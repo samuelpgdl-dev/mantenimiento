@@ -131,7 +131,7 @@
                 <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento</h2>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
+                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
                         <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2">
                             <option value="ALL">Todas las Categorías</option>
                         </select>
@@ -441,8 +441,16 @@
             const sortOrder = document.getElementById("sortSelector").value;
 
             let filtered = car.records.filter(r => {
-                const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search) || (r.tipo || '').toLowerCase().includes(search);
-                const matchesCat = catFilter === 'ALL' || r.tipo === catFilter;
+                const tipoStr = (r.tipo || '').toLowerCase();
+                const detalleStr = (r.detalle || '').toLowerCase();
+                const tallerStr = (r.taller || '').toLowerCase();
+
+                // 1. Buscador de texto libre busca en Detalle del mantenimiento o Taller
+                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search);
+                
+                // 2. Desplegable superior filtra por la Columna D (Tipo Mantenimiento)
+                const matchesCat = catFilter === 'ALL' || tipoStr === catFilter.toLowerCase() || tipoStr.includes(catFilter.toLowerCase());
+                
                 return matchesSearch && matchesCat;
             });
 
