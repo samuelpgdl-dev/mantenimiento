@@ -154,14 +154,22 @@
 
         <!-- Records Table Section -->
         <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
-            <div class="p-5 border-b border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <h2 class="text-lg font-bold text-white flex items-center">
                     <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento
                 </h2>
-                <div class="flex items-center space-x-3">
-                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-48">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-44">
+                    
                     <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
                         <option value="ALL">Todas las Categorías</option>
+                    </select>
+
+                    <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
+                        <option value="date-desc">Fecha: Recientes primero</option>
+                        <option value="date-asc">Fecha: Antiguos primero</option>
+                        <option value="km-desc">KM: Mayor a Menor</option>
+                        <option value="km-asc">KM: Menor a Mayor</option>
                     </select>
                 </div>
             </div>
@@ -196,6 +204,7 @@
             
             <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-4">
                 <input type="hidden" id="recordId">
+                <input type="hidden" id="recordRowIndex">
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -478,11 +487,25 @@
             const car = getActiveVehicle();
             const search = document.getElementById("searchInput").value.toLowerCase();
             const catFilter = document.getElementById("categoryFilter").value;
+            const sortOrder = document.getElementById("sortSelector").value;
 
-            const filtered = car.records.filter(r => {
+            let filtered = car.records.filter(r => {
                 const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search);
                 const matchesCat = catFilter === 'ALL' || r.tipo === catFilter;
                 return matchesSearch && matchesCat;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortOrder === 'date-desc') {
+                    return new Date(b.fecha) - new Date(a.fecha);
+                } else if (sortOrder === 'date-asc') {
+                    return new Date(a.fecha) - new Date(b.fecha);
+                } else if (sortOrder === 'km-desc') {
+                    return Number(b.kms || 0) - Number(a.kms || 0);
+                } else if (sortOrder === 'km-asc') {
+                    return Number(a.kms || 0) - Number(b.kms || 0);
+                }
+                return 0;
             });
 
             const tbody = document.getElementById("recordsTableBody");
@@ -520,6 +543,7 @@
                 if (record) {
                     title.innerText = "Editar Mantenimiento";
                     document.getElementById("recordId").value = record.id;
+                    document.getElementById("recordRowIndex").value = record.rowIndex || "";
                     document.getElementById("formFecha").value = formatDateDisplay(record.fecha);
                     document.getElementById("formKms").value = record.kms;
                     document.getElementById("formTipo").value = record.tipo;
@@ -533,6 +557,7 @@
             title.innerText = "Añadir Mantenimiento";
             document.getElementById("recordForm").reset();
             document.getElementById("recordId").value = "";
+            document.getElementById("recordRowIndex").value = "";
             document.getElementById("formFecha").value = new Date().toISOString().split('T')[0];
         }
 
@@ -544,6 +569,7 @@
             e.preventDefault();
             const car = getActiveVehicle();
             const recordId = document.getElementById("recordId").value;
+            const rowIndex = document.getElementById("recordRowIndex").value;
 
             const recordData = {
                 fecha: document.getElementById("formFecha").value,
@@ -552,7 +578,8 @@
                 coste: Number(document.getElementById("formCoste").value),
                 taller: document.getElementById("formTaller").value,
                 detalle: document.getElementById("formDetalle").value,
-                hojaVehiculo: car.sheetName
+                hojaVehiculo: car.sheetName,
+                rowIndex: rowIndex ? Number(rowIndex) : null
             };
 
             if (recordId) {
@@ -564,8 +591,6 @@
                 const newRecord = { id: Date.now(), ...recordData };
                 car.records.push(newRecord);
             }
-
-            if (recordData.kms > car.kms) car.kms = recordData.kms;
 
             closeRecordModal();
             renderDashboard();
@@ -593,12 +618,10 @@
             if (!recordToDelete) return;
 
             if (confirm(`¿Estás seguro de eliminar el registro "${recordToDelete.detalle}"?`)) {
-                // Eliminar del estado local inmediatamente
                 car.records = car.records.filter(r => r.id !== id);
                 renderDashboard();
                 showToast("Eliminando de Google Sheets...");
 
-                // Petición de borrado a Google Apps Script
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
@@ -607,6 +630,7 @@
                         body: JSON.stringify({
                             action: "delete",
                             hojaVehiculo: car.sheetName,
+                            rowIndex: recordToDelete.rowIndex || null,
                             detalle: recordToDelete.detalle,
                             kms: recordToDelete.kms
                         })
@@ -636,6 +660,7 @@
                         .filter(r => r.fecha && (r.kms !== undefined && r.kms !== null))
                         .map((r, i) => ({
                             id: i + 1,
+                            rowIndex: r.rowIndex,
                             fecha: formatDateDisplay(r.fecha),
                             kms: Number(r.kms) || 0,
                             tipo: r.tipo || "Otros",
@@ -646,7 +671,9 @@
 
                     if (car.records.length > 0) {
                         const maxKm = Math.max(...car.records.map(r => r.kms));
-                        if (maxKm > car.kms) car.kms = maxKm;
+                        car.kms = maxKm;
+                    } else {
+                        car.kms = 0;
                     }
 
                     renderDashboard();
