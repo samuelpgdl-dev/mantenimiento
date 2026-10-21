@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoKeep - Control de Mantenimiento de Vehículos</title>
+    <title>Canana Automotive - Control de Mantenimiento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -37,7 +37,7 @@
                 <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold text-xl flex items-center justify-center">
                     <i class="fa-solid fa-car-side"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight text-white">AutoKeep</span>
+                <span class="text-xl font-bold tracking-tight text-white">Canana Automotive</span>
                 <span id="syncStatus" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
                     <i class="fa-solid fa-cloud-arrow-up mr-1.5 text-xs"></i> Google Sheets
                 </span>
@@ -476,14 +476,39 @@
                     <td class="px-4 py-3 text-slate-400">${r.taller || '--'}</td>
                     <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste).toFixed(2)} €</td>
                     <td class="px-4 py-3 text-center">
-                        <button onclick="deleteRecord(${r.id})" class="text-slate-500 hover:text-red-400 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-400 p-1" title="Editar"><i class="fa-solid fa-pencil text-xs"></i></button>
+                            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-400 p-1" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function openRecordModal() {
-            document.getElementById("recordModal").classList.remove("hidden");
+        function openRecordModal(id = null) {
+            const modal = document.getElementById("recordModal");
+            const title = document.getElementById("recordModalTitle");
+            modal.classList.remove("hidden");
+
+            if (id) {
+                const car = getActiveVehicle();
+                const record = car.records.find(r => r.id === id);
+                if (record) {
+                    title.innerText = "Editar Mantenimiento";
+                    document.getElementById("recordId").value = record.id;
+                    document.getElementById("formFecha").value = record.fecha;
+                    document.getElementById("formKms").value = record.kms;
+                    document.getElementById("formTipo").value = record.tipo;
+                    document.getElementById("formCoste").value = record.coste;
+                    document.getElementById("formTaller").value = record.taller || '';
+                    document.getElementById("formDetalle").value = record.detalle || '';
+                    return;
+                }
+            }
+
+            title.innerText = "Añadir Mantenimiento";
+            document.getElementById("recordForm").reset();
+            document.getElementById("recordId").value = "";
             document.getElementById("formFecha").value = new Date().toISOString().split('T')[0];
         }
 
@@ -494,9 +519,9 @@
         async function handleSaveRecord(e) {
             e.preventDefault();
             const car = getActiveVehicle();
+            const recordId = document.getElementById("recordId").value;
 
-            const record = {
-                id: Date.now(),
+            const recordData = {
                 fecha: document.getElementById("formFecha").value,
                 kms: Number(document.getElementById("formKms").value),
                 tipo: document.getElementById("formTipo").value,
@@ -506,8 +531,19 @@
                 hojaVehiculo: car.sheetName
             };
 
-            car.records.unshift(record);
-            if (record.kms > car.kms) car.kms = record.kms;
+            if (recordId) {
+                // Modo Edición
+                const index = car.records.findIndex(r => r.id == recordId);
+                if (index !== -1) {
+                    car.records[index] = { ...car.records[index], ...recordData };
+                }
+            } else {
+                // Modo Nuevo Registro
+                const newRecord = { id: Date.now(), ...recordData };
+                car.records.unshift(newRecord);
+            }
+
+            if (recordData.kms > car.kms) car.kms = recordData.kms;
 
             closeRecordModal();
             renderDashboard();
@@ -518,7 +554,7 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(record)
+                    body: JSON.stringify(recordData)
                 });
             } catch (err) {
                 console.log("Modo offline / local pasivo");
