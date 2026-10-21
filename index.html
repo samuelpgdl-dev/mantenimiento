@@ -271,7 +271,7 @@
         let vehicles = [
             { id: "c3", name: "Citroën C3 BlueHDI 1.6", plate: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", records: [], parts: [] },
             { id: "p308", name: "Peugeot 308 II", plate: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", records: [], parts: [] },
-            { id: "p207", name: "Peugeot 207", plate: "207-PSA", year: 2010, kms: 250000, fuel: "Gasolina", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", records: [], parts: [] }
+            { id: "p207", name: "Peugeot 207", plate: "3323FMY", year: 2010, kms: 250000, fuel: "Diésel", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", records: [], parts: [] }
         ];
 
         let activeVehicleId = "c3";
@@ -445,11 +445,11 @@
                 const detalleStr = (r.detalle || '').toLowerCase();
                 const tallerStr = (r.taller || '').toLowerCase();
 
-                // 1. Buscador de texto libre busca en Detalle del mantenimiento o Taller
-                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
+                // 1. Buscador de texto libre busca exclusivamente en Detalle o Taller
+                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search);
                 
-                // 2. Desplegable superior filtra por la Columna D (Tipo Mantenimiento)
-                const matchesCat = catFilter === 'ALL' || tipoStr === catFilter.toLowerCase() || tipoStr.includes(catFilter.toLowerCase());
+                // 2. Desplegable superior filtra de manera exacta por la Columna D (Tipo Mantenimiento)
+                const matchesCat = catFilter === 'ALL' || tipoStr === catFilter.toLowerCase();
                 
                 return matchesSearch && matchesCat;
             });
