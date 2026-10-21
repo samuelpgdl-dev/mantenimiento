@@ -382,7 +382,6 @@
                 alerts.push({ title: "Valorar Cambio de Distribución", desc: "Siguiente revisión programada para 2026. Revisar estado de la correa de distribución.", type: "warning" });
             }
 
-            // Buscar la última revisión anual o mantenimiento oficial de aceite/revisión
             const oilChanges = car.records.filter(r => {
                 const tipo = (r.tipo || "").toLowerCase();
                 const detalle = (r.detalle || "").toLowerCase();
@@ -465,7 +464,7 @@
                 <tr class="hover:bg-slate-700/30 transition">
                     <td class="px-4 py-3 font-mono text-slate-300">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-4 py-3 font-mono text-slate-300">${Number(r.kms || 0).toLocaleString()} km</td>
-                    <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold bg-slate-700 text-emerald-400">${r.tipo}</span></td>
+                    <td class="px-4 py-3"><span class="px-2.5 py-1 rounded text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">${r.tipo}</span></td>
                     <td class="px-4 py-3 text-slate-200">${r.detalle}</td>
                     <td class="px-4 py-3 text-slate-400">${r.taller || '--'}</td>
                     <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste || 0).toFixed(2)} €</td>
