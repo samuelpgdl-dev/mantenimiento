@@ -297,7 +297,7 @@
                 year: 2017,
                 kms: 62066,
                 fuel: "Diésel",
-                sheetName: "Mantenimiento 308 II",
+                sheetName: "Mantenimiento 308 II Loyola",
                 records: [
                     { id: 1, fecha: "2025-07-25", kms: 62066, tipo: "Revisión anual", detalle: "Cambio aceite y filtro, filtro gasoil, aire y habitáculo. AdBlue", taller: "Caldereros Villarejo", coste: 93 }
                 ]
@@ -309,7 +309,7 @@
                 year: 2010,
                 kms: 250000,
                 fuel: "Gasolina",
-                sheetName: "Mantenimiento 207",
+                sheetName: "Mantenimiento Peugeot 207",
                 records: [
                     { id: 1, fecha: "2026-10-21", kms: 250000, tipo: "Cambio embrague", detalle: "Embrague y collarín", taller: "Otro", coste: 700 }
                 ]
@@ -616,9 +616,9 @@
             }
         }
 
-        // Método de Sincronización JSONP (Evita bloqueos CORS de Google Script en GitHub)
         function syncWithGoogleSheets() {
             updateSyncStatus(true, "Leyendo Google Sheets...");
+            const car = getActiveVehicle();
 
             const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
             
@@ -628,7 +628,6 @@
                 if (existingScript) existingScript.remove();
 
                 if (Array.isArray(data) && data.length > 0) {
-                    const car = getActiveVehicle();
                     const parsedRecords = data
                         .filter(r => r.fecha && r.kms)
                         .map((r, i) => ({
@@ -657,7 +656,7 @@
 
             const script = document.createElement('script');
             script.id = 'jsonp_script';
-            script.src = `${GOOGLE_SCRIPT_URL}?callback=${callbackName}`;
+            script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
             script.onerror = function() {
                 delete window[callbackName];
                 if (script) script.remove();
