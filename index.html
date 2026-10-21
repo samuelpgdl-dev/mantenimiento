@@ -199,7 +199,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Mantenimiento *</label>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Mantenimiento (Columna D) *</label>
                     <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></select>
                 </div>
 
@@ -215,7 +215,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle / Observaciones</label>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle / Trabajo (Columna E)</label>
                     <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
                 </div>
 
@@ -446,7 +446,7 @@
                 const tallerStr = (r.taller || '').toLowerCase();
 
                 // 1. Buscador de texto libre busca en Detalle del mantenimiento o Taller
-                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search);
+                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
                 
                 // 2. Desplegable superior filtra por la Columna D (Tipo Mantenimiento)
                 const matchesCat = catFilter === 'ALL' || tipoStr === catFilter.toLowerCase() || tipoStr.includes(catFilter.toLowerCase());
