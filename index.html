@@ -11,13 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            900: '#14532d',
-                        },
+                        brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
                         darkbg: '#0f172a',
                         cardbg: '#1e293b'
                     }
@@ -48,7 +42,6 @@
                 </div>
                 <span class="text-xl font-bold tracking-tight text-white hidden sm:inline">Canana Automotive</span>
                 
-                <!-- View Switcher -->
                 <div class="bg-slate-700 p-1 rounded-lg flex space-x-1 border border-slate-600 ml-2">
                     <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition">
                         <i class="fa-solid fa-wrench mr-1"></i> Mantenimiento
@@ -65,8 +58,7 @@
                     <span class="hidden md:inline">Recargar</span>
                 </button>
                 <div class="relative">
-                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium">
-                        <!-- Populated by JS -->
+                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 focus:ring-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium">
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
                         <i class="fa-solid fa-chevron-down text-xs"></i>
@@ -79,7 +71,6 @@
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Vehicle Details Header Card -->
         <section id="vehicleCard" class="bg-slate-800 rounded-xl p-5 border border-slate-700/60 shadow-lg relative overflow-hidden">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -94,7 +85,7 @@
                         <div class="text-slate-400 text-xs">Kilometraje Actual</div>
                         <div id="carKm" class="text-2xl font-bold text-emerald-400">-- km</div>
                     </div>
-                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg shadow-emerald-900/30 transition flex items-center space-x-2">
+                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg transition flex items-center space-x-2">
                         <i class="fa-solid fa-circle-plus"></i>
                         <span id="lblHeaderAdd">Añadir Registro</span>
                     </button>
@@ -140,8 +131,8 @@
                 <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento</h2>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 w-full sm:w-44">
-                        <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500">
+                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
+                        <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2">
                             <option value="ALL">Todas las Categorías</option>
                         </select>
                         <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-sm rounded-lg border border-slate-600 px-3 py-2 cursor-pointer">
@@ -158,7 +149,7 @@
                             <tr>
                                 <th class="px-4 py-3">Fecha</th>
                                 <th class="px-4 py-3">Km</th>
-                                <th class="px-4 py-3">Categoría</th>
+                                <th class="px-4 py-3">Tipo Mantenimiento</th>
                                 <th class="px-4 py-3">Detalle / Trabajo</th>
                                 <th class="px-4 py-3">Taller</th>
                                 <th class="px-4 py-3 text-right">Coste (€)</th>
@@ -171,7 +162,7 @@
             </section>
         </div>
 
-        <!-- VIEW 2: SPARE PARTS / REFERENCES -->
+        <!-- VIEW 2: SPARE PARTS -->
         <div id="viewParts" class="space-y-6 hidden">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700/60">
                 <div>
@@ -207,20 +198,20 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Mantenimiento *</label>
+                    <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo *</label>
-                        <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></select>
-                    </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Coste (€) *</label>
                         <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Taller / Proveedor</label>
-                    <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Taller / Proveedor</label>
+                        <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    </div>
                 </div>
 
                 <div>
@@ -236,7 +227,7 @@
         </div>
     </div>
 
-    <!-- Modal Form: Añadir Recambio (4 COLUMNAS) -->
+    <!-- Modal Form: Añadir Recambio -->
     <div id="partModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
             <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -245,24 +236,20 @@
             <form id="partForm" onsubmit="handleSavePart(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Categoría / Pieza *</label>
-                    <input type="text" id="partPieza" required placeholder="Ej. Filtro de Aceite, Bombilla H7, Escobillas..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <input type="text" id="partPieza" required placeholder="Ej. Filtro de Aceite, Bombilla H7..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Marca</label>
-                    <input type="text" id="partMarca" placeholder="Ej. Mann-Filter, Bosch, Valeo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <input type="text" id="partMarca" placeholder="Ej. Mann-Filter, Bosch..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                 </div>
-
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Notas / Ref. Exacta *</label>
-                    <textarea id="partNotas" rows="3" required placeholder="Ej. HU 711/51 x (incluye junta de goma)" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Notas *</label>
+                    <textarea id="partNotas" rows="3" required placeholder="Ej. HU 711/51 x (incluye junta)" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Enlace de Compra (Opcional)</label>
                     <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                 </div>
-
                 <div class="flex justify-end space-x-3 pt-3">
                     <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
                     <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg">Guardar Referencia</button>
@@ -394,9 +381,23 @@
             if (car.id === 'p308') {
                 alerts.push({ title: "Valorar Cambio de Distribución", desc: "Siguiente revisión programada para 2026. Revisar estado de la correa de distribución.", type: "warning" });
             }
-            const kmDiff = car.kms - (car.records[car.records.length - 1]?.kms || 0);
+
+            // Buscar la última revisión anual o mantenimiento oficial de aceite/revisión
+            const oilChanges = car.records.filter(r => {
+                const tipo = (r.tipo || "").toLowerCase();
+                const detalle = (r.detalle || "").toLowerCase();
+                return tipo.includes("revisión anual") || tipo.includes("revision anual") || detalle.includes("aceite") || detalle.includes("revision");
+            });
+
+            let lastOilKm = car.records[car.records.length - 1]?.kms || 0;
+            if (oilChanges.length > 0) {
+                oilChanges.sort((a, b) => b.kms - a.kms);
+                lastOilKm = oilChanges[0].kms;
+            }
+
+            const kmDiff = car.kms - lastOilKm;
             if (kmDiff > 15000) {
-                alerts.push({ title: "Revisión / Cambio de Aceite Recomendado", desc: `Han transcurrido ${kmDiff.toLocaleString()} km desde el último mantenimiento registrado.`, type: "info" });
+                alerts.push({ title: "Revisión / Cambio de Aceite Recomendado", desc: `Han transcurrido ${kmDiff.toLocaleString()} km desde la última revisión oficial o cambio de aceite (${lastOilKm.toLocaleString()} km).`, type: "info" });
             }
 
             document.getElementById("kpiAlertCount").innerText = alerts.length;
@@ -441,7 +442,7 @@
             const sortOrder = document.getElementById("sortSelector").value;
 
             let filtered = car.records.filter(r => {
-                const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search);
+                const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search) || (r.tipo || '').toLowerCase().includes(search);
                 const matchesCat = catFilter === 'ALL' || r.tipo === catFilter;
                 return matchesSearch && matchesCat;
             });
@@ -478,7 +479,6 @@
             `).join('');
         }
 
-        // RENDER PARTS (4 COLUMNAS: PIEZA, MARCA, NOTAS, LINK)
         function renderParts() {
             const car = getActiveVehicle();
             const container = document.getElementById("partsContainer");
@@ -548,7 +548,7 @@
                     document.getElementById("recordRowIndex").value = record.rowIndex || "";
                     document.getElementById("formFecha").value = formatDateDisplay(record.fecha);
                     document.getElementById("formKms").value = record.kms;
-                    document.getElementById("formTipo").value = record.tipo;
+                    document.getElementById("formTipo").value = record.tipo || "Revisión anual";
                     document.getElementById("formCoste").value = record.coste;
                     document.getElementById("formTaller").value = record.taller || '';
                     document.getElementById("formDetalle").value = record.detalle || '';
