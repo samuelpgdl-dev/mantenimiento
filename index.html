@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canana Automotive - Control de Mantenimiento</title>
+    <title>Canana Automotive - Control de Mantenimiento y Recambios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -46,16 +46,23 @@
                 <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold text-xl flex items-center justify-center">
                     <i class="fa-solid fa-car-side"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight text-white">Canana Automotive</span>
-                <span id="syncStatus" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
-                    <i class="fa-solid fa-rotate mr-1.5 text-xs animate-spin" id="syncIcon"></i> <span id="syncText">Cargando...</span>
-                </span>
+                <span class="text-xl font-bold tracking-tight text-white hidden sm:inline">Canana Automotive</span>
+                
+                <!-- View Switcher -->
+                <div class="bg-slate-700 p-1 rounded-lg flex space-x-1 border border-slate-600 ml-2">
+                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition">
+                        <i class="fa-solid fa-wrench mr-1"></i> Mantenimiento
+                    </button>
+                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+                        <i class="fa-solid fa-boxes-packing mr-1"></i> Recambios
+                    </button>
+                </div>
             </div>
             
             <div class="flex items-center space-x-3">
-                <button onclick="syncWithGoogleSheets()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg border border-slate-600 text-sm font-medium transition flex items-center" title="Recargar desde Google Sheets">
+                <button onclick="reloadData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg border border-slate-600 text-sm font-medium transition flex items-center" title="Recargar">
                     <i class="fa-solid fa-arrows-rotate mr-1.5"></i>
-                    <span class="hidden sm:inline">Recargar</span>
+                    <span class="hidden md:inline">Recargar</span>
                 </button>
                 <div class="relative">
                     <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium">
@@ -87,116 +94,99 @@
                         <div class="text-slate-400 text-xs">Kilometraje Actual</div>
                         <div id="carKm" class="text-2xl font-bold text-emerald-400">-- km</div>
                     </div>
-                    <button onclick="openRecordModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg shadow-emerald-900/30 transition flex items-center space-x-2">
+                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg shadow-emerald-900/30 transition flex items-center space-x-2">
                         <i class="fa-solid fa-circle-plus"></i>
-                        <span>Añadir Registro</span>
+                        <span id="lblHeaderAdd">Añadir Registro</span>
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- KPI Summary Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg text-xl"><i class="fa-solid fa-euro-sign"></i></div>
+        <!-- VIEW 1: MAINTENANCE DASHBOARD -->
+        <div id="viewMaintenance" class="space-y-6">
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                    <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg text-xl"><i class="fa-solid fa-euro-sign"></i></div>
+                    <div><div class="text-xs text-slate-400">Gasto Total Acumulado</div><div id="kpiTotalCost" class="text-xl font-bold text-white">0,00 €</div></div>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-wrench"></i></div>
+                    <div><div class="text-xs text-slate-400">Revisiones Realizadas</div><div id="kpiTotalCount" class="text-xl font-bold text-white">0</div></div>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                    <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div><div class="text-xs text-slate-400">Alertas Pendientes</div><div id="kpiAlertCount" class="text-xl font-bold text-white">0</div></div>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                    <div class="p-3 bg-purple-500/10 text-purple-400 rounded-lg text-xl"><i class="fa-solid fa-gas-pump"></i></div>
+                    <div><div class="text-xs text-slate-400">Combustible</div><div id="kpiFuel" class="text-xl font-bold text-white">--</div></div>
+                </div>
+            </section>
+
+            <section id="alertsContainer" class="space-y-3"></section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
+                    <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-emerald-400 mr-2"></i> Gastos por Categoría</h2>
+                    <div class="h-64 relative"><canvas id="categoryChart"></canvas></div>
+                </div>
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
+                    <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-column text-blue-400 mr-2"></i> Evolución de Gastos</h2>
+                    <div class="h-64 relative"><canvas id="timeChart"></canvas></div>
+                </div>
+            </section>
+
+            <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
+                <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento</h2>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 w-full sm:w-44">
+                        <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500">
+                            <option value="ALL">Todas las Categorías</option>
+                        </select>
+                        <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-sm rounded-lg border border-slate-600 px-3 py-2 cursor-pointer">
+                            <option value="date-desc">Fecha: Recientes primero</option>
+                            <option value="date-asc">Fecha: Antiguos primero</option>
+                            <option value="km-desc">KM: Mayor a Menor</option>
+                            <option value="km-asc">KM: Menor a Mayor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="px-4 py-3">Fecha</th>
+                                <th class="px-4 py-3">Km</th>
+                                <th class="px-4 py-3">Categoría</th>
+                                <th class="px-4 py-3">Detalle / Trabajo</th>
+                                <th class="px-4 py-3">Taller</th>
+                                <th class="px-4 py-3 text-right">Coste (€)</th>
+                                <th class="px-4 py-3 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody" class="divide-y divide-slate-700/50"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW 2: SPARE PARTS / REFERENCES -->
+        <div id="viewParts" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700/60">
                 <div>
-                    <div class="text-xs text-slate-400">Gasto Total Acumulado</div>
-                    <div id="kpiTotalCost" class="text-xl font-bold text-white">0,00 €</div>
+                    <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-400 mr-2"></i> Guía de Piezas y Recambios</h2>
+                    <p class="text-xs text-slate-400 mt-1">Busca referencias exactas y detalles técnicos para comprar recambios compatibles con este vehículo.</p>
                 </div>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-wrench"></i></div>
-                <div>
-                    <div class="text-xs text-slate-400">Revisiones Realizadas</div>
-                    <div id="kpiTotalCount" class="text-xl font-bold text-white">0</div>
-                </div>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div>
-                    <div class="text-xs text-slate-400">Alertas Pendientes</div>
-                    <div id="kpiAlertCount" class="text-xl font-bold text-white">0</div>
-                </div>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                <div class="p-3 bg-purple-500/10 text-purple-400 rounded-lg text-xl"><i class="fa-solid fa-gas-pump"></i></div>
-                <div>
-                    <div class="text-xs text-slate-400">Combustible</div>
-                    <div id="kpiFuel" class="text-xl font-bold text-white">--</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Dynamic Alerts Section -->
-        <section id="alertsContainer" class="space-y-3">
-            <!-- Alert Cards rendered via JS -->
-        </section>
-
-        <!-- Charts & Statistics -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
-                <h2 class="text-base font-semibold text-white mb-4 flex items-center">
-                    <i class="fa-solid fa-chart-pie text-emerald-400 mr-2"></i> Gastos por Categoría
-                </h2>
-                <div class="h-64 relative">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-            </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
-                <h2 class="text-base font-semibold text-white mb-4 flex items-center">
-                    <i class="fa-solid fa-chart-column text-blue-400 mr-2"></i> Evolución de Gastos
-                </h2>
-                <div class="h-64 relative">
-                    <canvas id="timeChart"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- Records Table Section -->
-        <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
-            <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <h2 class="text-lg font-bold text-white flex items-center">
-                    <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento
-                </h2>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-44">
-                    
-                    <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
-                        <option value="ALL">Todas las Categorías</option>
-                    </select>
-
-                    <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
-                        <option value="date-desc">Fecha: Recientes primero</option>
-                        <option value="date-asc">Fecha: Antiguos primero</option>
-                        <option value="km-desc">KM: Mayor a Menor</option>
-                        <option value="km-asc">KM: Menor a Mayor</option>
-                    </select>
-                </div>
+                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o notas..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-64">
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase font-semibold">
-                        <tr>
-                            <th class="px-4 py-3">Fecha</th>
-                            <th class="px-4 py-3">Km</th>
-                            <th class="px-4 py-3">Categoría</th>
-                            <th class="px-4 py-3">Detalle / Trabajo</th>
-                            <th class="px-4 py-3">Taller</th>
-                            <th class="px-4 py-3 text-right">Coste (€)</th>
-                            <th class="px-4 py-3 text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsTableBody" class="divide-y divide-slate-700/50">
-                        <!-- Table rows populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
 
     </main>
 
-    <!-- Modal Form for Record -->
+    <!-- Modal Form: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
             <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -209,42 +199,73 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                        <input type="date" id="formFecha" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Kilómetros *</label>
-                        <input type="number" id="formKms" required min="0" placeholder="Ej. 165500" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                        <input type="number" id="formKms" required min="0" placeholder="Ej. 165500" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Mantenimiento *</label>
-                        <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
-                            <!-- Populated dynamically -->
-                        </select>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo *</label>
+                        <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Coste Total (€) *</label>
-                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Coste (€) *</label>
+                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Taller / Proveedor</label>
-                    <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo, Feuvert..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                    <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle / Observaciones</label>
-                    <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30, filtro aire..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                    <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-3">
-                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
-                    <button type="submit" id="btnSaveRecord" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-emerald-900/30 flex items-center space-x-2">
-                        <span>Guardar</span>
-                    </button>
+                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form: Añadir Recambio (4 COLUMNAS) -->
+    <div id="partModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
+            <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-xl font-bold text-white mb-4">Añadir Nueva Referencia de Recambio</h3>
+            
+            <form id="partForm" onsubmit="handleSavePart(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Categoría / Pieza *</label>
+                    <input type="text" id="partPieza" required placeholder="Ej. Filtro de Aceite, Bombilla H7, Escobillas..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Marca</label>
+                    <input type="text" id="partMarca" placeholder="Ej. Mann-Filter, Bosch, Valeo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Notas / Ref. Exacta *</label>
+                    <textarea id="partNotas" rows="3" required placeholder="Ej. HU 711/51 x (incluye junta de goma)" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Enlace de Compra (Opcional)</label>
+                    <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg">Guardar Referencia</button>
                 </div>
             </form>
         </div>
@@ -255,61 +276,25 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLgA7wyack-Q7_bLOhHOXzYipa7pUQDoyjcTvrH2dMvMuBZ2MX7NX7BsCejxHzBXo2/exec";
 
         const MAINTENANCE_CATEGORIES = [
-            "Revisión anual",
-            "Cambio distribución",
-            "Cambio embrague",
-            "Cambio neumáticos",
-            "Cambio amortiguadores",
-            "Cambio seguro",
-            "Compra de coche",
-            "Impuesto",
-            "ITV",
-            "Luces",
-            "Pago del seguro",
-            "Reparación",
-            "Otros"
+            "Revisión anual", "Cambio distribución", "Cambio embrague", "Cambio neumáticos",
+            "Cambio amortiguadores", "Cambio seguro", "Compra de coche", "Impuesto",
+            "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
         let vehicles = [
-            {
-                id: "c3",
-                name: "Citroën C3 BlueHDI 1.6",
-                plate: "VF7SCBHY6GW586838",
-                year: 2016,
-                kms: 165500,
-                fuel: "Diésel",
-                sheetName: "Mantenimiento C3 II",
-                records: []
-            },
-            {
-                id: "p308",
-                name: "Peugeot 308 II",
-                plate: "VF3LBBHZ3FS336588",
-                year: 2017,
-                kms: 62066,
-                fuel: "Diésel",
-                sheetName: "Mantenimiento 308 II Loyola",
-                records: []
-            },
-            {
-                id: "p207",
-                name: "Peugeot 207",
-                plate: "207-PSA",
-                year: 2010,
-                kms: 250000,
-                fuel: "Gasolina",
-                sheetName: "Mantenimiento Peugeot 207",
-                records: []
-            }
+            { id: "c3", name: "Citroën C3 BlueHDI 1.6", plate: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", records: [], parts: [] },
+            { id: "p308", name: "Peugeot 308 II", plate: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", records: [], parts: [] },
+            { id: "p207", name: "Peugeot 207", plate: "207-PSA", year: 2010, kms: 250000, fuel: "Gasolina", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", records: [], parts: [] }
         ];
 
         let activeVehicleId = "c3";
+        let activeMainTab = "maintenance";
         let categoryChartInstance = null;
         let timeChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             initApp();
-            syncWithGoogleSheets();
+            reloadData();
         });
 
         function initApp() {
@@ -318,13 +303,40 @@
             renderDashboard();
         }
 
+        function switchMainTab(tab) {
+            activeMainTab = tab;
+            const btnMaint = document.getElementById("btnTabMaintenance");
+            const btnParts = document.getElementById("btnTabParts");
+            const viewMaint = document.getElementById("viewMaintenance");
+            const viewParts = document.getElementById("viewParts");
+            const lblAdd = document.getElementById("lblHeaderAdd");
+
+            if (tab === 'maintenance') {
+                btnMaint.className = "px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnParts.className = "px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition";
+                viewMaint.classList.remove("hidden");
+                viewParts.classList.add("hidden");
+                lblAdd.innerText = "Añadir Registro";
+            } else {
+                btnParts.className = "px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnMaint.className = "px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition";
+                viewParts.classList.remove("hidden");
+                viewMaint.classList.add("hidden");
+                lblAdd.innerText = "Añadir Recambio";
+                renderParts();
+            }
+        }
+
+        function openModalForCurrentView() {
+            if (activeMainTab === 'maintenance') openRecordModal();
+            else openPartModal();
+        }
+
         function populateCategories() {
             const formSelect = document.getElementById("formTipo");
             const filterSelect = document.getElementById("categoryFilter");
-
             formSelect.innerHTML = MAINTENANCE_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
-            filterSelect.innerHTML = `<option value="ALL">Todas las Categorías</option>` + 
-                MAINTENANCE_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+            filterSelect.innerHTML = `<option value="ALL">Todas las Categorías</option>` + MAINTENANCE_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
         function populateVehicleSelector() {
@@ -336,7 +348,7 @@
         function changeActiveVehicle(id) {
             activeVehicleId = id;
             renderDashboard();
-            syncWithGoogleSheets();
+            reloadData();
         }
 
         function getActiveVehicle() {
@@ -345,35 +357,19 @@
 
         function formatDateDisplay(rawDate) {
             if (!rawDate) return new Date().toISOString().split('T')[0];
-            if (typeof rawDate === 'string' && rawDate.includes('T')) {
-                return rawDate.split('T')[0];
-            }
+            if (typeof rawDate === 'string' && rawDate.includes('T')) return rawDate.split('T')[0];
             return String(rawDate).substring(0, 10);
         }
 
-        function showToast(text = "Los datos se han actualizado con Google Sheets.") {
+        function showToast(text = "Sincronizado con Google Sheets.") {
             const toast = document.getElementById("toastNotification");
             document.getElementById("toastMsg").innerText = text;
             toast.classList.remove("translate-y-[-100px]", "opacity-0", "pointer-events-none");
-            setTimeout(() => {
-                toast.classList.add("translate-y-[-100px]", "opacity-0", "pointer-events-none");
-            }, 3500);
-        }
-
-        function updateSyncStatus(loading, text = "Sincronizado") {
-            const icon = document.getElementById("syncIcon");
-            const label = document.getElementById("syncText");
-            label.innerText = text;
-            if (loading) {
-                icon.classList.add("animate-spin");
-            } else {
-                icon.classList.remove("animate-spin");
-            }
+            setTimeout(() => { toast.classList.add("translate-y-[-100px]", "opacity-0", "pointer-events-none"); }, 3500);
         }
 
         function renderDashboard() {
             const car = getActiveVehicle();
-            
             document.getElementById("carTitle").innerText = car.name;
             document.getElementById("carPlate").innerText = car.plate;
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
@@ -387,6 +383,7 @@
             renderAlerts(car);
             renderCharts(car);
             renderTable();
+            renderParts();
         }
 
         function renderAlerts(car) {
@@ -395,91 +392,45 @@
             let alerts = [];
 
             if (car.id === 'p308') {
-                alerts.push({
-                    title: "Valorar Cambio de Distribución",
-                    desc: "Siguiente revisión programada para 2026. Revisar estado de la correa de distribución.",
-                    type: "warning"
-                });
+                alerts.push({ title: "Valorar Cambio de Distribución", desc: "Siguiente revisión programada para 2026. Revisar estado de la correa de distribución.", type: "warning" });
             }
-
             const kmDiff = car.kms - (car.records[car.records.length - 1]?.kms || 0);
             if (kmDiff > 15000) {
-                alerts.push({
-                    title: "Revisión / Cambio de Aceite Recomendado",
-                    desc: `Han transcurrido ${kmDiff.toLocaleString()} km desde el último mantenimiento registrado.`,
-                    type: "info"
-                });
+                alerts.push({ title: "Revisión / Cambio de Aceite Recomendado", desc: `Han transcurrido ${kmDiff.toLocaleString()} km desde el último mantenimiento registrado.`, type: "info" });
             }
 
             document.getElementById("kpiAlertCount").innerText = alerts.length;
-
             alerts.forEach(a => {
                 const color = a.type === 'warning' ? 'amber' : 'blue';
                 container.innerHTML += `
                     <div class="bg-${color}-950/40 border border-${color}-700/50 p-4 rounded-xl flex items-start space-x-3 text-sm">
                         <i class="fa-solid fa-triangle-exclamation text-${color}-400 text-lg mt-0.5"></i>
-                        <div>
-                            <h4 class="font-bold text-${color}-200">${a.title}</h4>
-                            <p class="text-slate-300 text-xs mt-0.5">${a.desc}</p>
-                        </div>
-                    </div>
-                `;
+                        <div><h4 class="font-bold text-${color}-200">${a.title}</h4><p class="text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                    </div>`;
             });
         }
 
         function renderCharts(car) {
             const catMap = {};
-            car.records.forEach(r => {
-                const cat = r.tipo || "Otros";
-                catMap[cat] = (catMap[cat] || 0) + Number(r.coste || 0);
-            });
+            car.records.forEach(r => { const cat = r.tipo || "Otros"; catMap[cat] = (catMap[cat] || 0) + Number(r.coste || 0); });
 
             if (categoryChartInstance) categoryChartInstance.destroy();
             const ctx1 = document.getElementById('categoryChart').getContext('2d');
             categoryChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(catMap),
-                    datasets: [{
-                        data: Object.values(catMap),
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b', '#06b6d4', '#f97316']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
-                }
+                data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b', '#06b6d4', '#f97316'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
             });
 
             const yearMap = {};
-            car.records.forEach(r => {
-                const f = formatDateDisplay(r.fecha);
-                const year = f ? f.substring(0, 4) : '2026';
-                yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0);
-            });
+            car.records.forEach(r => { const f = formatDateDisplay(r.fecha); const year = f ? f.substring(0, 4) : '2026'; yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0); });
 
             if (timeChartInstance) timeChartInstance.destroy();
             const ctx2 = document.getElementById('timeChart').getContext('2d');
             timeChartInstance = new Chart(ctx2, {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(yearMap),
-                    datasets: [{
-                        label: 'Gasto (€)',
-                        data: Object.values(yearMap),
-                        backgroundColor: '#3b82f6'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
+                data: { labels: Object.keys(yearMap), datasets: [{ label: 'Gasto (€)', data: Object.values(yearMap), backgroundColor: '#3b82f6' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -496,15 +447,10 @@
             });
 
             filtered.sort((a, b) => {
-                if (sortOrder === 'date-desc') {
-                    return new Date(b.fecha) - new Date(a.fecha);
-                } else if (sortOrder === 'date-asc') {
-                    return new Date(a.fecha) - new Date(b.fecha);
-                } else if (sortOrder === 'km-desc') {
-                    return Number(b.kms || 0) - Number(a.kms || 0);
-                } else if (sortOrder === 'km-asc') {
-                    return Number(a.kms || 0) - Number(b.kms || 0);
-                }
+                if (sortOrder === 'date-desc') return new Date(b.fecha) - new Date(a.fecha);
+                if (sortOrder === 'date-asc') return new Date(a.fecha) - new Date(b.fecha);
+                if (sortOrder === 'km-desc') return Number(b.kms || 0) - Number(a.kms || 0);
+                if (sortOrder === 'km-asc') return Number(a.kms || 0) - Number(b.kms || 0);
                 return 0;
             });
 
@@ -532,16 +478,72 @@
             `).join('');
         }
 
+        // RENDER PARTS (4 COLUMNAS: PIEZA, MARCA, NOTAS, LINK)
+        function renderParts() {
+            const car = getActiveVehicle();
+            const container = document.getElementById("partsContainer");
+            const searchInput = document.getElementById("partSearchInput");
+            if (!container || !searchInput) return;
+
+            const search = searchInput.value.toLowerCase();
+            const filtered = (car.parts || []).filter(p => 
+                (p.pieza || '').toLowerCase().includes(search) || 
+                (p.marca || '').toLowerCase().includes(search) || 
+                (p.notas || '').toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full bg-slate-800 p-8 rounded-xl border border-slate-700/60 text-center text-slate-400">
+                        <i class="fa-solid fa-boxes-packing text-3xl mb-2 text-slate-500"></i>
+                        <p class="font-semibold text-sm">No hay referencias anotadas para este vehículo.</p>
+                        <button onclick="openPartModal()" class="mt-3 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold">Añadir primera referencia</button>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(p => {
+                const querySearch = encodeURIComponent(`${p.pieza} ${p.marca} ${p.notas}`);
+                const amazonUrl = p.link || `https://www.amazon.es/s?k=${querySearch}`;
+                const endadoUrl = `https://www.endado.com/busqueda?q=${querySearch}`;
+
+                return `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 shadow hover:border-slate-600 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <h3 class="font-bold text-white text-base">${p.pieza}</h3>
+                                ${p.marca ? `<span class="bg-slate-700 text-emerald-400 text-xs px-2 py-0.5 rounded font-mono font-bold">${p.marca}</span>` : ''}
+                            </div>
+                            <div class="mt-2 bg-slate-900/60 p-3 rounded-lg border border-slate-700 flex items-center justify-between">
+                                <p class="text-sm text-slate-200 font-sans leading-relaxed">${p.notas}</p>
+                                <button onclick="copyToClipboard('${p.pieza}: ${p.marca} ${p.notas}')" class="text-xs text-slate-400 hover:text-emerald-400 p-1 ml-2" title="Copiar detalles"><i class="fa-solid fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Comprar en:</span>
+                            <div class="flex space-x-2">
+                                <a href="${endadoUrl}" target="_blank" class="bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-solid fa-cart-shopping mr-1"></i>Endado</a>
+                                <a href="${amazonUrl}" target="_blank" class="bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-brands fa-amazon mr-1"></i>Amazon</a>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast("Detalles copiados al portapapeles.");
+        }
+
         function openRecordModal(id = null) {
             const modal = document.getElementById("recordModal");
-            const title = document.getElementById("recordModalTitle");
             modal.classList.remove("hidden");
 
             if (id) {
                 const car = getActiveVehicle();
                 const record = car.records.find(r => r.id === id);
                 if (record) {
-                    title.innerText = "Editar Mantenimiento";
+                    document.getElementById("recordModalTitle").innerText = "Editar Mantenimiento";
                     document.getElementById("recordId").value = record.id;
                     document.getElementById("recordRowIndex").value = record.rowIndex || "";
                     document.getElementById("formFecha").value = formatDateDisplay(record.fecha);
@@ -554,16 +556,17 @@
                 }
             }
 
-            title.innerText = "Añadir Mantenimiento";
+            document.getElementById("recordModalTitle").innerText = "Añadir Mantenimiento";
             document.getElementById("recordForm").reset();
             document.getElementById("recordId").value = "";
             document.getElementById("recordRowIndex").value = "";
             document.getElementById("formFecha").value = new Date().toISOString().split('T')[0];
         }
 
-        function closeRecordModal() {
-            document.getElementById("recordModal").classList.add("hidden");
-        }
+        function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
+
+        function openPartModal() { document.getElementById("partModal").classList.remove("hidden"); }
+        function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
 
         async function handleSaveRecord(e) {
             e.preventDefault();
@@ -582,72 +585,65 @@
                 rowIndex: rowIndex ? Number(rowIndex) : null
             };
 
-            if (recordId) {
-                const index = car.records.findIndex(r => r.id == recordId);
-                if (index !== -1) {
-                    car.records[index] = { ...car.records[index], ...recordData };
-                }
-            } else {
-                const newRecord = { id: Date.now(), ...recordData };
-                car.records.push(newRecord);
-            }
-
             closeRecordModal();
-            renderDashboard();
             showToast("Guardando en Google Sheets...");
 
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(recordData)
-                });
-                setTimeout(() => {
-                    syncWithGoogleSheets();
-                }, 1500);
-            } catch (err) {
-                console.log("Petición enviada.");
-            }
+                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recordData) });
+                setTimeout(() => reloadData(), 1500);
+            } catch (err) { console.log("Guardado enviado."); }
+        }
+
+        async function handleSavePart(e) {
+            e.preventDefault();
+            const car = getActiveVehicle();
+
+            const partData = {
+                type: "reference",
+                hojaVehiculo: car.refSheetName,
+                pieza: document.getElementById("partPieza").value,
+                marca: document.getElementById("partMarca").value,
+                notas: document.getElementById("partNotas").value,
+                link: document.getElementById("partLink").value
+            };
+
+            closePartModal();
+            showToast("Guardando nueva referencia...");
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(partData) });
+                document.getElementById("partForm").reset();
+                setTimeout(() => reloadData(), 1500);
+            } catch (err) { console.log("Referencia enviada."); }
         }
 
         async function deleteRecord(id) {
             const car = getActiveVehicle();
             const recordToDelete = car.records.find(r => r.id === id);
-            
             if (!recordToDelete) return;
 
-            if (confirm(`¿Estás seguro de eliminar el registro "${recordToDelete.detalle}"?`)) {
+            if (confirm(`¿Estás seguro de eliminar "${recordToDelete.detalle}"?`)) {
                 car.records = car.records.filter(r => r.id !== id);
                 renderDashboard();
                 showToast("Eliminando de Google Sheets...");
 
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: "delete",
-                            hojaVehiculo: car.sheetName,
-                            rowIndex: recordToDelete.rowIndex || null,
-                            detalle: recordToDelete.detalle,
-                            kms: recordToDelete.kms
-                        })
+                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: recordToDelete.rowIndex || null, detalle: recordToDelete.detalle, kms: recordToDelete.kms })
                     });
-                    setTimeout(() => {
-                        syncWithGoogleSheets();
-                    }, 1500);
-                } catch (err) {
-                    console.log("Petición de borrado enviada.");
-                }
+                    setTimeout(() => reloadData(), 1500);
+                } catch (err) { console.log("Borrado enviado."); }
             }
         }
 
-        function syncWithGoogleSheets() {
-            updateSyncStatus(true, "Leyendo Google Sheets...");
-            const car = getActiveVehicle();
+        function reloadData() {
+            syncWithGoogleSheets();
+            syncReferencesWithGoogleSheets();
+        }
 
+        function syncWithGoogleSheets() {
+            const car = getActiveVehicle();
             const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
             
             window[callbackName] = function(data) {
@@ -656,42 +652,41 @@
                 if (existingScript) existingScript.remove();
 
                 if (Array.isArray(data) && data.length > 0) {
-                    car.records = data
-                        .filter(r => r.fecha && (r.kms !== undefined && r.kms !== null))
-                        .map((r, i) => ({
-                            id: i + 1,
-                            rowIndex: r.rowIndex,
-                            fecha: formatDateDisplay(r.fecha),
-                            kms: Number(r.kms) || 0,
-                            tipo: r.tipo || "Otros",
-                            detalle: r.detalle || "",
-                            taller: r.taller || "",
-                            coste: Number(r.coste) || 0
-                        }));
+                    car.records = data.filter(r => r.fecha && (r.kms !== undefined && r.kms !== null)).map((r, i) => ({
+                        id: i + 1, rowIndex: r.rowIndex, fecha: formatDateDisplay(r.fecha), kms: Number(r.kms) || 0, tipo: r.tipo || "Otros", detalle: r.detalle || "", taller: r.taller || "", coste: Number(r.coste) || 0
+                    }));
 
                     if (car.records.length > 0) {
-                        const maxKm = Math.max(...car.records.map(r => r.kms));
-                        car.kms = maxKm;
-                    } else {
-                        car.kms = 0;
+                        car.kms = Math.max(...car.records.map(r => r.kms));
                     }
-
                     renderDashboard();
-                    updateSyncStatus(false, "Sincronizado");
-                    showToast("Base de datos cargada desde Google Sheets.");
-                } else {
-                    updateSyncStatus(false, "Sincronizado");
                 }
             };
 
             const script = document.createElement('script');
             script.id = 'jsonp_script';
             script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
-            script.onerror = function() {
+            document.body.appendChild(script);
+        }
+
+        function syncReferencesWithGoogleSheets() {
+            const car = getActiveVehicle();
+            const callbackName = 'jsonp_ref_cb_' + Math.round(100000 * Math.random());
+
+            window[callbackName] = function(data) {
                 delete window[callbackName];
-                if (script) script.remove();
-                updateSyncStatus(false, "Sincronizado (Copia Local)");
+                const existingScript = document.getElementById('jsonp_ref_script');
+                if (existingScript) existingScript.remove();
+
+                if (Array.isArray(data)) {
+                    car.parts = data;
+                    renderParts();
+                }
             };
+
+            const script = document.createElement('script');
+            script.id = 'jsonp_ref_script';
+            script.src = `${GOOGLE_SCRIPT_URL}?action=getReferences&hoja=${encodeURIComponent(car.refSheetName)}&callback=${callbackName}`;
             document.body.appendChild(script);
         }
     </script>
