@@ -1,1 +1,559 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoKeep - Control de Mantenimiento de Vehículos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
 
+    <!-- Navbar -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold text-xl flex items-center justify-center">
+                    <i class="fa-solid fa-car-side"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-white">AutoKeep</span>
+                <span id="syncStatus" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
+                    <i class="fa-solid fa-cloud-arrow-up mr-1.5 text-xs"></i> Google Sheets
+                </span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium">
+                        <!-- Populated by JS -->
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+                <button onclick="openVehicleModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg border border-slate-600 text-sm font-medium transition flex items-center" title="Añadir/Editar Vehículo">
+                    <i class="fa-solid fa-plus sm:mr-1.5"></i>
+                    <span class="hidden sm:inline">Coche</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Vehicle Details Header Card -->
+        <section id="vehicleCard" class="bg-slate-800 rounded-xl p-5 border border-slate-700/60 shadow-lg relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <h1 id="carTitle" class="text-2xl font-extrabold text-white">--</h1>
+                        <span id="carPlate" class="bg-slate-700 text-slate-200 text-xs px-2.5 py-1 rounded font-mono font-semibold border border-slate-600">--</span>
+                    </div>
+                    <p id="carSub" class="text-slate-400 text-sm mt-1">--</p>
+                </div>
+                <div class="flex items-center space-x-6 text-sm">
+                    <div class="text-center md:text-right">
+                        <div class="text-slate-400 text-xs">Kilometraje Actual</div>
+                        <div id="carKm" class="text-2xl font-bold text-emerald-400">-- km</div>
+                    </div>
+                    <button onclick="openRecordModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg shadow-emerald-900/30 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-plus"></i>
+                        <span>Añadir Registro</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Summary Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg text-xl"><i class="fa-solid fa-euro-sign"></i></div>
+                <div>
+                    <div class="text-xs text-slate-400">Gasto Total Acumulado</div>
+                    <div id="kpiTotalCost" class="text-xl font-bold text-white">0,00 €</div>
+                </div>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-wrench"></i></div>
+                <div>
+                    <div class="text-xs text-slate-400">Revisiones Realizadas</div>
+                    <div id="kpiTotalCount" class="text-xl font-bold text-white">0</div>
+                </div>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <div class="text-xs text-slate-400">Alertas Pendientes</div>
+                    <div id="kpiAlertCount" class="text-xl font-bold text-white">0</div>
+                </div>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
+                <div class="p-3 bg-purple-500/10 text-purple-400 rounded-lg text-xl"><i class="fa-solid fa-gas-pump"></i></div>
+                <div>
+                    <div class="text-xs text-slate-400">Combustible</div>
+                    <div id="kpiFuel" class="text-xl font-bold text-white">--</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Alerts Section -->
+        <section id="alertsContainer" class="space-y-3">
+            <!-- Alert Cards rendered via JS -->
+        </section>
+
+        <!-- Charts & Statistics -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
+                <h2 class="text-base font-semibold text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-chart-pie text-emerald-400 mr-2"></i> Gastos por Categoría
+                </h2>
+                <div class="h-64 relative">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
+                <h2 class="text-base font-semibold text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-chart-column text-blue-400 mr-2"></i> Evolución de Gastos
+                </h2>
+                <div class="h-64 relative">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Records Table Section -->
+        <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
+            <div class="p-5 border-b border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 class="text-lg font-bold text-white flex items-center">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento
+                </h2>
+                <div class="flex items-center space-x-3">
+                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-48">
+                    <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="ALL">Todas las Categorías</option>
+                        <option value="Revisión anual">Revisión anual</option>
+                        <option value="Cambio distribución">Cambio distribución</option>
+                        <option value="Cambio neumáticos">Cambio neumáticos</option>
+                        <option value="Cambio embrague">Cambio embrague</option>
+                        <option value="Reparación">Reparación</option>
+                        <option value="Luces">Luces</option>
+                        <option value="ITV">ITV</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-4 py-3">Fecha</th>
+                            <th class="px-4 py-3">Km</th>
+                            <th class="px-4 py-3">Categoría</th>
+                            <th class="px-4 py-3">Detalle / Trabajo</th>
+                            <th class="px-4 py-3">Taller</th>
+                            <th class="px-4 py-3 text-right">Coste (€)</th>
+                            <th class="px-4 py-3 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody" class="divide-y divide-slate-700/50">
+                        <!-- Table rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Form for Record -->
+    <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
+            <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 id="recordModalTitle" class="text-xl font-bold text-white mb-4">Añadir Mantenimiento</h3>
+            
+            <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-4">
+                <input type="hidden" id="recordId">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha *</label>
+                        <input type="date" id="formFecha" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Kilómetros *</label>
+                        <input type="number" id="formKms" required min="0" placeholder="Ej. 165500" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo / Categoría *</label>
+                        <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                            <option value="Revisión anual">Revisión anual</option>
+                            <option value="Cambio distribución">Cambio distribución</option>
+                            <option value="Cambio neumáticos">Cambio neumáticos</option>
+                            <option value="Cambio embrague">Cambio embrague</option>
+                            <option value="Reparación">Reparación</option>
+                            <option value="Luces">Luces</option>
+                            <option value="ITV">ITV</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Coste Total (€) *</label>
+                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Taller / Proveedor</label>
+                    <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo, Feuvert..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle / Observaciones</label>
+                    <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30, filtro aire..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3">
+                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-emerald-900/30">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLgA7wyack-Q7_bLOhHOXzYipa7pUQDoyjcTvrH2dMvMuBZ2MX7NX7BsCejxHzBXo2/exec";
+
+        let vehicles = [
+            {
+                id: "c3",
+                name: "Citroën C3 BlueHDI 1.6",
+                plate: "VF7SCBHY6GW586838",
+                year: 2016,
+                kms: 165500,
+                fuel: "Diésel",
+                sheetName: "Mantenimiento C3 II",
+                records: [
+                    { id: 1, fecha: "2016-06-28", kms: 0, tipo: "Otros", detalle: "Compra inicial del coche", taller: "Citroën Amabe", coste: 12240 },
+                    { id: 2, fecha: "2017-06-05", kms: 23857, tipo: "Revisión anual", detalle: "Cambio Aceite, junta tapón, filtro aceite, llenado Adblue", taller: "Citroën Argüelles", coste: 202 },
+                    { id: 3, fecha: "2018-05-19", kms: 44982, tipo: "Luces", detalle: "Cambio bombilla H7 derecha", taller: "Neumáticos Iban", coste: 10 },
+                    { id: 4, fecha: "2018-07-07", kms: 47721, tipo: "Revisión anual", detalle: "Cambio Aceite y filtro", taller: "Feuvert Leioa", coste: 82 },
+                    { id: 5, fecha: "2018-07-07", kms: 47721, tipo: "Reparación", detalle: "Cambio anticongelante", taller: "Feuvert Leioa", coste: 50 },
+                    { id: 6, fecha: "2019-02-09", kms: 60000, tipo: "Reparación", detalle: "Cambio pastillas, discos y líquido frenos", taller: "Feuvert Leioa", coste: 245 },
+                    { id: 7, fecha: "2019-02-09", kms: 63982, tipo: "Cambio neumáticos", detalle: "Cambio neumáticos Continental, equilibrado y paralelo", taller: "Feuvert Leioa", coste: 275 },
+                    { id: 8, fecha: "2019-08-06", kms: 74992, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, discos y pastillas delanteras", taller: "Taller Galiauto", coste: 327 },
+                    { id: 9, fecha: "2020-09-14", kms: 99800, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, filtro aire", taller: "Neumáticos Iban", coste: 109 },
+                    { id: 10, fecha: "2022-01-12", kms: 119644, tipo: "Revisión anual", detalle: "Cambio aceite y filtros completos", taller: "Neumáticos Vallejo", coste: 205 },
+                    { id: 11, fecha: "2024-02-28", kms: 128000, tipo: "Cambio distribución", detalle: "Distribución, correa accesorios y bomba de agua", taller: "MIO Mecanica", coste: 542 },
+                    { id: 12, fecha: "2024-04-11", kms: 130000, tipo: "Reparación", detalle: "Caja de cambios, embrague y valvulina", taller: "Neumáticos Iban", coste: 1335 },
+                    { id: 13, fecha: "2024-08-02", kms: 136631, tipo: "Reparación", detalle: "Cambio batería 75AH 700A", taller: "Amcengine", coste: 227 },
+                    { id: 14, fecha: "2025-07-02", kms: 143500, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, pastillas traseras y filtros", taller: "Romo Arganda", coste: 291 },
+                    { id: 15, fecha: "2025-10-07", kms: 149547, tipo: "Reparación", detalle: "Depósito y líquido FAP", taller: "Romo Arganda", coste: 429 },
+                    { id: 16, fecha: "2026-03-09", kms: 156666, tipo: "Revisión anual", detalle: "Cambio Aceite, filtro y aditivo AdBlue", taller: "Caldereros Villarejo", coste: 50 },
+                    { id: 17, fecha: "2026-10-19", kms: 165500, tipo: "Luces", detalle: "Cambio bombillas W5W", taller: "Caldereros Villarejo", coste: 10 }
+                ]
+            },
+            {
+                id: "p308",
+                name: "Peugeot 308 II",
+                plate: "VF3LBBHZ3FS336588",
+                year: 2017,
+                kms: 62066,
+                fuel: "Diésel",
+                sheetName: "Mantenimiento 308 II",
+                records: [
+                    { id: 1, fecha: "2025-07-25", kms: 62066, tipo: "Revisión anual", detalle: "Cambio aceite y filtro, filtro gasoil, aire y habitáculo. AdBlue", taller: "Caldereros Villarejo", coste: 93 }
+                ]
+            },
+            {
+                id: "p207",
+                name: "Peugeot 207",
+                plate: "207-PSA",
+                year: 2010,
+                kms: 250000,
+                fuel: "Gasolina",
+                sheetName: "Mantenimiento 207",
+                records: [
+                    { id: 1, fecha: "2026-10-21", kms: 250000, tipo: "Cambio embrague", detalle: "Embrague y collarín", taller: "Otro", coste: 700 }
+                ]
+            }
+        ];
+
+        let activeVehicleId = "c3";
+        let categoryChartInstance = null;
+        let timeChartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initApp();
+            syncWithGoogleSheets();
+        });
+
+        function initApp() {
+            populateVehicleSelector();
+            renderDashboard();
+        }
+
+        function populateVehicleSelector() {
+            const selector = document.getElementById("vehicleSelector");
+            selector.innerHTML = vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+            selector.value = activeVehicleId;
+        }
+
+        function changeActiveVehicle(id) {
+            activeVehicleId = id;
+            renderDashboard();
+        }
+
+        function getActiveVehicle() {
+            return vehicles.find(v => v.id === activeVehicleId);
+        }
+
+        function renderDashboard() {
+            const car = getActiveVehicle();
+            
+            document.getElementById("carTitle").innerText = car.name;
+            document.getElementById("carPlate").innerText = car.plate;
+            document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
+            document.getElementById("carKm").innerText = `${car.kms.toLocaleString('es-ES')} km`;
+            document.getElementById("kpiFuel").innerText = car.fuel;
+
+            // Stats
+            const totalCost = car.records.reduce((sum, r) => sum + Number(r.coste || 0), 0);
+            document.getElementById("kpiTotalCost").innerText = `${totalCost.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
+            document.getElementById("kpiTotalCount").innerText = car.records.length;
+
+            renderAlerts(car);
+            renderCharts(car);
+            renderTable();
+        }
+
+        function renderAlerts(car) {
+            const container = document.getElementById("alertsContainer");
+            container.innerHTML = "";
+            let alerts = [];
+
+            if (car.id === 'p308') {
+                alerts.push({
+                    title: "Valorar Cambio de Distribución",
+                    desc: "Siguiente revisión programada para 2026. Revisar estado de la correa de distribución.",
+                    type: "warning"
+                });
+            }
+
+            const kmDiff = car.kms - (car.records[car.records.length - 1]?.kms || 0);
+            if (kmDiff > 15000) {
+                alerts.push({
+                    title: "Revisión / Cambio de Aceite Recomendado",
+                    desc: `Han transcurrido ${kmDiff.toLocaleString()} km desde el último mantenimiento registrado.`,
+                    type: "info"
+                });
+            }
+
+            document.getElementById("kpiAlertCount").innerText = alerts.length;
+
+            alerts.forEach(a => {
+                const color = a.type === 'warning' ? 'amber' : 'blue';
+                container.innerHTML += `
+                    <div class="bg-${color}-950/40 border border-${color}-700/50 p-4 rounded-xl flex items-start space-x-3 text-sm">
+                        <i class="fa-solid fa-triangle-exclamation text-${color}-400 text-lg mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-${color}-200">${a.title}</h4>
+                            <p class="text-slate-300 text-xs mt-0.5">${a.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCharts(car) {
+            // Category Chart
+            const catMap = {};
+            car.records.forEach(r => {
+                const cat = r.tipo || "Otros";
+                catMap[cat] = (catMap[cat] || 0) + Number(r.coste || 0);
+            });
+
+            const catLabels = Object.keys(catMap);
+            const catData = Object.values(catMap);
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctx1 = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b', '#06b6d4']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }
+                }
+            });
+
+            // Time Chart
+            const yearMap = {};
+            car.records.forEach(r => {
+                const year = r.fecha ? r.fecha.substring(0, 4) : '2026';
+                yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0);
+            });
+
+            if (timeChartInstance) timeChartInstance.destroy();
+            const ctx2 = document.getElementById('timeChart').getContext('2d');
+            timeChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(yearMap),
+                    datasets: [{
+                        label: 'Gasto (€)',
+                        data: Object.values(yearMap),
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTable() {
+            const car = getActiveVehicle();
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const catFilter = document.getElementById("categoryFilter").value;
+
+            const filtered = car.records.filter(r => {
+                const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search);
+                const matchesCat = catFilter === 'ALL' || r.tipo === catFilter;
+                return matchesSearch && matchesCat;
+            });
+
+            const tbody = document.getElementById("recordsTableBody");
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No hay mantenimientos registrados</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="hover:bg-slate-700/30 transition">
+                    <td class="px-4 py-3 font-mono text-slate-300">${r.fecha}</td>
+                    <td class="px-4 py-3 font-mono text-slate-300">${Number(r.kms).toLocaleString()} km</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold bg-slate-700 text-emerald-400">${r.tipo}</span></td>
+                    <td class="px-4 py-3 text-slate-200">${r.detalle}</td>
+                    <td class="px-4 py-3 text-slate-400">${r.taller || '--'}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste).toFixed(2)} €</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="deleteRecord(${r.id})" class="text-slate-500 hover:text-red-400 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openRecordModal() {
+            document.getElementById("recordModal").classList.remove("hidden");
+            document.getElementById("formFecha").value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeRecordModal() {
+            document.getElementById("recordModal").classList.add("hidden");
+        }
+
+        async function handleSaveRecord(e) {
+            e.preventDefault();
+            const car = getActiveVehicle();
+
+            const record = {
+                id: Date.now(),
+                fecha: document.getElementById("formFecha").value,
+                kms: Number(document.getElementById("formKms").value),
+                tipo: document.getElementById("formTipo").value,
+                coste: Number(document.getElementById("formCoste").value),
+                taller: document.getElementById("formTaller").value,
+                detalle: document.getElementById("formDetalle").value,
+                hojaVehiculo: car.sheetName
+            };
+
+            car.records.unshift(record);
+            if (record.kms > car.kms) car.kms = record.kms;
+
+            closeRecordModal();
+            renderDashboard();
+
+            // Push to Google Sheets API
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(record)
+                });
+            } catch (err) {
+                console.log("Modo offline / local pasivo");
+            }
+        }
+
+        function deleteRecord(id) {
+            const car = getActiveVehicle();
+            if (confirm("¿Estás seguro de eliminar este registro?")) {
+                car.records = car.records.filter(r => r.id !== id);
+                renderDashboard();
+            }
+        }
+
+        async function syncWithGoogleSheets() {
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    const car = getActiveVehicle();
+                    car.records = data.map((r, i) => ({
+                        id: i + 1,
+                        fecha: r.fecha || "2026-10-21",
+                        kms: r.kms || 0,
+                        tipo: r.tipo || "Otros",
+                        detalle: r.detalle || "",
+                        taller: r.taller || "",
+                        coste: r.coste || 0
+                    }));
+                    renderDashboard();
+                }
+            } catch (err) {
+                console.log("Cargando base de datos precargada por defecto.");
+            }
+        }
+    </script>
+</body>
+</html>
