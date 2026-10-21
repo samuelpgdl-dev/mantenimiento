@@ -52,10 +52,6 @@
                         <i class="fa-solid fa-chevron-down text-xs"></i>
                     </div>
                 </div>
-                <button onclick="openVehicleModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg border border-slate-600 text-sm font-medium transition flex items-center" title="Añadir/Editar Vehículo">
-                    <i class="fa-solid fa-plus sm:mr-1.5"></i>
-                    <span class="hidden sm:inline">Coche</span>
-                </button>
             </div>
         </div>
     </header>
@@ -310,7 +306,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             initApp();
-            syncWithGoogleSheets();
         });
 
         function initApp() {
@@ -333,13 +328,21 @@
             return vehicles.find(v => v.id === activeVehicleId);
         }
 
+        function formatDateDisplay(rawDate) {
+            if (!rawDate) return new Date().toISOString().split('T')[0];
+            if (typeof rawDate === 'string' && rawDate.includes('T')) {
+                return rawDate.split('T')[0];
+            }
+            return String(rawDate).substring(0, 10);
+        }
+
         function renderDashboard() {
             const car = getActiveVehicle();
             
             document.getElementById("carTitle").innerText = car.name;
             document.getElementById("carPlate").innerText = car.plate;
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
-            document.getElementById("carKm").innerText = `${car.kms.toLocaleString('es-ES')} km`;
+            document.getElementById("carKm").innerText = `${Number(car.kms || 0).toLocaleString('es-ES')} km`;
             document.getElementById("kpiFuel").innerText = car.fuel;
 
             // Stats
@@ -422,7 +425,8 @@
             // Time Chart
             const yearMap = {};
             car.records.forEach(r => {
-                const year = r.fecha ? r.fecha.substring(0, 4) : '2026';
+                const f = formatDateDisplay(r.fecha);
+                const year = f ? f.substring(0, 4) : '2026';
                 yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0);
             });
 
@@ -469,12 +473,12 @@
 
             tbody.innerHTML = filtered.map(r => `
                 <tr class="hover:bg-slate-700/30 transition">
-                    <td class="px-4 py-3 font-mono text-slate-300">${r.fecha}</td>
-                    <td class="px-4 py-3 font-mono text-slate-300">${Number(r.kms).toLocaleString()} km</td>
+                    <td class="px-4 py-3 font-mono text-slate-300">${formatDateDisplay(r.fecha)}</td>
+                    <td class="px-4 py-3 font-mono text-slate-300">${Number(r.kms || 0).toLocaleString()} km</td>
                     <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold bg-slate-700 text-emerald-400">${r.tipo}</span></td>
                     <td class="px-4 py-3 text-slate-200">${r.detalle}</td>
                     <td class="px-4 py-3 text-slate-400">${r.taller || '--'}</td>
-                    <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste).toFixed(2)} €</td>
+                    <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center space-x-2">
                             <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-400 p-1" title="Editar"><i class="fa-solid fa-pencil text-xs"></i></button>
@@ -496,7 +500,7 @@
                 if (record) {
                     title.innerText = "Editar Mantenimiento";
                     document.getElementById("recordId").value = record.id;
-                    document.getElementById("formFecha").value = record.fecha;
+                    document.getElementById("formFecha").value = formatDateDisplay(record.fecha);
                     document.getElementById("formKms").value = record.kms;
                     document.getElementById("formTipo").value = record.tipo;
                     document.getElementById("formCoste").value = record.coste;
@@ -548,7 +552,7 @@
             closeRecordModal();
             renderDashboard();
 
-            // Push to Google Sheets API
+            // Enviar a Google Sheets
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
@@ -557,7 +561,7 @@
                     body: JSON.stringify(recordData)
                 });
             } catch (err) {
-                console.log("Modo offline / local pasivo");
+                console.log("Servicio guardado en local/hoja");
             }
         }
 
@@ -566,28 +570,6 @@
             if (confirm("¿Estás seguro de eliminar este registro?")) {
                 car.records = car.records.filter(r => r.id !== id);
                 renderDashboard();
-            }
-        }
-
-        async function syncWithGoogleSheets() {
-            try {
-                const res = await fetch(GOOGLE_SCRIPT_URL);
-                const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    const car = getActiveVehicle();
-                    car.records = data.map((r, i) => ({
-                        id: i + 1,
-                        fecha: r.fecha || "2026-10-21",
-                        kms: r.kms || 0,
-                        tipo: r.tipo || "Otros",
-                        detalle: r.detalle || "",
-                        taller: r.taller || "",
-                        coste: r.coste || 0
-                    }));
-                    renderDashboard();
-                }
-            } catch (err) {
-                console.log("Cargando base de datos precargada por defecto.");
             }
         }
     </script>
