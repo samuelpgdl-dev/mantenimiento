@@ -270,25 +270,7 @@
                 kms: 165500,
                 fuel: "Diésel",
                 sheetName: "Mantenimiento C3 II",
-                records: [
-                    { id: 1, fecha: "2016-06-28", kms: 0, tipo: "Compra de coche", detalle: "Compra inicial del coche", taller: "Citroën Amabe", coste: 12240 },
-                    { id: 2, fecha: "2017-06-05", kms: 23857, tipo: "Revisión anual", detalle: "Cambio Aceite, junta tapón, filtro aceite, llenado Adblue", taller: "Citroën Argüelles", coste: 202 },
-                    { id: 3, fecha: "2018-05-19", kms: 44982, tipo: "Luces", detalle: "Cambio bombilla H7 derecha", taller: "Neumáticos Iban", coste: 10 },
-                    { id: 4, fecha: "2018-07-07", kms: 47721, tipo: "Revisión anual", detalle: "Cambio Aceite y filtro", taller: "Feuvert Leioa", coste: 82 },
-                    { id: 5, fecha: "2018-07-07", kms: 47721, tipo: "Reparación", detalle: "Cambio anticongelante", taller: "Feuvert Leioa", coste: 50 },
-                    { id: 6, fecha: "2019-02-09", kms: 60000, tipo: "Reparación", detalle: "Cambio pastillas, discos y líquido frenos", taller: "Feuvert Leioa", coste: 245 },
-                    { id: 7, fecha: "2019-02-09", kms: 63982, tipo: "Cambio neumáticos", detalle: "Cambio neumáticos Continental, equilibrado y paralelo", taller: "Feuvert Leioa", coste: 275 },
-                    { id: 8, fecha: "2019-08-06", kms: 74992, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, discos y pastillas delanteras", taller: "Taller Galiauto", coste: 327 },
-                    { id: 9, fecha: "2020-09-14", kms: 99800, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, filtro aire", taller: "Neumáticos Iban", coste: 109 },
-                    { id: 10, fecha: "2022-01-12", kms: 119644, tipo: "Revisión anual", detalle: "Cambio aceite y filtros completos", taller: "Neumáticos Vallejo", coste: 205 },
-                    { id: 11, fecha: "2024-02-28", kms: 128000, tipo: "Cambio distribución", detalle: "Distribución, correa accesorios y bomba de agua", taller: "MIO Mecanica", coste: 542 },
-                    { id: 12, fecha: "2024-04-11", kms: 130000, tipo: "Reparación", detalle: "Caja de cambios, embrague y valvulina", taller: "Neumáticos Iban", coste: 1335 },
-                    { id: 13, fecha: "2024-08-02", kms: 136631, tipo: "Reparación", detalle: "Cambio batería 75AH 700A", taller: "Amcengine", coste: 227 },
-                    { id: 14, fecha: "2025-07-02", kms: 143500, tipo: "Revisión anual", detalle: "Cambio aceite, filtro, pastillas traseras y filtros", taller: "Romo Arganda", coste: 291 },
-                    { id: 15, fecha: "2025-10-07", kms: 149547, tipo: "Reparación", detalle: "Depósito y líquido FAP", taller: "Romo Arganda", coste: 429 },
-                    { id: 16, fecha: "2026-03-09", kms: 156666, tipo: "Revisión anual", detalle: "Cambio Aceite, filtro y aditivo AdBlue", taller: "Caldereros Villarejo", coste: 50 },
-                    { id: 17, fecha: "2026-10-19", kms: 165500, tipo: "Luces", detalle: "Cambio bombillas W5W", taller: "Caldereros Villarejo", coste: 10 }
-                ]
+                records: []
             },
             {
                 id: "p308",
@@ -298,9 +280,7 @@
                 kms: 62066,
                 fuel: "Diésel",
                 sheetName: "Mantenimiento 308 II Loyola",
-                records: [
-                    { id: 1, fecha: "2025-07-25", kms: 62066, tipo: "Revisión anual", detalle: "Cambio aceite y filtro, filtro gasoil, aire y habitáculo. AdBlue", taller: "Caldereros Villarejo", coste: 93 }
-                ]
+                records: []
             },
             {
                 id: "p207",
@@ -310,9 +290,7 @@
                 kms: 250000,
                 fuel: "Gasolina",
                 sheetName: "Mantenimiento Peugeot 207",
-                records: [
-                    { id: 1, fecha: "2026-10-21", kms: 250000, tipo: "Cambio embrague", detalle: "Embrague y collarín", taller: "Otro", coste: 700 }
-                ]
+                records: []
             }
         ];
 
@@ -584,7 +562,7 @@
                 }
             } else {
                 const newRecord = { id: Date.now(), ...recordData };
-                car.records.unshift(newRecord);
+                car.records.push(newRecord);
             }
 
             if (recordData.kms > car.kms) car.kms = recordData.kms;
@@ -628,8 +606,8 @@
                 if (existingScript) existingScript.remove();
 
                 if (Array.isArray(data) && data.length > 0) {
-                    const parsedRecords = data
-                        .filter(r => r.fecha && r.kms)
+                    car.records = data
+                        .filter(r => r.fecha && (r.kms !== undefined && r.kms !== null))
                         .map((r, i) => ({
                             id: i + 1,
                             fecha: formatDateDisplay(r.fecha),
@@ -640,9 +618,8 @@
                             coste: Number(r.coste) || 0
                         }));
 
-                    if (parsedRecords.length > 0) {
-                        car.records = parsedRecords;
-                        const maxKm = Math.max(...parsedRecords.map(r => r.kms));
+                    if (car.records.length > 0) {
+                        const maxKm = Math.max(...car.records.map(r => r.kms));
                         if (maxKm > car.kms) car.kms = maxKm;
                     }
 
