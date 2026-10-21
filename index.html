@@ -34,8 +34,8 @@
     <div id="toastNotification" class="fixed top-20 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none">
         <i class="fa-solid fa-circle-check text-xl"></i>
         <div>
-            <h5 class="font-bold text-sm">¡Estado de Sincronización!</h5>
-            <p class="text-xs text-emerald-100" id="toastMsg">Los datos se han actualizado con Google Sheets.</p>
+            <h5 class="font-bold text-sm">Sincronización</h5>
+            <p class="text-xs text-emerald-100" id="toastMsg">Base de datos cargada desde Google Sheets.</p>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                 </div>
                 <span class="text-xl font-bold tracking-tight text-white">Canana Automotive</span>
                 <span id="syncStatus" class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
-                    <i class="fa-solid fa-rotate mr-1.5 text-xs animate-spin" id="syncIcon"></i> <span id="syncText">Conectando...</span>
+                    <i class="fa-solid fa-rotate mr-1.5 text-xs animate-spin" id="syncIcon"></i> <span id="syncText">Cargando...</span>
                 </span>
             </div>
             
@@ -349,6 +349,7 @@
         function changeActiveVehicle(id) {
             activeVehicleId = id;
             renderDashboard();
+            syncWithGoogleSheets();
         }
 
         function getActiveVehicle() {
@@ -372,7 +373,7 @@
             }, 3500);
         }
 
-        function updateSyncStatus(loading, text = "Google Sheets Conectado") {
+        function updateSyncStatus(loading, text = "Sincronizado") {
             const icon = document.getElementById("syncIcon");
             const label = document.getElementById("syncText");
             label.innerText = text;
@@ -590,7 +591,7 @@
 
             closeRecordModal();
             renderDashboard();
-            showToast("Guardado correctamente en la hoja.");
+            showToast("Guardando en Google Sheets...");
 
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
@@ -599,8 +600,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(recordData)
                 });
+                setTimeout(() => {
+                    syncWithGoogleSheets();
+                }, 1500);
             } catch (err) {
-                console.log("Petición POST enviada.");
+                console.log("Petición enviada.");
             }
         }
 
@@ -612,14 +616,16 @@
             }
         }
 
-        // Función JSONP para evitar bloqueos CORS en navegadores
+        // Método de Sincronización JSONP (Evita bloqueos CORS de Google Script en GitHub)
         function syncWithGoogleSheets() {
             updateSyncStatus(true, "Leyendo Google Sheets...");
 
-            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            
             window[callbackName] = function(data) {
                 delete window[callbackName];
-                document.body.removeChild(script);
+                const existingScript = document.getElementById('jsonp_script');
+                if (existingScript) existingScript.remove();
 
                 if (Array.isArray(data) && data.length > 0) {
                     const car = getActiveVehicle();
@@ -640,20 +646,21 @@
                         const maxKm = Math.max(...parsedRecords.map(r => r.kms));
                         if (maxKm > car.kms) car.kms = maxKm;
                     }
-                    
+
                     renderDashboard();
                     updateSyncStatus(false, "Sincronizado");
-                    showToast("Base de datos recargada correctamente.");
+                    showToast("Base de datos cargada desde Google Sheets.");
                 } else {
                     updateSyncStatus(false, "Sincronizado");
                 }
             };
 
             const script = document.createElement('script');
+            script.id = 'jsonp_script';
             script.src = `${GOOGLE_SCRIPT_URL}?callback=${callbackName}`;
             script.onerror = function() {
                 delete window[callbackName];
-                document.body.removeChild(script);
+                if (script) script.remove();
                 updateSyncStatus(false, "Sincronizado (Copia Local)");
             };
             document.body.appendChild(script);
