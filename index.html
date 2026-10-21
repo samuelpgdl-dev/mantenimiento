@@ -586,11 +586,37 @@
             }
         }
 
-        function deleteRecord(id) {
+        async function deleteRecord(id) {
             const car = getActiveVehicle();
-            if (confirm("¿Estás seguro de eliminar este registro?")) {
+            const recordToDelete = car.records.find(r => r.id === id);
+            
+            if (!recordToDelete) return;
+
+            if (confirm(`¿Estás seguro de eliminar el registro "${recordToDelete.detalle}"?`)) {
+                // Eliminar del estado local inmediatamente
                 car.records = car.records.filter(r => r.id !== id);
                 renderDashboard();
+                showToast("Eliminando de Google Sheets...");
+
+                // Petición de borrado a Google Apps Script
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: "delete",
+                            hojaVehiculo: car.sheetName,
+                            detalle: recordToDelete.detalle,
+                            kms: recordToDelete.kms
+                        })
+                    });
+                    setTimeout(() => {
+                        syncWithGoogleSheets();
+                    }, 1500);
+                } catch (err) {
+                    console.log("Petición de borrado enviada.");
+                }
             }
         }
 
