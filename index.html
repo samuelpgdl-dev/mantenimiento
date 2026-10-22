@@ -707,13 +707,16 @@
             const recordId = document.getElementById("recordId").value;
             const rowIndex = document.getElementById("recordRowIndex").value;
 
+            // Google Apps Script coloca 'detalle' en la Columna C y 'tipo' en la Columna D de Google Sheets.
+            // Para que en Excel Columna C sea 'Tipo Mantenimiento' y Columna D sea 'Detalle',
+            // enviamos formTipo a 'detalle' y formDetalle a 'tipo'.
             const recordData = {
                 fecha: document.getElementById("formFecha").value,
                 kms: Number(document.getElementById("formKms").value),
-                tipo: document.getElementById("formTipo").value,
-                detalle: document.getElementById("formDetalle").value,
-                taller: document.getElementById("formTaller").value,
-                coste: Number(document.getElementById("formCoste").value),
+                detalle: document.getElementById("formTipo").value,        // Va a Columna C de Excel
+                tipo: document.getElementById("formDetalle").value,        // Va a Columna D de Excel
+                taller: document.getElementById("formTaller").value,      // Va a Columna E de Excel
+                coste: Number(document.getElementById("formCoste").value),  // Va a Columna F de Excel
                 hojaVehiculo: car.sheetName,
                 rowIndex: rowIndex ? Number(rowIndex) : null
             };
@@ -763,7 +766,7 @@
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: recordToDelete.rowIndex || null, detalle: recordToDelete.detalle, kms: recordToDelete.kms })
+                        body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: recordToDelete.rowIndex || null, detalle: recordToDelete.tipo, kms: recordToDelete.kms })
                     });
                     setTimeout(() => reloadData(), 1500);
                 } catch (err) { console.log("Borrado enviado."); }
@@ -791,8 +794,9 @@
                         rowIndex: r.rowIndex, 
                         fecha: formatDateDisplay(r.fecha), 
                         kms: Number(r.kms) || 0, 
-                        // Corregido: r.detalle trae la categoría corta (Columna C de Excel) y r.tipo trae el detalle (Columna D de Excel)
+                        // Columna C trae la categoría (Luces, Reparación...)
                         tipo: r.detalle || "Otros", 
+                        // Columna D trae la descripción detallada
                         detalle: r.tipo || "", 
                         taller: r.taller || "", 
                         coste: Number(r.coste) || 0
