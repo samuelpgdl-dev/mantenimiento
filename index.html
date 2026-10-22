@@ -240,7 +240,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento (Columna C en Excel) *</label>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento *</label>
                     <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm"></select>
                 </div>
 
@@ -256,7 +256,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo (Columna D en Excel)</label>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo</label>
                     <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de bombillas W5W..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm"></textarea>
                 </div>
 
@@ -707,16 +707,13 @@
             const recordId = document.getElementById("recordId").value;
             const rowIndex = document.getElementById("recordRowIndex").value;
 
-            // Mapeo directo y estricto a las columnas de la hoja de Google Sheets
-            // Columna C (tipo) = Categoría (Luces, Reparación, Revisión anual, etc.)
-            // Columna D (detalle) = Trabajo realizado (Cambio bombillas W5W, etc.)
             const recordData = {
                 fecha: document.getElementById("formFecha").value,
                 kms: Number(document.getElementById("formKms").value),
-                tipo: document.getElementById("formTipo").value,       // C: Tipo mantenimiento
-                detalle: document.getElementById("formDetalle").value, // D: Detalle / trabajo
-                taller: document.getElementById("formTaller").value,   // E: Taller
-                coste: Number(document.getElementById("formCoste").value), // F: Coste
+                tipo: document.getElementById("formTipo").value,
+                detalle: document.getElementById("formDetalle").value,
+                taller: document.getElementById("formTaller").value,
+                coste: Number(document.getElementById("formCoste").value),
                 hojaVehiculo: car.sheetName,
                 rowIndex: rowIndex ? Number(rowIndex) : null
             };
@@ -794,8 +791,9 @@
                         rowIndex: r.rowIndex, 
                         fecha: formatDateDisplay(r.fecha), 
                         kms: Number(r.kms) || 0, 
-                        tipo: r.tipo || "Otros", 
-                        detalle: r.detalle || "", 
+                        // Corregido: r.detalle trae la categoría corta (Columna C de Excel) y r.tipo trae el detalle (Columna D de Excel)
+                        tipo: r.detalle || "Otros", 
+                        detalle: r.tipo || "", 
                         taller: r.taller || "", 
                         coste: Number(r.coste) || 0
                     }));
