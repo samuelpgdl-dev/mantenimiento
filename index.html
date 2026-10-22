@@ -503,14 +503,17 @@
         function getActiveVehicle() { return vehicles.find(v => v.id === activeVehicleId); }
 
         function formatDateDisplay(rawDate) {
-            if (!rawDate) return new Date().toISOString().split('T')[0];
-            if (typeof rawDate === 'string' && rawDate.includes('T')) return rawDate.split('T')[0];
-            return String(rawDate).substring(0, 10);
+            if (!rawDate) return "";
+            let str = String(rawDate);
+            if (str.includes('T')) return str.split('T')[0];
+            return str.substring(0, 10);
         }
 
         function clearDateFilter() {
-            document.getElementById("dateFrom").value = "";
-            document.getElementById("dateTo").value = "";
+            const dateFromElem = document.getElementById("dateFrom");
+            const dateToElem = document.getElementById("dateTo");
+            if (dateFromElem) dateFromElem.value = "";
+            if (dateToElem) dateToElem.value = "";
             renderTable();
         }
 
@@ -523,6 +526,8 @@
 
         function renderDashboard() {
             const car = getActiveVehicle();
+            if (!car) return;
+
             document.getElementById("carTitle").innerText = car.name;
             document.getElementById("carPlate").innerText = car.plate;
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
@@ -563,7 +568,7 @@
 
             const catMap = {};
             car.records.forEach(r => { 
-                let displayTipo = (r.tipo || "Otros").trim();
+                let displayTipo = String(r.tipo || "Otros").trim();
                 catMap[displayTipo] = (catMap[displayTipo] || 0) + Number(r.coste || 0); 
             });
 
@@ -597,36 +602,38 @@
 
         function renderTable() {
             const car = getActiveVehicle();
-            const search = document.getElementById("searchInput").value.toLowerCase();
-            const catFilter = document.getElementById("categoryFilter").value;
-            const sortOrder = document.getElementById("sortSelector").value;
+            if (!car) return;
+
+            const searchInput = document.getElementById("searchInput");
+            const catFilterElem = document.getElementById("categoryFilter");
+            const sortElem = document.getElementById("sortSelector");
+
+            const search = searchInput ? String(searchInput.value || '').toLowerCase() : '';
+            const catFilter = catFilterElem ? String(catFilterElem.value || 'ALL') : 'ALL';
+            const sortOrder = sortElem ? String(sortElem.value || 'date-desc') : 'date-desc';
 
             const dateFromElem = document.getElementById("dateFrom");
             const dateToElem = document.getElementById("dateTo");
-            const dateFromVal = dateFromElem ? dateFromElem.value : "";
-            const dateToVal = dateToElem ? dateToElem.value : "";
+            const dateFromVal = dateFromElem ? String(dateFromElem.value || '') : "";
+            const dateToVal = dateToElem ? String(dateToElem.value || '') : "";
 
-            let filtered = car.records.filter(r => {
-                const tipoStr = (r.tipo || '').toLowerCase();
-                const detalleStr = (r.detalle || '').toLowerCase();
-                const tallerStr = (r.taller || '').toLowerCase();
+            let filtered = (car.records || []).filter(r => {
+                const tipoStr = String(r.tipo || '').toLowerCase();
+                const detalleStr = String(r.detalle || '').toLowerCase();
+                const tallerStr = String(r.taller || '').toLowerCase();
                 const recordFecha = formatDateDisplay(r.fecha);
 
-                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
+                const matchesSearch = !search || detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
                 
                 let matchesCat = true;
                 if (catFilter !== 'ALL') {
                     const filterLower = catFilter.toLowerCase();
-                    const filterNormalized = filterLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    const tipoNormalized = tipoStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    const detalleNormalized = detalleStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-                    matchesCat = tipoNormalized.includes(filterNormalized) || detalleNormalized.includes(filterNormalized);
+                    matchesCat = tipoStr.includes(filterLower) || detalleStr.includes(filterLower);
                 }
 
                 let matchesDate = true;
-                if (dateFromVal && recordFecha < dateFromVal) matchesDate = false;
-                if (dateToVal && recordFecha > dateToVal) matchesDate = false;
+                if (dateFromVal && recordFecha && recordFecha < dateFromVal) matchesDate = false;
+                if (dateToVal && recordFecha && recordFecha > dateToVal) matchesDate = false;
 
                 return matchesSearch && matchesCat && matchesDate;
             });
@@ -640,15 +647,17 @@
             });
 
             const tbody = document.getElementById("recordsTableBody");
+            if (!tbody) return;
+
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay registros de mantenimiento</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay registros de mantenimiento para mostrar.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(r => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(r.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${Number(r.kms || 0).toLocaleString()} km</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
                     <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">${r.tipo || "Otros"}</span></td>
                     <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.detalle || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
@@ -670,7 +679,7 @@
 
             if (filterVeh !== 'ALL') {
                 const targetVeh = vehicles.find(v => v.id === filterVeh);
-                if (targetVeh) filtered = fuelRecords.filter(f => f.vehiculo === targetVeh.excelName);
+                if (targetVeh) filtered = fuelRecords.filter(f => String(f.vehiculo) === String(targetVeh.excelName));
             }
 
             const total = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
@@ -692,7 +701,7 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${f.vehiculo}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString() + ' km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white">${Number(f.importe || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-mono">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
@@ -703,18 +712,18 @@
             `).join('');
         }
 
-        // RENDERIZADO DE RECAMBIOS CON ENLACES A ENDADO Y AMAZON
+        // RECAMBIOS
         function renderParts() {
             const car = getActiveVehicle();
             const container = document.getElementById("partsContainer");
             const searchInput = document.getElementById("partSearchInput");
             if (!container || !searchInput) return;
 
-            const search = searchInput.value.toLowerCase();
+            const search = String(searchInput.value || '').toLowerCase();
             const filtered = (car.parts || []).filter(p => 
-                (p.pieza || '').toLowerCase().includes(search) || 
-                (p.marca || '').toLowerCase().includes(search) || 
-                (p.notas || '').toLowerCase().includes(search)
+                String(p.pieza || '').toLowerCase().includes(search) || 
+                String(p.marca || '').toLowerCase().includes(search) || 
+                String(p.notas || '').toLowerCase().includes(search)
             );
 
             if (filtered.length === 0) {
@@ -723,7 +732,7 @@
             }
 
             container.innerHTML = filtered.map(p => {
-                const querySearch = encodeURIComponent(`${p.pieza} ${p.marca || ''} ${p.notas || ''}`);
+                const querySearch = encodeURIComponent(`${p.pieza || ''} ${p.marca || ''} ${p.notas || ''}`);
                 const amazonUrl = p.link || `https://www.amazon.es/s?k=${querySearch}`;
                 const endadoUrl = `https://www.endado.com/busqueda?q=${querySearch}`;
 
@@ -888,20 +897,29 @@
 
         function syncWithGoogleSheets() {
             const car = getActiveVehicle();
+            if (!car) return;
             const cb = 'jsonp_cb_' + Math.round(100000 * Math.random());
             window[cb] = function(data) {
                 delete window[cb];
                 if (Array.isArray(data)) {
-                    car.records = data.filter(r => r.fecha && r.kms !== undefined).map((r, i) => ({
-                        id: i + 1, rowIndex: r.rowIndex, fecha: formatDateDisplay(r.fecha), kms: Number(r.kms) || 0,
-                        tipo: r.detalle || "Otros", detalle: r.tipo || "", taller: r.taller || "", coste: Number(r.coste) || 0
+                    car.records = data.filter(r => r && r.fecha && r.kms !== undefined).map((r, i) => ({
+                        id: i + 1,
+                        rowIndex: r.rowIndex,
+                        fecha: formatDateDisplay(r.fecha),
+                        kms: Number(r.kms) || 0,
+                        tipo: String(r.detalle || "Otros"),
+                        detalle: String(r.tipo || ""),
+                        taller: String(r.taller || ""),
+                        coste: Number(r.coste) || 0
                     }));
-                    if (car.records.length > 0) car.kms = Math.max(...car.records.map(r => r.kms));
+                    if (car.records.length > 0) {
+                        car.kms = Math.max(...car.records.map(r => r.kms));
+                    }
                     renderDashboard();
                 }
             };
             const script = document.createElement('script');
-            script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${cb}`;
+            script.src = `${GOOGLE_SCRIPT_URL}?action=getMaintenance&hoja=${encodeURIComponent(car.sheetName)}&callback=${cb}`;
             document.body.appendChild(script);
         }
 
@@ -921,6 +939,7 @@
 
         function syncReferencesWithGoogleSheets() {
             const car = getActiveVehicle();
+            if (!car) return;
             const cb = 'jsonp_ref_cb_' + Math.round(100000 * Math.random());
             window[cb] = function(data) {
                 delete window[cb];
@@ -933,10 +952,14 @@
 
         function syncAlertsWithGoogleSheets() {
             const car = getActiveVehicle();
+            if (!car) return;
             const cb = 'jsonp_alert_cb_' + Math.round(100000 * Math.random());
             window[cb] = function(data) {
                 delete window[cb];
-                if (Array.isArray(data)) { car.alerts = data.filter(a => a.vehiculo.toLowerCase() === car.sheetName.toLowerCase()); renderAlerts(car); }
+                if (Array.isArray(data)) { 
+                    car.alerts = data.filter(a => String(a.vehiculo).toLowerCase() === String(car.sheetName).toLowerCase()); 
+                    renderAlerts(car); 
+                }
             };
             const script = document.createElement('script');
             script.src = `${GOOGLE_SCRIPT_URL}?action=getAlerts&callback=${cb}`;
