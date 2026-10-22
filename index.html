@@ -235,13 +235,37 @@
                 </div>
             </section>
 
+            <!-- Estadísticas de Gasoil: Ranking y Evolución de Precio -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <!-- Ranking Gasolineras (1 columna) -->
+                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-trophy text-amber-500"></i>
+                        <span>Gasolineras Más Frecuentes</span>
+                    </h3>
+                    <div id="gasStationRanking" class="space-y-3">
+                        <p class="text-xs text-slate-400">Cargando datos...</p>
+                    </div>
+                </div>
+
+                <!-- Gráfica Evolución Precio €/L (2 columnas) -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-emerald-500"></i>
+                        <span>Evolución del Precio del Gasoil (€/L)</span>
+                    </h3>
+                    <div class="h-56 relative">
+                        <canvas id="chartFuelPrice"></canvas>
+                    </div>
+                </div>
+            </section>
+
             <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial y Rendimiento de Combustible</h2>
                     </div>
 
-                    <!-- Filtros de Fecha -->
                     <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
@@ -274,7 +298,7 @@
                                 <th class="px-3 sm:px-4 py-3 text-right">Litros</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Precio/L</th>
                                 <th class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">Consumo</th>
-                                <th class="px-3 sm:px-4 py-3">Notas</th>
+                                <th class="px-3 sm:px-4 py-3">Gasolinera / Notas</th>
                                 <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -305,7 +329,6 @@
             <h3 id="recordModalTitle" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Añadir Mantenimiento</h3>
             
             <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-3">
-                <input type="hidden" id="recordId">
                 <input type="hidden" id="recordRowIndex">
                 
                 <div class="grid grid-cols-2 gap-3">
@@ -433,7 +456,7 @@
         ];
 
         let vehicles = [
-            { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "2805JRB", vin: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
+            { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "2805JRB", vin: "VF7SCBHY6GW586838", year: 2016, kms: 165900, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
             { id: "p308", name: "Peugeot 308 II", excelName: "Mantenimiento 308 II Loyola", plate: "1184JMB", vin: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
             { id: "p207", name: "Peugeot 207", excelName: "Mantenimiento Peugeot 207", plate: "3323FMY", vin: "VF3WC9HXC33655626", year: 2010, kms: 250000, fuel: "Diésel", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", intervalKm: 10000, intervalMonths: 12, records: [], parts: [], alerts: [] }
         ];
@@ -443,6 +466,7 @@
         let activeMainTab = "maintenance";
         let categoryChartInstance = null;
         let timeChartInstance = null;
+        let fuelPriceChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             initTheme();
@@ -461,12 +485,63 @@
             localStorage.setItem("theme", isDark ? "dark" : "light");
             const car = getActiveVehicle();
             if (car) renderCharts(car);
+            if (activeMainTab === 'fuel') renderFuelAnalytics();
         }
 
         function initApp() {
             populateCategories();
             populateVehicleSelector();
             renderDashboard();
+        }
+
+        function fetchJSONP(url, callback) {
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                callback(data);
+            };
+            const script = document.createElement('script');
+            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+            document.body.appendChild(script);
+        }
+
+        function reloadData() {
+            const car = getActiveVehicle();
+            if (!car) return;
+
+            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getMaintenance&hoja=${encodeURIComponent(car.sheetName)}`, (data) => {
+                car.records = Array.isArray(data) ? data : [];
+                if (car.records.length > 0) {
+                    const sorted = [...car.records].sort((a, b) => Number(b.kms || 0) - Number(a.kms || 0));
+                    if (sorted[0].kms) car.kms = Number(sorted[0].kms);
+                }
+                renderDashboard();
+            });
+
+            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getReferences&hoja=${encodeURIComponent(car.refSheetName)}`, (data) => {
+                car.parts = Array.isArray(data) ? data : [];
+                renderParts();
+            });
+
+            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getAlerts`, (data) => {
+                const allAlerts = Array.isArray(data) ? data : [];
+                car.alerts = allAlerts.filter(a => String(a.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(a.vehiculo).toLowerCase()));
+                renderAlerts(car);
+            });
+
+            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getFuel`, (data) => {
+                fuelRecords = Array.isArray(data) ? data : [];
+                if (activeMainTab === 'fuel') {
+                    renderFuelDashboard();
+                }
+                const activeCar = getActiveVehicle();
+                if (activeCar) {
+                    renderNextServiceEstimations(activeCar);
+                }
+            });
+
+            showToast("Sincronizando con Google Sheets...");
         }
 
         function switchMainTab(tab) {
@@ -555,8 +630,9 @@
             if (str.includes('-')) {
                 if (str.includes('T')) str = str.split('T')[0];
                 let parts = str.split('-');
-                if (parts.length === 3 && parts[0].length === 4) {
-                    return new Date(parts[0], parts[1] - 1, parts[2]);
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) return new Date(parts[0], parts[1] - 1, parts[2]);
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
                 }
             }
 
@@ -648,7 +724,6 @@
 
             cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
 
-            // 1. Obtener la última revisión oficial realizada
             const revisions = (car.records || []).filter(r => {
                 const t = String(r.tipo || '').toLowerCase();
                 const d = String(r.detalle || '').toLowerCase();
@@ -658,7 +733,6 @@
             const hasRevision = revisions.length > 0;
             const lastRevision = hasRevision ? revisions[0] : null;
 
-            // Caso A: Sin registros de revisión previa
             if (!hasRevision) {
                 cardMonth.innerText = "Sin registro de revisión previa";
                 cardMonth.className = "text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
@@ -675,9 +749,9 @@
             const intervalKm = car.intervalKm || 15000;
             const intervalMonths = car.intervalMonths || 12;
 
-            // 2. Ritmo medio de conducción (km / mes) desde repostajes
             let monthlyKmRate = 1000;
-            const carFuel = fuelRecords.filter(f => String(f.vehiculo) === String(car.excelName));
+            const carFuel = fuelRecords.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
+            
             if (carFuel.length >= 2) {
                 const sortedFuel = [...carFuel].sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
                 const firstLog = sortedFuel[0];
@@ -691,7 +765,6 @@
                 }
             }
 
-            // 3. Proyecciones
             const targetDateByTime = new Date(lastDate);
             targetDateByTime.setMonth(targetDateByTime.getMonth() + intervalMonths);
 
@@ -712,7 +785,6 @@
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             const monthStr = `${monthNames[finalTargetDate.getMonth()]} de ${finalTargetDate.getFullYear()}`;
 
-            // Caso B: Revisión Vencida (por tiempo o por kilometraje)
             if (isOverdueTime || isOverdueKm) {
                 cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
                 
@@ -728,9 +800,7 @@
                 
                 cardKm.innerText = remainingKm <= 0 ? `Excedido en ${Math.abs(remainingKm).toLocaleString('es-ES')} km` : `0 km`;
                 cardKm.className = "text-base sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
-            } 
-            // Caso C: En fecha correcta
-            else {
+            } else {
                 cardMonth.innerText = monthStr;
                 cardMonth.className = "text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
                 cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
@@ -764,7 +834,6 @@
                 }
             }
 
-            // Ciclo DGT Oficial: Amarillo (2026, 2029...), Verde (2025, 2028...), Rojo (2024, 2027...)
             let colorBg = "bg-amber-400 text-slate-950 border-amber-500/40";
             let holeBg = "bg-slate-900 text-amber-400";
             
@@ -848,7 +917,7 @@
 
             const catMap = {};
             car.records.forEach(r => { 
-                let displayTipo = String(r.tipo || "Otros").trim();
+                let displayTipo = String(r.detalle || "Otros").trim();
                 catMap[displayTipo] = (catMap[displayTipo] || 0) + Number(r.coste || 0); 
             });
 
@@ -898,17 +967,17 @@
             const dateToVal = dateToElem ? String(dateToElem.value || '') : "";
 
             let filtered = (car.records || []).filter(r => {
-                const tipoStr = String(r.tipo || '').toLowerCase();
-                const detalleStr = String(r.detalle || '').toLowerCase();
+                const tipoStr = String(r.tipo || '').toLowerCase(); 
+                const detalleStr = String(r.detalle || '').toLowerCase(); 
                 const tallerStr = String(r.taller || '').toLowerCase();
                 const recordISO = formatDateISO(r.fecha);
 
-                const matchesSearch = !search || detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
+                const matchesSearch = !search || tipoStr.includes(search) || tallerStr.includes(search) || detalleStr.includes(search);
                 
                 let matchesCat = true;
                 if (catFilter !== 'ALL') {
                     const filterLower = catFilter.toLowerCase();
-                    matchesCat = tipoStr.includes(filterLower) || detalleStr.includes(filterLower);
+                    matchesCat = detalleStr.includes(filterLower) || tipoStr.includes(filterLower);
                 }
 
                 let matchesDate = true;
@@ -941,14 +1010,14 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
-                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.tipo || "Otros"}</span></td>
-                    <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.detalle || ""}</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
+                    <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.tipo || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="openRecordModal(${r.rowIndex})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deleteRecord(${r.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -957,7 +1026,112 @@
 
         // REPOSTAJES (GASOIL)
         function renderFuelDashboard() { 
-            renderFuelTable(); 
+            renderFuelTable();
+            renderFuelAnalytics();
+        }
+
+        function renderFuelAnalytics() {
+            const car = getActiveVehicle();
+            let rawList = fuelRecords;
+            if (car) {
+                rawList = rawList.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
+            }
+
+            if (!rawList || rawList.length === 0) {
+                const rankingElem = document.getElementById('gasStationRanking');
+                if (rankingElem) rankingElem.innerHTML = `<p class="text-xs text-slate-400">Sin datos de repostajes.</p>`;
+                return;
+            }
+
+            // 1. RANKING DE GASOLINERAS
+            const stationCounts = {};
+            rawList.forEach(r => {
+                let station = (r.notas || 'Sin especificar').trim();
+                if (station) {
+                    station = station.charAt(0).toUpperCase() + station.slice(1);
+                    stationCounts[station] = (stationCounts[station] || 0) + 1;
+                }
+            });
+
+            const sortedStations = Object.entries(stationCounts).sort((a, b) => b[1] - a[1]);
+            const totalFuelings = rawList.length;
+            const rankingContainer = document.getElementById('gasStationRanking');
+
+            if (rankingContainer) {
+                rankingContainer.innerHTML = sortedStations.slice(0, 5).map(([name, count], index) => {
+                    const percentage = Math.round((count / totalFuelings) * 100);
+                    const medalColor = index === 0 ? 'text-amber-400' : (index === 1 ? 'text-slate-300' : (index === 2 ? 'text-amber-600' : 'text-slate-400'));
+                    return `
+                        <div class="flex flex-col space-y-1">
+                            <div class="flex justify-between items-center text-xs font-semibold">
+                                <span class="flex items-center space-x-1.5 text-slate-700 dark:text-slate-200 truncate">
+                                    <i class="fa-solid fa-gas-pump ${medalColor}"></i>
+                                    <span class="truncate">${name}</span>
+                                </span>
+                                <span class="text-slate-500 dark:text-slate-400">${count} (${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div class="bg-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. GRÁFICA DE EVOLUCIÓN DE PRECIO
+            const validRecords = rawList
+                .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
+                .map(r => ({
+                    fecha: r.fecha,
+                    precio: Number((Number(r.importe) / Number(r.litros)).toFixed(3))
+                }))
+                .sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
+
+            const labels = validRecords.map(r => formatDateDisplay(r.fecha));
+            const dataPrices = validRecords.map(r => r.precio);
+
+            const isDark = document.documentElement.classList.contains("dark");
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+            const ctx = document.getElementById('chartFuelPrice');
+            if (ctx) {
+                if (fuelPriceChartInstance) fuelPriceChartInstance.destroy();
+
+                fuelPriceChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Precio (€/L)',
+                            data: dataPrices,
+                            borderColor: '#a855f7',
+                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#a855f7',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) { return `Precio: ${ctx.parsed.y.toFixed(3)} €/L`; }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+                            y: { ticks: { color: textColor, font: { size: 10 }, callback: function(val) { return val.toFixed(2) + ' €'; } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            }
         }
 
         function renderFuelTable() {
@@ -968,7 +1142,7 @@
             let rawList = fuelRecords;
 
             if (car) {
-                rawList = rawList.filter(f => String(f.vehiculo) === String(car.excelName));
+                rawList = rawList.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
             }
 
             let sortedAsc = [...rawList].sort((a, b) => {
@@ -994,11 +1168,7 @@
                     }
                 }
 
-                return {
-                    ...f,
-                    pricePerLiter,
-                    consumption
-                };
+                return { ...f, pricePerLiter, consumption };
             });
 
             let filtered = processedList.filter(f => {
@@ -1040,16 +1210,13 @@
                     <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${f.vehiculo}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${formatDateDisplay(f.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-mono whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-mono text-slate-500 whitespace-nowrap">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openFuelModalForEdit(${f.rowIndex})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                        </div>
+                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -1058,160 +1225,175 @@
         // RECAMBIOS
         function renderParts() {
             const car = getActiveVehicle();
-            const container = document.getElementById("partsContainer");
-            const searchInput = document.getElementById("partSearchInput");
-            if (!container || !searchInput) return;
+            if (!car) return;
 
-            const search = String(searchInput.value || '').toLowerCase();
-            const filtered = (car.parts || []).filter(p => 
-                String(p.pieza || '').toLowerCase().includes(search) || 
-                String(p.marca || '').toLowerCase().includes(search) || 
-                String(p.notas || '').toLowerCase().includes(search)
-            );
+            const searchInput = document.getElementById("partSearchInput");
+            const search = searchInput ? String(searchInput.value || '').toLowerCase() : '';
+
+            const container = document.getElementById("partsContainer");
+            if (!container) return;
+
+            let filtered = (car.parts || []).filter(p => {
+                return !search || String(p.pieza || '').toLowerCase().includes(search) || String(p.marca || '').toLowerCase().includes(search) || String(p.notas || '').toLowerCase().includes(search);
+            });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold text-sm">No hay referencias anotadas para este vehículo.</div>`;
+                container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold border border-slate-200 dark:border-slate-700/60">No se encontraron recambios guardados.</div>`;
                 return;
             }
 
-            container.innerHTML = filtered.map(p => {
-                const querySearch = encodeURIComponent(`${p.pieza || ''} ${p.marca || ''} ${p.notas || ''}`);
-                const amazonUrl = p.link || `https://www.amazon.es/s?k=${querySearch}`;
-                const endadoUrl = `https://www.endado.com/busqueda?q=${querySearch}`;
-
-                return `
-                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-start justify-between">
-                                <h3 class="font-bold text-slate-900 dark:text-white text-base">${p.pieza}</h3>
-                                ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 text-xs px-2 py-0.5 rounded font-mono font-bold">${p.marca}</span>` : ''}
-                            </div>
-                            <div class="mt-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                                <p class="text-sm text-slate-700 dark:text-slate-200 font-sans leading-relaxed">${p.notas}</p>
-                                <button onclick="copyToClipboard('${p.pieza}: ${p.marca || ''} ${p.notas || ''}')" class="text-xs text-slate-400 hover:text-emerald-500 p-1 ml-2 shrink-0" title="Copiar detalles"><i class="fa-solid fa-copy"></i></button>
-                            </div>
+            container.innerHTML = filtered.map(p => `
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${p.pieza}</h3>
+                            ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">${p.marca}</span>` : ''}
                         </div>
-                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs">
-                            <span class="text-slate-500">Comprar en:</span>
-                            <div class="flex space-x-2">
-                                <a href="${endadoUrl}" target="_blank" class="bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-solid fa-cart-shopping mr-1"></i>Endado</a>
-                                <a href="${amazonUrl}" target="_blank" class="bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-brands fa-amazon mr-1"></i>Amazon</a>
-                            </div>
-                        </div>
-                    </div>`;
-            }).join('');
+                        <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 whitespace-pre-line">${p.notas || ''}</p>
+                    </div>
+                    ${p.link ? `<a href="${p.link}" target="_blank" class="inline-flex items-center justify-center space-x-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline pt-2 border-t border-slate-100 dark:border-slate-700/50"><span>Ver en Tienda</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>` : ''}
+                </div>
+            `).join('');
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            showToast("Detalles copiados al portapapeles.");
-        }
+        // MODALS & GUARDADO
+        function openRecordModal(rowIndex = null) {
+            const car = getActiveVehicle();
+            if (!car) return;
 
-        // MODALES
-        function openRecordModal(id = null) {
-            document.getElementById("recordModal").classList.remove("hidden");
-            if (id) {
-                const car = getActiveVehicle();
-                const record = car.records.find(r => r.id === id);
+            document.getElementById("recordRowIndex").value = rowIndex || "";
+            document.getElementById("recordModalTitle").innerText = rowIndex ? "Editar Mantenimiento" : "Añadir Mantenimiento";
+
+            if (rowIndex) {
+                const record = car.records.find(r => r.rowIndex === rowIndex);
                 if (record) {
-                    document.getElementById("recordId").value = record.id;
-                    document.getElementById("recordRowIndex").value = record.rowIndex || "";
                     document.getElementById("formFecha").value = formatDateISO(record.fecha);
-                    document.getElementById("formKms").value = record.kms;
-                    document.getElementById("formTipo").value = record.tipo || "Luces";
-                    document.getElementById("formCoste").value = record.coste;
-                    document.getElementById("formTaller").value = record.taller || '';
-                    document.getElementById("formDetalle").value = record.detalle || '';
-                    return;
+                    document.getElementById("formKms").value = record.kms || "";
+                    document.getElementById("formTipo").value = record.detalle || "Otros";
+                    document.getElementById("formCoste").value = record.coste || "";
+                    document.getElementById("formTaller").value = record.taller || "";
+                    document.getElementById("formDetalle").value = record.tipo || "";
                 }
+            } else {
+                document.getElementById("recordForm").reset();
+                document.getElementById("formFecha").value = formatDateISO(new Date());
+                document.getElementById("formKms").value = car.kms || "";
             }
-            document.getElementById("recordForm").reset();
-            document.getElementById("formFecha").value = new Date().toISOString().split('T')[0];
+
+            document.getElementById("recordModal").classList.remove("hidden");
         }
 
         function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
 
-        function openFuelModal() {
-            document.getElementById("fuelModal").classList.remove("hidden");
-            document.getElementById("fuelForm").reset();
-            document.getElementById("fuelFormFecha").value = new Date().toISOString().split('T')[0];
-            document.getElementById("fuelForm").removeAttribute("data-row-index");
-        }
-
-        function openFuelModalForEdit(rowIndex) {
-            const record = fuelRecords.find(f => f.rowIndex === rowIndex);
-            if (!record) return;
-
-            document.getElementById("fuelModal").classList.remove("hidden");
-            document.getElementById("fuelFormVehicle").value = record.vehiculo;
-            document.getElementById("fuelFormFecha").value = formatDateISO(record.fecha);
-            document.getElementById("fuelFormKms").value = record.kms || "";
-            document.getElementById("fuelFormImporte").value = record.importe || "";
-            document.getElementById("fuelFormLitros").value = record.litros || "";
-            document.getElementById("fuelFormNotas").value = record.notas || "";
-
-            document.getElementById("fuelForm").setAttribute("data-row-index", rowIndex);
-        }
-
-        function closeFuelModal() { 
-            document.getElementById("fuelModal").classList.add("hidden"); 
-            document.getElementById("fuelForm").removeAttribute("data-row-index");
-        }
-
-        function openPartModal() { document.getElementById("partModal").classList.remove("hidden"); }
-        function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
-
-        async function handleSaveRecord(e) {
+        function handleSaveRecord(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            const recordData = {
-                fecha: document.getElementById("formFecha").value,
-                kms: Number(document.getElementById("formKms").value),
-                detalle: document.getElementById("formTipo").value,
-                tipo: document.getElementById("formDetalle").value,
-                taller: document.getElementById("formTaller").value,
-                coste: Number(document.getElementById("formCoste").value),
+            if (!car) return;
+
+            const payload = {
                 hojaVehiculo: car.sheetName,
-                rowIndex: document.getElementById("recordRowIndex").value || null
+                rowIndex: document.getElementById("recordRowIndex").value,
+                fecha: document.getElementById("formFecha").value,
+                kms: document.getElementById("formKms").value,
+                detalle: document.getElementById("formTipo").value, // Categoría
+                tipo: document.getElementById("formDetalle").value,  // Descripción
+                taller: document.getElementById("formTaller").value,
+                coste: document.getElementById("formCoste").value
             };
 
             closeRecordModal();
-            showToast("Guardando mantenimiento...");
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recordData) });
-                setTimeout(() => reloadData(), 1500);
-            } catch (err) {}
+            showToast("Guardando en Google Sheets...");
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                setTimeout(reloadData, 1500);
+            }).catch(err => alert("Error al guardar: " + err));
         }
 
-        async function handleSaveFuel(e) {
-            e.preventDefault();
-            const form = document.getElementById("fuelForm");
-            const editRowIndex = form.getAttribute("data-row-index");
+        function deleteRecord(rowIndex) {
+            const car = getActiveVehicle();
+            if (!car || !confirm("¿Seguro que deseas eliminar este registro de mantenimiento?")) return;
 
-            const fuelData = {
+            showToast("Eliminando registro...");
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: rowIndex })
+            }).then(() => {
+                setTimeout(reloadData, 1500);
+            });
+        }
+
+        function openFuelModal() {
+            const car = getActiveVehicle();
+            document.getElementById("fuelForm").reset();
+            document.getElementById("fuelFormFecha").value = formatDateISO(new Date());
+            if (car) {
+                document.getElementById("fuelFormVehicle").value = car.excelName;
+                document.getElementById("fuelFormKms").value = car.kms || "";
+            }
+            document.getElementById("fuelModal").classList.remove("hidden");
+        }
+
+        function closeFuelModal() { document.getElementById("fuelModal").classList.add("hidden"); }
+
+        function handleSaveFuel(e) {
+            e.preventDefault();
+            const payload = {
                 type: "fuel",
                 hojaVehiculo: "GASOIL",
                 vehiculo: document.getElementById("fuelFormVehicle").value,
                 fecha: document.getElementById("fuelFormFecha").value,
-                kms: document.getElementById("fuelFormKms").value ? Number(document.getElementById("fuelFormKms").value) : "",
-                importe: Number(document.getElementById("fuelFormImporte").value),
-                litros: document.getElementById("fuelFormLitros").value ? Number(document.getElementById("fuelFormLitros").value) : "",
-                notas: document.getElementById("fuelFormNotas").value || "",
-                rowIndex: editRowIndex || null
+                kms: document.getElementById("fuelFormKms").value,
+                importe: document.getElementById("fuelFormImporte").value,
+                litros: document.getElementById("fuelFormLitros").value,
+                notas: document.getElementById("fuelFormNotas").value
             };
 
             closeFuelModal();
-            showToast(editRowIndex ? "Actualizando repostaje..." : "Añadiendo repostaje a pestaña GASOIL...");
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fuelData) });
-                setTimeout(() => reloadData(), 1500);
-            } catch (err) {}
+            showToast("Guardando repostaje...");
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                setTimeout(reloadData, 1500);
+            });
         }
 
-        async function handleSavePart(e) {
+        function deleteFuelRecord(rowIndex) {
+            if (!confirm("¿Seguro que deseas eliminar este repostaje?")) return;
+            showToast("Eliminando repostaje...");
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "delete", hojaVehiculo: "GASOIL", rowIndex: rowIndex })
+            }).then(() => {
+                setTimeout(reloadData, 1500);
+            });
+        }
+
+        function openPartModal() {
+            document.getElementById("partForm").reset();
+            document.getElementById("partModal").classList.remove("hidden");
+        }
+
+        function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
+
+        function handleSavePart(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            const partData = {
+            if (!car) return;
+
+            const payload = {
                 type: "reference",
                 hojaVehiculo: car.refSheetName,
                 pieza: document.getElementById("partPieza").value,
@@ -1221,116 +1403,16 @@
             };
 
             closePartModal();
-            showToast("Guardando referencia...");
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(partData) });
-                setTimeout(() => reloadData(), 1500);
-            } catch (err) {}
-        }
+            showToast("Guardando recambio...");
 
-        async function deleteRecord(id) {
-            const car = getActiveVehicle();
-            const r = car.records.find(rec => rec.id === id);
-            if (!r || !confirm(`¿Eliminar "${r.detalle}"?`)) return;
-
-            showToast("Eliminando...");
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: r.rowIndex || null, detalle: r.tipo, kms: r.kms })
-                });
-                setTimeout(() => reloadData(), 1500);
-            } catch (err) {}
-        }
-
-        async function deleteFuelRecord(rowIndex) {
-            if (!rowIndex || !confirm("¿Eliminar este repostaje?")) return;
-            showToast("Eliminando repostaje...");
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "delete", hojaVehiculo: "GASOIL", rowIndex: rowIndex })
-                });
-                setTimeout(() => reloadData(), 1500);
-            } catch (err) {}
-        }
-
-        function reloadData() {
-            syncWithGoogleSheets();
-            syncReferencesWithGoogleSheets();
-            syncAlertsWithGoogleSheets();
-            syncFuelWithGoogleSheets();
-        }
-
-        function syncWithGoogleSheets() {
-            const car = getActiveVehicle();
-            if (!car) return;
-            const cb = 'jsonp_cb_' + Math.round(100000 * Math.random());
-            window[cb] = function(data) {
-                delete window[cb];
-                if (Array.isArray(data)) {
-                    car.records = data.filter(r => r && r.fecha && r.kms !== undefined).map((r, i) => ({
-                        id: i + 1,
-                        rowIndex: r.rowIndex,
-                        fecha: r.fecha,
-                        kms: Number(r.kms) || 0,
-                        tipo: String(r.detalle || "Otros"),
-                        detalle: String(r.tipo || ""),
-                        taller: String(r.taller || ""),
-                        coste: Number(r.coste) || 0
-                    }));
-                    if (car.records.length > 0) {
-                        car.kms = Math.max(...car.records.map(r => r.kms));
-                    }
-                    renderDashboard();
-                }
-            };
-            const script = document.createElement('script');
-            script.src = `${GOOGLE_SCRIPT_URL}?action=getMaintenance&hoja=${encodeURIComponent(car.sheetName)}&callback=${cb}`;
-            document.body.appendChild(script);
-        }
-
-        function syncFuelWithGoogleSheets() {
-            const cb = 'jsonp_fuel_cb_' + Math.round(100000 * Math.random());
-            window[cb] = function(data) {
-                delete window[cb];
-                if (Array.isArray(data)) {
-                    fuelRecords = data;
-                    renderFuelDashboard();
-                }
-            };
-            const script = document.createElement('script');
-            script.src = `${GOOGLE_SCRIPT_URL}?action=getFuel&hoja=GASOIL&callback=${cb}`;
-            document.body.appendChild(script);
-        }
-
-        function syncReferencesWithGoogleSheets() {
-            const car = getActiveVehicle();
-            if (!car) return;
-            const cb = 'jsonp_ref_cb_' + Math.round(100000 * Math.random());
-            window[cb] = function(data) {
-                delete window[cb];
-                if (Array.isArray(data)) { car.parts = data; renderParts(); }
-            };
-            const script = document.createElement('script');
-            script.src = `${GOOGLE_SCRIPT_URL}?action=getReferences&hoja=${encodeURIComponent(car.refSheetName)}&callback=${cb}`;
-            document.body.appendChild(script);
-        }
-
-        function syncAlertsWithGoogleSheets() {
-            const car = getActiveVehicle();
-            if (!car) return;
-            const cb = 'jsonp_alert_cb_' + Math.round(100000 * Math.random());
-            window[cb] = function(data) {
-                delete window[cb];
-                if (Array.isArray(data)) { 
-                    car.alerts = data.filter(a => String(a.vehiculo).toLowerCase() === String(car.sheetName).toLowerCase()); 
-                    renderAlerts(car); 
-                }
-            };
-            const script = document.createElement('script');
-            script.src = `${GOOGLE_SCRIPT_URL}?action=getAlerts&callback=${cb}`;
-            document.body.appendChild(script);
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                setTimeout(reloadData, 1500);
+            });
         }
     </script>
 </body>
