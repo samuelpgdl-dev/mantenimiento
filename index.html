@@ -220,12 +220,6 @@
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial de Repostajes (GASOIL)</h2>
-                        <div class="flex items-center space-x-2">
-                            <label class="text-xs text-slate-400">Ver:</label>
-                            <select id="fuelVehicleFilter" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white rounded-lg border border-slate-200 dark:border-slate-600 p-2">
-                                <option value="ALL">Todos los coches</option>
-                            </select>
-                        </div>
                     </div>
 
                     <!-- Filtros de Fecha para Repostajes -->
@@ -505,19 +499,20 @@
 
         function populateVehicleSelector() {
             const selector = document.getElementById("vehicleSelector");
-            const fuelVehicleFilter = document.getElementById("fuelVehicleFilter");
             const fuelFormVehicle = document.getElementById("fuelFormVehicle");
 
             selector.innerHTML = vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
             selector.value = activeVehicleId;
 
-            fuelVehicleFilter.innerHTML = `<option value="ALL">Todos los coches</option>` + vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
             fuelFormVehicle.innerHTML = vehicles.map(v => `<option value="${v.excelName}">${v.name}</option>`).join('');
         }
 
         function changeActiveVehicle(id) {
             activeVehicleId = id;
             renderDashboard();
+            if (activeMainTab === 'fuel') {
+                renderFuelDashboard();
+            }
             reloadData();
         }
 
@@ -740,19 +735,20 @@
             `).join('');
         }
 
-        // REPOSTAJES (GASOIL) CON FILTRO DE FECHAS
-        function renderFuelDashboard() { renderFuelTable(); }
+        // REPOSTAJES (GASOIL) - UNIFICADO CON SELECTOR PRINCIPAL
+        function renderFuelDashboard() { 
+            renderFuelTable(); 
+        }
 
         function renderFuelTable() {
-            const filterVeh = document.getElementById("fuelVehicleFilter").value;
             const dateFromVal = document.getElementById("fuelDateFrom") ? document.getElementById("fuelDateFrom").value : "";
             const dateToVal = document.getElementById("fuelDateTo") ? document.getElementById("fuelDateTo").value : "";
 
+            const car = getActiveVehicle();
             let filtered = fuelRecords;
 
-            if (filterVeh !== 'ALL') {
-                const targetVeh = vehicles.find(v => v.id === filterVeh);
-                if (targetVeh) filtered = filtered.filter(f => String(f.vehiculo) === String(targetVeh.excelName));
+            if (car) {
+                filtered = filtered.filter(f => String(f.vehiculo) === String(car.excelName));
             }
 
             filtered = filtered.filter(f => {
@@ -775,8 +771,10 @@
             document.getElementById("kpiFuelMonthlyAvg").innerText = count > 0 ? `${(total / 12).toFixed(2)} €` : "0.00 €";
 
             const tbody = document.getElementById("fuelTableBody");
+            if (!tbody) return;
+
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay repostajes registrados en la pestaña GASOIL con los filtros seleccionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay repostajes registrados en la pestaña GASOIL para este vehículo.</td></tr>`;
                 return;
             }
 
