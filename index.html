@@ -195,7 +195,7 @@
             </section>
         </div>
 
-        <!-- VISTA 2: REPOSTAJES (GASOIL) -->
+        <!-- VISTA 2: REPOSTAJES (GASOIL + CÁLCULO DE CONSUMO) -->
         <div id="viewFuel" class="space-y-4 sm:space-y-6 hidden">
             <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
@@ -207,22 +207,22 @@
                     <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Repostajes</div><div id="kpiFuelCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Coste Medio / Repostaje</div><div id="kpiFuelAvg" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gauge-high"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Consumo Medio</div><div id="kpiFuelAvgConsumption" class="text-base sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">-- L/100km</div></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-calendar-days"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Media Mensual</div><div id="kpiFuelMonthlyAvg" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+                    <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Precio Medio / Litro</div><div id="kpiFuelAvgPriceLiter" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
                 </div>
             </section>
 
             <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial de Repostajes (GASOIL)</h2>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial y Rendimiento de Combustible</h2>
                     </div>
 
-                    <!-- Filtros de Fecha para Repostajes -->
+                    <!-- Filtros de Fecha -->
                     <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
@@ -253,7 +253,9 @@
                                 <th class="px-3 sm:px-4 py-3">Km Actuales</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Importe (€)</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Litros</th>
-                                <th class="px-3 sm:px-4 py-3">Gasolinera / Notas</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Precio/L</th>
+                                <th class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">Consumo</th>
+                                <th class="px-3 sm:px-4 py-3">Notas</th>
                                 <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -735,7 +737,7 @@
             `).join('');
         }
 
-        // REPOSTAJES (GASOIL) - UNIFICADO CON SELECTOR PRINCIPAL
+        // REPOSTAJES (GASOIL) + LÓGICA DE CONSUMO L/100KM
         function renderFuelDashboard() { 
             renderFuelTable(); 
         }
@@ -745,13 +747,46 @@
             const dateToVal = document.getElementById("fuelDateTo") ? document.getElementById("fuelDateTo").value : "";
 
             const car = getActiveVehicle();
-            let filtered = fuelRecords;
+            let rawList = fuelRecords;
 
             if (car) {
-                filtered = filtered.filter(f => String(f.vehiculo) === String(car.excelName));
+                rawList = rawList.filter(f => String(f.vehiculo) === String(car.excelName));
             }
 
-            filtered = filtered.filter(f => {
+            // 1. Ordenar cronológicamente (de más antiguo a más reciente) para calcular consumos relativos
+            let sortedAsc = [...rawList].sort((a, b) => {
+                let kmA = Number(a.kms || 0);
+                let kmB = Number(b.kms || 0);
+                if (kmA !== kmB) return kmA - kmB;
+                return (parseDate(a.fecha) || new Date(0)) - (parseDate(b.fecha) || new Date(0));
+            });
+
+            // 2. Calcular precio/L y consumo (L/100km) entre repostajes consecutivos
+            let processedList = sortedAsc.map((f, idx) => {
+                let imp = Number(f.importe || 0);
+                let lit = Number(f.litros || 0);
+                let kms = Number(f.kms || 0);
+
+                let pricePerLiter = (imp > 0 && lit > 0) ? (imp / lit) : null;
+                let consumption = null;
+
+                if (idx > 0 && kms > 0 && lit > 0) {
+                    let prevKms = Number(sortedAsc[idx - 1].kms || 0);
+                    let deltaKms = kms - prevKms;
+                    if (deltaKms > 0) {
+                        consumption = (lit / deltaKms) * 100;
+                    }
+                }
+
+                return {
+                    ...f,
+                    pricePerLiter,
+                    consumption
+                };
+            });
+
+            // 3. Filtrar por rango de fecha
+            let filtered = processedList.filter(f => {
                 const recordISO = formatDateISO(f.fecha);
                 let matchesDate = true;
                 if (dateFromVal && recordISO && recordISO < dateFromVal) matchesDate = false;
@@ -759,22 +794,31 @@
                 return matchesDate;
             });
 
+            // 4. Invertir para mostrar los más recientes arriba
             filtered.sort((a, b) => (parseDate(b.fecha) || new Date(0)) - (parseDate(a.fecha) || new Date(0)));
 
-            const total = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
+            // KPIs
+            const totalImport = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
+            const totalLitros = filtered.reduce((sum, f) => sum + Number(f.litros || 0), 0);
             const count = filtered.length;
-            const avg = count > 0 ? total / count : 0;
 
-            document.getElementById("kpiFuelTotal").innerText = `${total.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
+            const avgPrice = totalLitros > 0 ? (totalImport / totalLitros) : 0;
+
+            let validConsumptions = filtered.filter(f => f.consumption !== null).map(f => f.consumption);
+            let avgConsumption = validConsumptions.length > 0 
+                ? (validConsumptions.reduce((a, b) => a + b, 0) / validConsumptions.length)
+                : null;
+
+            document.getElementById("kpiFuelTotal").innerText = `${totalImport.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
             document.getElementById("kpiFuelCount").innerText = count;
-            document.getElementById("kpiFuelAvg").innerText = `${avg.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
-            document.getElementById("kpiFuelMonthlyAvg").innerText = count > 0 ? `${(total / 12).toFixed(2)} €` : "0.00 €";
+            document.getElementById("kpiFuelAvgPriceLiter").innerText = avgPrice > 0 ? `${avgPrice.toFixed(3)} €/L` : "0,000 €/L";
+            document.getElementById("kpiFuelAvgConsumption").innerText = avgConsumption ? `${avgConsumption.toFixed(2)} L/100km` : "-- L/100km";
 
             const tbody = document.getElementById("fuelTableBody");
             if (!tbody) return;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay repostajes registrados en la pestaña GASOIL para este vehículo.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay repostajes registrados para este vehículo.</td></tr>`;
                 return;
             }
 
@@ -785,6 +829,8 @@
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-mono whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-mono text-slate-500 whitespace-nowrap">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
