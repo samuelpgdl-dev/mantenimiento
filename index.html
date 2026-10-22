@@ -638,13 +638,17 @@
                 }
             }
 
+            // Ciclo DGT Oficial:
+            // Amarillo: 2023, 2026, 2029...
+            // Verde: 2025, 2028, 2031...
+            // Rojo: 2024, 2027, 2030...
             let colorBg = "bg-amber-400 text-slate-950 border-amber-500/40";
             let holeBg = "bg-slate-900 text-amber-400";
             
-            if (yearNum % 3 === 1) {
+            if (yearNum % 3 === 0) {
                 colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/40";
                 holeBg = "bg-slate-900 text-emerald-400";
-            } else if (yearNum % 3 === 0) {
+            } else if (yearNum % 3 === 2) {
                 colorBg = "bg-rose-500 text-white border-rose-600/40";
                 holeBg = "bg-slate-900 text-rose-400";
             }
