@@ -154,6 +154,26 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
+                                <i class="fa-solid fa-calendar-days text-emerald-500 dark:text-emerald-400 mr-1.5"></i> Fechas:
+                            </span>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Desde:</label>
+                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Hasta:</label>
+                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
+                        </div>
+                        <button onclick="clearDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                            <span>Limpiar</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -199,7 +219,7 @@
             <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial de Repostajes (Pestaña GASOIL)</h2>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial de Repostajes (GASOIL)</h2>
                         <div class="flex items-center space-x-2">
                             <label class="text-xs text-slate-400">Ver:</label>
                             <select id="fuelVehicleFilter" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white rounded-lg border border-slate-200 dark:border-slate-600 p-2">
@@ -215,7 +235,10 @@
                             <tr>
                                 <th class="px-3 sm:px-4 py-3">Vehículo</th>
                                 <th class="px-3 sm:px-4 py-3">Fecha</th>
+                                <th class="px-3 sm:px-4 py-3">Km Actuales</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Importe (€)</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Litros</th>
+                                <th class="px-3 sm:px-4 py-3">Gasolinera / Notas</th>
                                 <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -291,7 +314,7 @@
 
     <!-- Modal Form: Añadir Repostaje (GASOIL) -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md shadow-2xl p-5 relative">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Nuevo Repostaje de Gasoil</h3>
             
@@ -306,9 +329,23 @@
                         <input type="date" id="fuelFormFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
                     </div>
                     <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
+                        <input type="number" id="fuelFormKms" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Importe (€) *</label>
                         <input type="number" id="fuelFormImporte" step="0.01" required placeholder="50.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Litros (Opcional)</label>
+                        <input type="number" id="fuelFormLitros" step="0.01" placeholder="35.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Gasolinera / Notas</label>
+                    <input type="text" id="fuelFormNotas" placeholder="Repsol Arganda, Plenoil..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-2">
@@ -471,6 +508,12 @@
             return String(rawDate).substring(0, 10);
         }
 
+        function clearDateFilter() {
+            document.getElementById("dateFrom").value = "";
+            document.getElementById("dateTo").value = "";
+            renderTable();
+        }
+
         function showToast(text = "Sincronizado con Google Sheets.") {
             const toast = document.getElementById("toastNotification");
             document.getElementById("toastMsg").innerText = text;
@@ -558,10 +601,34 @@
             const catFilter = document.getElementById("categoryFilter").value;
             const sortOrder = document.getElementById("sortSelector").value;
 
+            const dateFromElem = document.getElementById("dateFrom");
+            const dateToElem = document.getElementById("dateTo");
+            const dateFromVal = dateFromElem ? dateFromElem.value : "";
+            const dateToVal = dateToElem ? dateToElem.value : "";
+
             let filtered = car.records.filter(r => {
-                const matchesSearch = (r.detalle || '').toLowerCase().includes(search) || (r.taller || '').toLowerCase().includes(search);
-                const matchesCat = catFilter === 'ALL' || (r.tipo || '').toLowerCase().includes(catFilter.toLowerCase());
-                return matchesSearch && matchesCat;
+                const tipoStr = (r.tipo || '').toLowerCase();
+                const detalleStr = (r.detalle || '').toLowerCase();
+                const tallerStr = (r.taller || '').toLowerCase();
+                const recordFecha = formatDateDisplay(r.fecha);
+
+                const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
+                
+                let matchesCat = true;
+                if (catFilter !== 'ALL') {
+                    const filterLower = catFilter.toLowerCase();
+                    const filterNormalized = filterLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const tipoNormalized = tipoStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const detalleNormalized = detalleStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                    matchesCat = tipoNormalized.includes(filterNormalized) || detalleNormalized.includes(filterNormalized);
+                }
+
+                let matchesDate = true;
+                if (dateFromVal && recordFecha < dateFromVal) matchesDate = false;
+                if (dateToVal && recordFecha > dateToVal) matchesDate = false;
+
+                return matchesSearch && matchesCat && matchesDate;
             });
 
             filtered.sort((a, b) => {
@@ -617,7 +684,7 @@
 
             const tbody = document.getElementById("fuelTableBody");
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">No hay repostajes registrados en la pestaña GASOIL.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay repostajes registrados en la pestaña GASOIL.</td></tr>`;
                 return;
             }
 
@@ -625,36 +692,67 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${f.vehiculo}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-bold">${Number(f.importe || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString() + ' km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white">${Number(f.importe || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-mono">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center">
-                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
+        // RENDERIZADO DE RECAMBIOS CON ENLACES A ENDADO Y AMAZON
         function renderParts() {
             const car = getActiveVehicle();
             const container = document.getElementById("partsContainer");
-            const search = document.getElementById("partSearchInput").value.toLowerCase();
-            const filtered = (car.parts || []).filter(p => (p.pieza || '').toLowerCase().includes(search) || (p.marca || '').toLowerCase().includes(search));
+            const searchInput = document.getElementById("partSearchInput");
+            if (!container || !searchInput) return;
+
+            const search = searchInput.value.toLowerCase();
+            const filtered = (car.parts || []).filter(p => 
+                (p.pieza || '').toLowerCase().includes(search) || 
+                (p.marca || '').toLowerCase().includes(search) || 
+                (p.notas || '').toLowerCase().includes(search)
+            );
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold text-sm">No hay referencias anotadas.</div>`;
+                container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold text-sm">No hay referencias anotadas para este vehículo.</div>`;
                 return;
             }
 
-            container.innerHTML = filtered.map(p => `
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-start justify-between">
-                            <h3 class="font-bold text-slate-900 dark:text-white">${p.pieza}</h3>
-                            ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-emerald-500 text-xs px-2 py-0.5 rounded font-bold">${p.marca}</span>` : ''}
+            container.innerHTML = filtered.map(p => {
+                const querySearch = encodeURIComponent(`${p.pieza} ${p.marca || ''} ${p.notas || ''}`);
+                const amazonUrl = p.link || `https://www.amazon.es/s?k=${querySearch}`;
+                const endadoUrl = `https://www.endado.com/busqueda?q=${querySearch}`;
+
+                return `
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between">
+                                <h3 class="font-bold text-slate-900 dark:text-white text-base">${p.pieza}</h3>
+                                ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 text-xs px-2 py-0.5 rounded font-mono font-bold">${p.marca}</span>` : ''}
+                            </div>
+                            <div class="mt-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <p class="text-sm text-slate-700 dark:text-slate-200 font-sans leading-relaxed">${p.notas}</p>
+                                <button onclick="copyToClipboard('${p.pieza}: ${p.marca || ''} ${p.notas || ''}')" class="text-xs text-slate-400 hover:text-emerald-500 p-1 ml-2 shrink-0" title="Copiar detalles"><i class="fa-solid fa-copy"></i></button>
+                            </div>
                         </div>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-2 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg">${p.notas}</p>
-                    </div>
-                </div>
-            `).join('');
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Comprar en:</span>
+                            <div class="flex space-x-2">
+                                <a href="${endadoUrl}" target="_blank" class="bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-solid fa-cart-shopping mr-1"></i>Endado</a>
+                                <a href="${amazonUrl}" target="_blank" class="bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-brands fa-amazon mr-1"></i>Amazon</a>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast("Detalles copiados al portapapeles.");
         }
 
         // MODALES
@@ -720,7 +818,10 @@
                 hojaVehiculo: "GASOIL",
                 vehiculo: document.getElementById("fuelFormVehicle").value,
                 fecha: document.getElementById("fuelFormFecha").value,
-                importe: Number(document.getElementById("fuelFormImporte").value)
+                kms: document.getElementById("fuelFormKms").value ? Number(document.getElementById("fuelFormKms").value) : "",
+                importe: Number(document.getElementById("fuelFormImporte").value),
+                litros: document.getElementById("fuelFormLitros").value ? Number(document.getElementById("fuelFormLitros").value) : "",
+                notas: document.getElementById("fuelFormNotas").value || ""
             };
 
             closeFuelModal();
@@ -761,6 +862,18 @@
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: r.rowIndex || null, detalle: r.tipo, kms: r.kms })
+                });
+                setTimeout(() => reloadData(), 1500);
+            } catch (err) {}
+        }
+
+        async function deleteFuelRecord(rowIndex) {
+            if (!rowIndex || !confirm("¿Eliminar este repostaje?")) return;
+            showToast("Eliminando repostaje...");
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "delete", hojaVehiculo: "GASOIL", rowIndex: rowIndex })
                 });
                 setTimeout(() => reloadData(), 1500);
             } catch (err) {}
