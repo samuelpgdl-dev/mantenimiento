@@ -122,6 +122,24 @@
                 </div>
             </section>
 
+            <!-- Tarjeta Próxima Revisión Estimada -->
+            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-2xl shrink-0">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Próxima Revisión Estimada</span>
+                        <h3 id="nextServiceMonth" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">--</h3>
+                        <p id="nextServiceDetail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200/60 dark:border-slate-600/60 text-right w-full sm:w-auto shrink-0">
+                    <div class="text-[11px] text-slate-400 font-medium">Faltan aproximadamente</div>
+                    <div id="nextServiceKm" class="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
+                </div>
+            </section>
+
             <section id="alertsContainer" class="space-y-3"></section>
 
             <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -414,9 +432,9 @@
         ];
 
         let vehicles = [
-            { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "2805JRB", vin: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", records: [], parts: [], alerts: [] },
-            { id: "p308", name: "Peugeot 308 II", excelName: "Mantenimiento 308 II Loyola", plate: "1184JMB", vin: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", records: [], parts: [], alerts: [] },
-            { id: "p207", name: "Peugeot 207", excelName: "Mantenimiento Peugeot 207", plate: "3323FMY", vin: "VF3WC9HXC33655626", year: 2010, kms: 250000, fuel: "Diésel", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", records: [], parts: [], alerts: [] }
+            { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "2805JRB", vin: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
+            { id: "p308", name: "Peugeot 308 II", excelName: "Mantenimiento 308 II Loyola", plate: "1184JMB", vin: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
+            { id: "p207", name: "Peugeot 207", excelName: "Mantenimiento Peugeot 207", plate: "3323FMY", vin: "VF3WC9HXC33655626", year: 2010, kms: 250000, fuel: "Diésel", sheetName: "Mantenimiento Peugeot 207", refSheetName: "Referencias 207", intervalKm: 10000, intervalMonths: 12, records: [], parts: [], alerts: [] }
         ];
 
         let fuelRecords = [];
@@ -614,8 +632,81 @@
 
             renderAlerts(car);
             renderCharts(car);
+            renderNextServiceEstimations(car);
             renderTable();
             renderParts();
+        }
+
+        function renderNextServiceEstimations(car) {
+            const cardMonth = document.getElementById("nextServiceMonth");
+            const cardDetail = document.getElementById("nextServiceDetail");
+            const cardKm = document.getElementById("nextServiceKm");
+
+            if (!cardMonth || !car) return;
+
+            // 1. Obtener la última revisión oficial realizada
+            const revisions = (car.records || []).filter(r => {
+                const t = String(r.tipo || '').toLowerCase();
+                const d = String(r.detalle || '').toLowerCase();
+                return t.includes("revisión") || d.includes("revisión");
+            }).sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
+
+            const lastRevision = revisions[0] || (car.records || [])[0];
+            
+            const lastDate = lastRevision ? (parseDate(lastRevision.fecha) || new Date()) : new Date();
+            const lastKm = lastRevision ? Number(lastRevision.kms || car.kms || 0) : Number(car.kms || 0);
+            const currentKm = Number(car.kms || lastKm);
+
+            // Intervalos personalizados desde el objeto car
+            const intervalKm = car.intervalKm || 15000;
+            const intervalMonths = car.intervalMonths || 12;
+
+            // 2. Calcular ritmo medio de conducción (km / mes) mediante el histórico de repostajes
+            let monthlyKmRate = 1000; // Valor por defecto si no hay suficientes datos
+            const carFuel = fuelRecords.filter(f => String(f.vehiculo) === String(car.excelName));
+            
+            if (carFuel.length >= 2) {
+                const sortedFuel = [...carFuel].sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
+                const firstLog = sortedFuel[0];
+                const lastLog = sortedFuel[sortedFuel.length - 1];
+                
+                const d1 = parseDate(firstLog.fecha);
+                const d2 = parseDate(lastLog.fecha);
+                const kmDiff = Number(lastLog.kms || 0) - Number(firstLog.kms || 0);
+
+                if (d1 && d2 && d2 > d1 && kmDiff > 0) {
+                    const monthsDiff = (d2 - d1) / (1000 * 60 * 60 * 24 * 30.44);
+                    if (monthsDiff >= 0.5) {
+                        monthlyKmRate = kmDiff / monthsDiff;
+                    }
+                }
+            }
+
+            // 3. Proyecciones por Tiempo vs Kilometraje
+            const targetDateByTime = new Date(lastDate);
+            targetDateByTime.setMonth(targetDateByTime.getMonth() + intervalMonths);
+
+            const targetKm = lastKm + intervalKm;
+            const remainingKm = Math.max(0, targetKm - currentKm);
+            
+            const monthsToKmTarget = monthlyKmRate > 0 ? (remainingKm / monthlyKmRate) : intervalMonths;
+            const targetDateByKm = new Date();
+            targetDateByKm.setMonth(targetDateByKm.getMonth() + Math.round(monthsToKmTarget));
+
+            const finalTargetDate = targetDateByTime < targetDateByKm ? targetDateByTime : targetDateByKm;
+            const isLimitedByTime = targetDateByTime < targetDateByKm;
+
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const monthStr = `${monthNames[finalTargetDate.getMonth()]} de ${finalTargetDate.getFullYear()}`;
+
+            cardMonth.innerText = monthStr;
+            cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
+            
+            const reasonText = isLimitedByTime 
+                ? `Límite por tiempo (${intervalMonths} meses desde ${formatDateDisplay(lastDate)})` 
+                : `Límite por km (${targetKm.toLocaleString('es-ES')} km aprox.)`;
+                
+            cardDetail.innerText = `${reasonText} • Ritmo: ~${Math.round(monthlyKmRate).toLocaleString('es-ES')} km/mes`;
         }
 
         function createITVStickerHTML(title, desc) {
@@ -638,10 +729,7 @@
                 }
             }
 
-            // Ciclo DGT Oficial:
-            // Amarillo: 2023, 2026, 2029...
-            // Verde: 2025, 2028, 2031...
-            // Rojo: 2024, 2027, 2030...
+            // Ciclo DGT Oficial: Amarillo (2026, 2029...), Verde (2025, 2028...), Rojo (2024, 2027...)
             let colorBg = "bg-amber-400 text-slate-950 border-amber-500/40";
             let holeBg = "bg-slate-900 text-amber-400";
             
