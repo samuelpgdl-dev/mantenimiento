@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canana Automotive - Control de Mantenimiento y Recambios</title>
+
+    <!-- Favicon dinámico en SVG (Sin necesidad de subir archivos de imagen) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2310b981%22/><path fill=%22%230f172a%22 d=%22M20 55 l10 -20 h40 l10 20 h10 v15 h-10 a8 8 0 0 1 -16 0 h-28 a8 8 0 0 1 -16 0 h-10 v-15 z%22/></svg>">
+
+    <!-- Open Graph (Información al compartir por WhatsApp/Telegram/Redes) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Canana Automotive 🚗">
+    <meta property="og:description" content="Gestión de mantenimiento, historial de revisiones y guía de recambios por vehículo.">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Canana Automotive 🚗">
+    <meta name="twitter:description" content="Gestión de mantenimiento, historial de revisiones y guía de recambios por vehículo.">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -72,7 +86,7 @@
         </div>
     </header>
 
-    <!-- Main Content con espacio inferior holgado para móviles (pb-28) -->
+    <!-- Main Content -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-28 space-y-4 sm:space-y-6">
 
         <section id="vehicleCard" class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md relative overflow-hidden transition-colors duration-200">
@@ -477,7 +491,6 @@
                 let displayTipo = (r.tipo || "Otros").trim();
                 let displayDetalle = (r.detalle || "").trim();
 
-                // Inversión inteligente: si el tipo trae una descripción larga histórica, usamos la categoría corta limpia
                 if (displayTipo.length > 20 && displayDetalle.length <= 20 && displayDetalle.length > 0) {
                     displayTipo = displayDetalle;
                 }
