@@ -417,6 +417,7 @@
             "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
+        // NOMBRES EXACTOS DE LAS PESTAÑAS COPIADOS DIRECTAMENTE DE TU GOOGLE SHEETS
         let vehicles = [
             { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", records: [], parts: [], alerts: [] },
             { id: "p308", name: "Peugeot 308 II", excelName: "Mantenimiento 308 II Loyola", plate: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", records: [], parts: [], alerts: [] },
@@ -714,7 +715,6 @@
                 if (targetVeh) filtered = filtered.filter(f => String(f.vehiculo) === String(targetVeh.excelName));
             }
 
-            // Aplicar filtros de fecha en repostajes
             filtered = filtered.filter(f => {
                 const recordFecha = formatDateDisplay(f.fecha);
                 let matchesDate = true;
