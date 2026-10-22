@@ -68,8 +68,8 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- Main Content con espacio inferior ajustado para navegadores móviles (pb-24) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 space-y-6">
 
         <section id="vehicleCard" class="bg-slate-800 rounded-xl p-5 border border-slate-700/60 shadow-lg relative overflow-hidden">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -119,30 +119,59 @@
             <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
                     <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-emerald-400 mr-2"></i> Gastos por Categoría</h2>
-                    <div class="h-64 relative"><canvas id="categoryChart"></canvas></div>
+                    <div class="h-56 sm:h-64 relative"><canvas id="categoryChart"></canvas></div>
                 </div>
                 <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
                     <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-column text-blue-400 mr-2"></i> Evolución de Gastos</h2>
-                    <div class="h-64 relative"><canvas id="timeChart"></canvas></div>
+                    <div class="h-56 sm:h-64 relative"><canvas id="timeChart"></canvas></div>
                 </div>
             </section>
 
+            <!-- Historial de Mantenimiento con Filtro de Fechas -->
             <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
-                <div class="p-5 border-b border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento</h2>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
-                        <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2">
-                            <option value="ALL">Todas las Categorías</option>
-                        </select>
-                        <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-sm rounded-lg border border-slate-600 px-3 py-2 cursor-pointer">
-                            <option value="date-desc">Fecha: Recientes primero</option>
-                            <option value="date-asc">Fecha: Antiguos primero</option>
-                            <option value="km-desc">KM: Mayor a Menor</option>
-                            <option value="km-asc">KM: Menor a Mayor</option>
-                        </select>
+                <div class="p-5 border-b border-slate-700/60 space-y-4">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <h2 class="text-lg font-bold text-white flex items-center">
+                            <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento
+                        </h2>
+                        
+                        <!-- Barra de controles de filtrado -->
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-700 text-white text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
+                            
+                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2">
+                                <option value="ALL">Todas las Categorías</option>
+                            </select>
+
+                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2 cursor-pointer">
+                                <option value="date-desc">Fecha: Recientes primero</option>
+                                <option value="date-asc">Fecha: Antiguos primero</option>
+                                <option value="km-desc">KM: Mayor a Menor</option>
+                                <option value="km-asc">KM: Menor a Mayor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fila del Filtro de Rango de Fechas -->
+                    <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-700/40 text-xs">
+                        <span class="text-slate-400 font-semibold flex items-center">
+                            <i class="fa-solid fa-calendar-days text-emerald-400 mr-1.5"></i> Rango de Fechas:
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-slate-400">Desde:</label>
+                            <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-700 text-white text-xs rounded-lg border border-slate-600 px-2.5 py-1.5">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-slate-400">Hasta:</label>
+                            <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-700 text-white text-xs rounded-lg border border-slate-600 px-2.5 py-1.5">
+                        </div>
+                        <button onclick="clearDateFilter()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-600 transition flex items-center space-x-1" title="Limpiar fechas">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                            <span>Limpiar Fechas</span>
+                        </button>
                     </div>
                 </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-300">
                         <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase font-semibold">
@@ -348,6 +377,12 @@
             return String(rawDate).substring(0, 10);
         }
 
+        function clearDateFilter() {
+            document.getElementById("dateFrom").value = "";
+            document.getElementById("dateTo").value = "";
+            renderTable();
+        }
+
         function showToast(text = "Sincronizado con Google Sheets.") {
             const toast = document.getElementById("toastNotification");
             document.getElementById("toastMsg").innerText = text;
@@ -440,14 +475,20 @@
             const search = document.getElementById("searchInput").value.toLowerCase();
             const catFilter = document.getElementById("categoryFilter").value;
             const sortOrder = document.getElementById("sortSelector").value;
+            
+            const dateFromVal = document.getElementById("dateFrom").value; // Formato YYYY-MM-DD
+            const dateToVal = document.getElementById("dateTo").value;     // Formato YYYY-MM-DD
 
             let filtered = car.records.filter(r => {
                 const tipoStr = (r.tipo || '').toLowerCase();
                 const detalleStr = (r.detalle || '').toLowerCase();
                 const tallerStr = (r.taller || '').toLowerCase();
+                const recordFecha = formatDateDisplay(r.fecha);
 
+                // 1. Buscador texto libre
                 const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
                 
+                // 2. Filtro Categoría
                 let matchesCat = true;
                 if (catFilter !== 'ALL') {
                     const filterLower = catFilter.toLowerCase();
@@ -457,8 +498,17 @@
 
                     matchesCat = tipoNormalized.includes(filterNormalized) || detalleNormalized.includes(filterNormalized);
                 }
+
+                // 3. Filtro Rango de Fechas (Desde / Hasta)
+                let matchesDate = true;
+                if (dateFromVal && recordFecha < dateFromVal) {
+                    matchesDate = false;
+                }
+                if (dateToVal && recordFecha > dateToVal) {
+                    matchesDate = false;
+                }
                 
-                return matchesSearch && matchesCat;
+                return matchesSearch && matchesCat && matchesDate;
             });
 
             filtered.sort((a, b) => {
@@ -471,7 +521,7 @@
 
             const tbody = document.getElementById("recordsTableBody");
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No hay mantenimientos registrados</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No hay mantenimientos registrados en este rango o búsqueda</td></tr>`;
                 return;
             }
 
