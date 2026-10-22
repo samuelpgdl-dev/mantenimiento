@@ -763,32 +763,39 @@
             syncAlertsWithGoogleSheets();
         }
 
-        function syncWithGoogleSheets() {
-            const car = getActiveVehicle();
-            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-            
-            window[callbackName] = function(data) {
-                delete window[window[callbackName]];
-                const existingScript = document.getElementById('jsonp_script');
-                if (existingScript) existingScript.remove();
+     function syncWithGoogleSheets() {
+    const car = getActiveVehicle();
+    const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+    
+    window[callbackName] = function(data) {
+        delete window[callbackName];
+        const existingScript = document.getElementById('jsonp_script');
+        if (existingScript) existingScript.remove();
 
-                if (Array.isArray(data) && data.length > 0) {
-                    car.records = data.filter(r => r.fecha && (r.kms !== undefined && r.kms !== null)).map((r, i) => ({
-                        id: i + 1, rowIndex: r.rowIndex, fecha: formatDateDisplay(r.fecha), kms: Number(r.kms) || 0, tipo: r.tipo || "Otros", detalle: r.detalle || "", taller: r.taller || "", coste: Number(r.coste) || 0
-                    }));
+        if (Array.isArray(data) && data.length > 0) {
+            car.records = data.filter(r => r.fecha && (r.kms !== undefined && r.kms !== null)).map((r, i) => ({
+                id: i + 1, 
+                rowIndex: r.rowIndex, 
+                fecha: formatDateDisplay(r.fecha), 
+                kms: Number(r.kms) || 0, 
+                tipo: r.tipo || "Otros", 
+                detalle: r.detalle || "", 
+                taller: r.taller || "", 
+                coste: Number(r.coste) || 0
+            }));
 
-                    if (car.records.length > 0) {
-                        car.kms = Math.max(...car.records.map(r => r.kms));
-                    }
-                    renderDashboard();
-                }
-            };
-
-            const script = document.createElement('script');
-            script.id = 'jsonp_script';
-            script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
-            document.body.appendChild(script);
+            if (car.records.length > 0) {
+                car.kms = Math.max(...car.records.map(r => r.kms));
+            }
+            renderDashboard();
         }
+    };
+
+    const script = document.createElement('script');
+    script.id = 'jsonp_script';
+    script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
+    document.body.appendChild(script);
+}
 
         function syncReferencesWithGoogleSheets() {
             const car = getActiveVehicle();
