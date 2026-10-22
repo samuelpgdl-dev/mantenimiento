@@ -523,25 +523,47 @@
 
         function getActiveVehicle() { return vehicles.find(v => v.id === activeVehicleId); }
 
-        function formatDateDisplay(rawDate) {
-            if (!rawDate) return "";
-            
-            let d = new Date(rawDate);
-            if (!isNaN(d.getTime())) {
-                let day = String(d.getDate()).padStart(2, '0');
-                let month = String(d.getMonth() + 1).padStart(2, '0');
-                let year = d.getFullYear();
-                return `${day}/${month}/${year}`;
+        function parseDate(rawDate) {
+            if (!rawDate) return null;
+            if (rawDate instanceof Date) return rawDate;
+
+            let str = String(rawDate).trim();
+
+            if (str.includes('/')) {
+                let parts = str.split('/');
+                if (parts.length === 3) {
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                }
             }
-            
-            let str = String(rawDate);
-            if (str.includes('T')) str = str.split('T')[0];
+
             if (str.includes('-')) {
+                if (str.includes('T')) str = str.split('T')[0];
                 let parts = str.split('-');
-                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                if (parts.length === 3 && parts[0].length === 4) {
+                    return new Date(parts[0], parts[1] - 1, parts[2]);
+                }
             }
-            
-            return str;
+
+            let d = new Date(str);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function formatDateDisplay(rawDate) {
+            let d = parseDate(rawDate);
+            if (!d) return String(rawDate || '');
+            let day = String(d.getDate()).padStart(2, '0');
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatDateISO(rawDate) {
+            let d = parseDate(rawDate);
+            if (!d) return "";
+            let day = String(d.getDate()).padStart(2, '0');
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let year = d.getFullYear();
+            return `${year}-${month}-${day}`;
         }
 
         function clearDateFilter() {
@@ -629,8 +651,8 @@
 
             const yearMap = {};
             car.records.forEach(r => { 
-                const f = formatDateDisplay(r.fecha); 
-                const year = f ? f.substring(6, 10) : '2026'; 
+                let d = parseDate(r.fecha);
+                const year = d ? d.getFullYear() : '2026'; 
                 yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0); 
             });
 
@@ -664,7 +686,7 @@
                 const tipoStr = String(r.tipo || '').toLowerCase();
                 const detalleStr = String(r.detalle || '').toLowerCase();
                 const tallerStr = String(r.taller || '').toLowerCase();
-                const recordFecha = formatDateDisplay(r.fecha);
+                const recordISO = formatDateISO(r.fecha);
 
                 const matchesSearch = !search || detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
                 
@@ -675,15 +697,18 @@
                 }
 
                 let matchesDate = true;
-                if (dateFromVal && recordFecha && recordFecha < dateFromVal) matchesDate = false;
-                if (dateToVal && recordFecha && recordFecha > dateToVal) matchesDate = false;
+                if (dateFromVal && recordISO && recordISO < dateFromVal) matchesDate = false;
+                if (dateToVal && recordISO && recordISO > dateToVal) matchesDate = false;
 
                 return matchesSearch && matchesCat && matchesDate;
             });
 
             filtered.sort((a, b) => {
-                if (sortOrder === 'date-desc') return new Date(b.fecha) - new Date(a.fecha);
-                if (sortOrder === 'date-asc') return new Date(a.fecha) - new Date(b.fecha);
+                let dA = parseDate(a.fecha) || new Date(0);
+                let dB = parseDate(b.fecha) || new Date(0);
+
+                if (sortOrder === 'date-desc') return dB - dA;
+                if (sortOrder === 'date-asc') return dA - dB;
                 if (sortOrder === 'km-desc') return Number(b.kms || 0) - Number(a.kms || 0);
                 if (sortOrder === 'km-asc') return Number(a.kms || 0) - Number(b.kms || 0);
                 return 0;
@@ -731,12 +756,14 @@
             }
 
             filtered = filtered.filter(f => {
-                const recordFecha = formatDateDisplay(f.fecha);
+                const recordISO = formatDateISO(f.fecha);
                 let matchesDate = true;
-                if (dateFromVal && recordFecha && recordFecha < dateFromVal) matchesDate = false;
-                if (dateToVal && recordFecha && recordFecha > dateToVal) matchesDate = false;
+                if (dateFromVal && recordISO && recordISO < dateFromVal) matchesDate = false;
+                if (dateToVal && recordISO && recordISO > dateToVal) matchesDate = false;
                 return matchesDate;
             });
+
+            filtered.sort((a, b) => (parseDate(b.fecha) || new Date(0)) - (parseDate(a.fecha) || new Date(0)));
 
             const total = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
             const count = filtered.length;
@@ -829,7 +856,7 @@
                 if (record) {
                     document.getElementById("recordId").value = record.id;
                     document.getElementById("recordRowIndex").value = record.rowIndex || "";
-                    document.getElementById("formFecha").value = formatDateDisplay(record.fecha);
+                    document.getElementById("formFecha").value = formatDateISO(record.fecha);
                     document.getElementById("formKms").value = record.kms;
                     document.getElementById("formTipo").value = record.tipo || "Luces";
                     document.getElementById("formCoste").value = record.coste;
@@ -961,7 +988,7 @@
                     car.records = data.filter(r => r && r.fecha && r.kms !== undefined).map((r, i) => ({
                         id: i + 1,
                         rowIndex: r.rowIndex,
-                        fecha: formatDateDisplay(r.fecha),
+                        fecha: r.fecha,
                         kms: Number(r.kms) || 0,
                         tipo: String(r.detalle || "Otros"),
                         detalle: String(r.tipo || ""),
