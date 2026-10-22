@@ -231,8 +231,49 @@
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
                     <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Precio Medio / Litro</div><div id="kpiFuelAvgPriceLiter" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
+                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Precio Medio Total</div><div id="kpiFuelAvgPriceLiter" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
                 </div>
+            </section>
+
+            <!-- Tarjeta de Análisis de Precio Medio y Variabilidad por Rango -->
+            <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-base shrink-0">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Análisis de Precio en Periodo Seleccionado</h3>
+                            <p class="text-[11px] text-slate-400">Varía al ajustar el rango de fechas inferior</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="periodVariabilityBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">Sin datos</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
+                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Precio Medio Periodo</div>
+                        <div id="periodAvgPrice" class="text-base font-extrabold text-slate-900 dark:text-white mt-0.5">-- €/L</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Mínimo Registrado</div>
+                        <div id="periodMinPrice" class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">-- €/L</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Máximo Registrado</div>
+                        <div id="periodMaxPrice" class="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">-- €/L</div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Diferencia Mín / Máx</div>
+                        <div id="periodDiffPrice" class="text-base font-bold text-slate-800 dark:text-slate-200 mt-0.5">-- €/L</div>
+                    </div>
+                </div>
+
+                <p id="periodAnalysisComment" class="text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-700/50 leading-relaxed italic">
+                    Selecciona un rango de fechas en la tabla para calcular la estabilidad o fluctuación del precio del gasoil.
+                </p>
             </section>
 
             <!-- Estadísticas de Gasoil: Ranking y Evolución de Precio -->
@@ -273,11 +314,11 @@
                             </span>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="fuelDateFrom" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="fuelDateTo" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                         </div>
                         <button onclick="clearFuelDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
@@ -671,7 +712,7 @@
             const dateToElem = document.getElementById("fuelDateTo");
             if (dateFromElem) dateFromElem.value = "";
             if (dateToElem) dateToElem.value = "";
-            renderFuelTable();
+            renderFuelDashboard();
         }
 
         function showToast(text = "Sincronizado con Google Sheets.") {
@@ -1037,15 +1078,20 @@
                 rawList = rawList.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
             }
 
-            if (!rawList || rawList.length === 0) {
-                const rankingElem = document.getElementById('gasStationRanking');
-                if (rankingElem) rankingElem.innerHTML = `<p class="text-xs text-slate-400">Sin datos de repostajes.</p>`;
-                return;
-            }
+            const dateFromVal = document.getElementById("fuelDateFrom") ? document.getElementById("fuelDateFrom").value : "";
+            const dateToVal = document.getElementById("fuelDateTo") ? document.getElementById("fuelDateTo").value : "";
+
+            let filteredList = rawList.filter(f => {
+                const recordISO = formatDateISO(f.fecha);
+                let matchesDate = true;
+                if (dateFromVal && recordISO && recordISO < dateFromVal) matchesDate = false;
+                if (dateToVal && recordISO && recordISO > dateToVal) matchesDate = false;
+                return matchesDate;
+            });
 
             // 1. RANKING DE GASOLINERAS
             const stationCounts = {};
-            rawList.forEach(r => {
+            filteredList.forEach(r => {
                 let station = (r.notas || 'Sin especificar').trim();
                 if (station) {
                     station = station.charAt(0).toUpperCase() + station.slice(1);
@@ -1054,32 +1100,93 @@
             });
 
             const sortedStations = Object.entries(stationCounts).sort((a, b) => b[1] - a[1]);
-            const totalFuelings = rawList.length;
+            const totalFuelings = filteredList.length;
             const rankingContainer = document.getElementById('gasStationRanking');
 
             if (rankingContainer) {
-                rankingContainer.innerHTML = sortedStations.slice(0, 5).map(([name, count], index) => {
-                    const percentage = Math.round((count / totalFuelings) * 100);
-                    const medalColor = index === 0 ? 'text-amber-400' : (index === 1 ? 'text-slate-300' : (index === 2 ? 'text-amber-600' : 'text-slate-400'));
-                    return `
-                        <div class="flex flex-col space-y-1">
-                            <div class="flex justify-between items-center text-xs font-semibold">
-                                <span class="flex items-center space-x-1.5 text-slate-700 dark:text-slate-200 truncate">
-                                    <i class="fa-solid fa-gas-pump ${medalColor}"></i>
-                                    <span class="truncate">${name}</span>
-                                </span>
-                                <span class="text-slate-500 dark:text-slate-400">${count} (${percentage}%)</span>
+                if (totalFuelings === 0) {
+                    rankingContainer.innerHTML = `<p class="text-xs text-slate-400">Sin datos en el rango seleccionado.</p>`;
+                } else {
+                    rankingContainer.innerHTML = sortedStations.slice(0, 5).map(([name, count], index) => {
+                        const percentage = Math.round((count / totalFuelings) * 100);
+                        const medalColor = index === 0 ? 'text-amber-400' : (index === 1 ? 'text-slate-300' : (index === 2 ? 'text-amber-600' : 'text-slate-400'));
+                        return `
+                            <div class="flex flex-col space-y-1">
+                                <div class="flex justify-between items-center text-xs font-semibold">
+                                    <span class="flex items-center space-x-1.5 text-slate-700 dark:text-slate-200 truncate">
+                                        <i class="fa-solid fa-gas-pump ${medalColor}"></i>
+                                        <span class="truncate">${name}</span>
+                                    </span>
+                                    <span class="text-slate-500 dark:text-slate-400">${count} (${percentage}%)</span>
+                                </div>
+                                <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                                </div>
                             </div>
-                            <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                <div class="bg-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                        `;
+                    }).join('');
+                }
             }
 
-            // 2. GRÁFICA DE EVOLUCIÓN DE PRECIO
-            const validRecords = rawList
+            // 2. ANÁLISIS DE PRECIO Y VARIABILIDAD EN PERIODO
+            const validPrices = filteredList
+                .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
+                .map(r => Number((Number(r.importe) / Number(r.litros)).toFixed(3)));
+
+            const avgPriceElem = document.getElementById('periodAvgPrice');
+            const badgeElem = document.getElementById('periodVariabilityBadge');
+            const minPriceElem = document.getElementById('periodMinPrice');
+            const maxPriceElem = document.getElementById('periodMaxPrice');
+            const diffPriceElem = document.getElementById('periodDiffPrice');
+            const commentElem = document.getElementById('periodAnalysisComment');
+
+            if (avgPriceElem && validPrices.length > 0) {
+                const minP = Math.min(...validPrices);
+                const maxP = Math.max(...validPrices);
+                const sumP = validPrices.reduce((a, b) => a + b, 0);
+                const avgP = sumP / validPrices.length;
+                const diffP = maxP - minP;
+                const varPercent = avgP > 0 ? (diffP / avgP) * 100 : 0;
+                const centsDiff = (diffP * 100).toFixed(1);
+
+                avgPriceElem.innerText = `${avgP.toFixed(3)} €/L`;
+                minPriceElem.innerText = `${minP.toFixed(3)} €/L`;
+                maxPriceElem.innerText = `${maxP.toFixed(3)} €/L`;
+                diffPriceElem.innerText = `${diffP.toFixed(3)} €/L`;
+
+                let badgeClass = "";
+                let badgeText = "";
+                let commentText = "";
+
+                if (varPercent < 4) {
+                    badgeClass = "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60";
+                    badgeText = `Baja (±${varPercent.toFixed(1)}%)`;
+                    commentText = `Precios muy estables en el periodo seleccionado. La diferencia máxima entre el repostaje más barato y el más caro es de solo ${centsDiff} céntimos por litro.`;
+                } else if (varPercent <= 8) {
+                    badgeClass = "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60";
+                    badgeText = `Moderada (±${varPercent.toFixed(1)}%)`;
+                    commentText = `Variabilidad moderada en el periodo seleccionado. El precio osciló en ${centsDiff} céntimos por litro entre el mínimo (${minP.toFixed(3)} €/L) y el máximo (${maxP.toFixed(3)} €/L).`;
+                } else {
+                    badgeClass = "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800/60";
+                    badgeText = `Alta (±${varPercent.toFixed(1)}%)`;
+                    commentText = `Alta volatilidad detectada en el periodo. Se registró una brecha de ${centsDiff} céntimos por litro entre el repostaje más económico y el más costoso.`;
+                }
+
+                badgeElem.className = `px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}`;
+                badgeElem.innerText = badgeText;
+                commentElem.innerText = commentText;
+            } else if (avgPriceElem) {
+                avgPriceElem.innerText = "-- €/L";
+                minPriceElem.innerText = "-- €/L";
+                maxPriceElem.innerText = "-- €/L";
+                diffPriceElem.innerText = "-- €/L";
+                badgeElem.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500";
+                badgeElem.innerText = "Sin datos";
+                commentElem.innerText = "No se encontraron registros de repostaje con litros e importe en el rango de fechas seleccionado.";
+            }
+
+            // 3. GRÁFICA DE EVOLUCIÓN DE PRECIO
+            const validRecords = filteredList
                 .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
                 .map(r => ({
                     fecha: r.fecha,
