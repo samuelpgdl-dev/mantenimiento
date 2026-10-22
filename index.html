@@ -417,7 +417,6 @@
             "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
-        // NOMBRES EXACTOS DE LAS PESTAÑAS COPIADOS DIRECTAMENTE DE TU GOOGLE SHEETS
         let vehicles = [
             { id: "c3", name: "Citroën C3 BlueHDI 1.6", excelName: "Mantenimiento C3 II", plate: "VF7SCBHY6GW586838", year: 2016, kms: 165500, fuel: "Diésel", sheetName: "Mantenimiento C3 II", refSheetName: "Referencias C3", records: [], parts: [], alerts: [] },
             { id: "p308", name: "Peugeot 308 II", excelName: "Mantenimiento 308 II Loyola", plate: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", sheetName: "Mantenimiento 308 II Loyola", refSheetName: "Referencias 308 II", records: [], parts: [], alerts: [] },
@@ -526,9 +525,23 @@
 
         function formatDateDisplay(rawDate) {
             if (!rawDate) return "";
+            
+            let d = new Date(rawDate);
+            if (!isNaN(d.getTime())) {
+                let day = String(d.getDate()).padStart(2, '0');
+                let month = String(d.getMonth() + 1).padStart(2, '0');
+                let year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            
             let str = String(rawDate);
-            if (str.includes('T')) return str.split('T')[0];
-            return str.substring(0, 10);
+            if (str.includes('T')) str = str.split('T')[0];
+            if (str.includes('-')) {
+                let parts = str.split('-');
+                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            
+            return str;
         }
 
         function clearDateFilter() {
@@ -617,7 +630,7 @@
             const yearMap = {};
             car.records.forEach(r => { 
                 const f = formatDateDisplay(r.fecha); 
-                const year = f ? f.substring(0, 4) : '2026'; 
+                const year = f ? f.substring(6, 10) : '2026'; 
                 yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0); 
             });
 
@@ -686,15 +699,17 @@
 
             tbody.innerHTML = filtered.map(r => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                    <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(r.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
-                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">${r.tipo || "Otros"}</span></td>
+                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.tipo || "Otros"}</span></td>
                     <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.detalle || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-semibold">${Number(r.coste || 0).toFixed(2)} €</td>
-                    <td class="px-3 sm:px-4 py-3 text-center">
-                        <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-500 p-1"><i class="fa-solid fa-pencil text-xs"></i></button>
-                        <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -741,13 +756,13 @@
             tbody.innerHTML = filtered.map(f => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${f.vehiculo}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white">${Number(f.importe || 0).toFixed(2)} €</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-mono">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${formatDateDisplay(f.fecha)}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-mono whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-center">
-                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                     </td>
                 </tr>
             `).join('');
