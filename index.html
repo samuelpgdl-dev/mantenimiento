@@ -329,11 +329,11 @@
         </div>
     </div>
 
-    <!-- Modal Form: Añadir Repostaje (GASOIL) -->
+    <!-- Modal Form: Añadir / Editar Repostaje (GASOIL) -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Nuevo Repostaje de Gasoil</h3>
+            <h3 id="fuelModalTitle" class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Gasoil</h3>
             
             <form id="fuelForm" onsubmit="handleSaveFuel(event)" class="space-y-3">
                 <div>
@@ -367,7 +367,7 @@
 
                 <div class="flex justify-end space-x-3 pt-2">
                     <button type="button" onclick="closeFuelModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold">Añadir Repostaje</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold">Guardar Repostaje</button>
                 </div>
             </form>
         </div>
@@ -606,7 +606,6 @@
             renderParts();
         }
 
-        // Genera la pegatina gráfica de la ITV oficial DGT
         function createITVStickerHTML(title, desc) {
             let yearMatch = desc.match(/\b(20\d\d)\b/);
             let yearVal = yearMatch ? yearMatch[1] : "2026";
@@ -779,7 +778,7 @@
             `).join('');
         }
 
-        // REPOSTAJES (GASOIL) + LÓGICA DE CONSUMO L/100KM
+        // REPOSTAJES (GASOIL)
         function renderFuelDashboard() { 
             renderFuelTable(); 
         }
@@ -870,7 +869,10 @@
                     <td class="px-3 sm:px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="openFuelModalForEdit(${f.rowIndex})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -956,8 +958,28 @@
             document.getElementById("fuelModal").classList.remove("hidden");
             document.getElementById("fuelForm").reset();
             document.getElementById("fuelFormFecha").value = new Date().toISOString().split('T')[0];
+            document.getElementById("fuelForm").removeAttribute("data-row-index");
         }
-        function closeFuelModal() { document.getElementById("fuelModal").classList.add("hidden"); }
+
+        function openFuelModalForEdit(rowIndex) {
+            const record = fuelRecords.find(f => f.rowIndex === rowIndex);
+            if (!record) return;
+
+            document.getElementById("fuelModal").classList.remove("hidden");
+            document.getElementById("fuelFormVehicle").value = record.vehiculo;
+            document.getElementById("fuelFormFecha").value = formatDateISO(record.fecha);
+            document.getElementById("fuelFormKms").value = record.kms || "";
+            document.getElementById("fuelFormImporte").value = record.importe || "";
+            document.getElementById("fuelFormLitros").value = record.litros || "";
+            document.getElementById("fuelFormNotas").value = record.notas || "";
+
+            document.getElementById("fuelForm").setAttribute("data-row-index", rowIndex);
+        }
+
+        function closeFuelModal() { 
+            document.getElementById("fuelModal").classList.add("hidden"); 
+            document.getElementById("fuelForm").removeAttribute("data-row-index");
+        }
 
         function openPartModal() { document.getElementById("partModal").classList.remove("hidden"); }
         function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
@@ -986,6 +1008,9 @@
 
         async function handleSaveFuel(e) {
             e.preventDefault();
+            const form = document.getElementById("fuelForm");
+            const editRowIndex = form.getAttribute("data-row-index");
+
             const fuelData = {
                 type: "fuel",
                 hojaVehiculo: "GASOIL",
@@ -994,11 +1019,12 @@
                 kms: document.getElementById("fuelFormKms").value ? Number(document.getElementById("fuelFormKms").value) : "",
                 importe: Number(document.getElementById("fuelFormImporte").value),
                 litros: document.getElementById("fuelFormLitros").value ? Number(document.getElementById("fuelFormLitros").value) : "",
-                notas: document.getElementById("fuelFormNotas").value || ""
+                notas: document.getElementById("fuelFormNotas").value || "",
+                rowIndex: editRowIndex || null
             };
 
             closeFuelModal();
-            showToast("Añadiendo repostaje a pestaña GASOIL...");
+            showToast(editRowIndex ? "Actualizando repostaje..." : "Añadiendo repostaje a pestaña GASOIL...");
             try {
                 await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fuelData) });
                 setTimeout(() => reloadData(), 1500);
