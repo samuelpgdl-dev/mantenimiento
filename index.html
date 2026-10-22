@@ -474,9 +474,19 @@
 
             const catMap = {};
             car.records.forEach(r => { 
-                let cat = (r.tipo || "Otros").trim();
-                if (cat.length > 22) cat = "Otros / Varios";
-                catMap[cat] = (catMap[cat] || 0) + Number(r.coste || 0); 
+                let displayTipo = (r.tipo || "Otros").trim();
+                let displayDetalle = (r.detalle || "").trim();
+
+                // Inversión inteligente: si el tipo trae una descripción larga histórica, usamos la categoría corta limpia
+                if (displayTipo.length > 20 && displayDetalle.length <= 20 && displayDetalle.length > 0) {
+                    displayTipo = displayDetalle;
+                }
+
+                if (displayTipo.length > 25) {
+                    displayTipo = "Otros / Varios";
+                }
+
+                catMap[displayTipo] = (catMap[displayTipo] || 0) + Number(r.coste || 0); 
             });
 
             const sortedCategories = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
@@ -501,12 +511,31 @@
             const ctx1 = document.getElementById('categoryChart').getContext('2d');
             categoryChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
-                data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 11 } } } } }
+                data: { 
+                    labels: chartLabels, 
+                    datasets: [{ 
+                        data: chartData, 
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { color: textColor, boxWidth: 12, font: { size: 11 } } 
+                        } 
+                    } 
+                }
             });
 
             const yearMap = {};
-            car.records.forEach(r => { const f = formatDateDisplay(r.fecha); const year = f ? f.substring(0, 4) : '2026'; yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0); });
+            car.records.forEach(r => { 
+                const f = formatDateDisplay(r.fecha); 
+                const year = f ? f.substring(0, 4) : '2026'; 
+                yearMap[year] = (yearMap[year] || 0) + Number(r.coste || 0); 
+            });
 
             if (timeChartInstance) timeChartInstance.destroy();
             const ctx2 = document.getElementById('timeChart').getContext('2d');
@@ -569,7 +598,6 @@
                 let displayTipo = r.tipo || "Otros";
                 let displayDetalle = r.detalle || "";
 
-                // Inversión inteligente si por datos antiguos el tipo trae el texto largo
                 if (displayTipo.length > 20 && displayDetalle.length <= 20) {
                     const temp = displayTipo;
                     displayTipo = displayDetalle || "Reparación";
@@ -763,39 +791,32 @@
             syncAlertsWithGoogleSheets();
         }
 
-     function syncWithGoogleSheets() {
-    const car = getActiveVehicle();
-    const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-    
-    window[callbackName] = function(data) {
-        delete window[callbackName];
-        const existingScript = document.getElementById('jsonp_script');
-        if (existingScript) existingScript.remove();
+        function syncWithGoogleSheets() {
+            const car = getActiveVehicle();
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                const existingScript = document.getElementById('jsonp_script');
+                if (existingScript) existingScript.remove();
 
-        if (Array.isArray(data) && data.length > 0) {
-            car.records = data.filter(r => r.fecha && (r.kms !== undefined && r.kms !== null)).map((r, i) => ({
-                id: i + 1, 
-                rowIndex: r.rowIndex, 
-                fecha: formatDateDisplay(r.fecha), 
-                kms: Number(r.kms) || 0, 
-                tipo: r.tipo || "Otros", 
-                detalle: r.detalle || "", 
-                taller: r.taller || "", 
-                coste: Number(r.coste) || 0
-            }));
+                if (Array.isArray(data) && data.length > 0) {
+                    car.records = data.filter(r => r.fecha && (r.kms !== undefined && r.kms !== null)).map((r, i) => ({
+                        id: i + 1, rowIndex: r.rowIndex, fecha: formatDateDisplay(r.fecha), kms: Number(r.kms) || 0, tipo: r.tipo || "Otros", detalle: r.detalle || "", taller: r.taller || "", coste: Number(r.coste) || 0
+                    }));
 
-            if (car.records.length > 0) {
-                car.kms = Math.max(...car.records.map(r => r.kms));
-            }
-            renderDashboard();
+                    if (car.records.length > 0) {
+                        car.kms = Math.max(...car.records.map(r => r.kms));
+                    }
+                    renderDashboard();
+                }
+            };
+
+            const script = document.createElement('script');
+            script.id = 'jsonp_script';
+            script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
+            document.body.appendChild(script);
         }
-    };
-
-    const script = document.createElement('script');
-    script.id = 'jsonp_script';
-    script.src = `${GOOGLE_SCRIPT_URL}?hoja=${encodeURIComponent(car.sheetName)}&callback=${callbackName}`;
-    document.body.appendChild(script);
-}
 
         function syncReferencesWithGoogleSheets() {
             const car = getActiveVehicle();
