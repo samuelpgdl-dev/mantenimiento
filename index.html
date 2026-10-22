@@ -11,9 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
-                        darkbg: '#0f172a',
-                        cardbg: '#1e293b'
+                        brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' }
                     }
                 }
             }
@@ -22,43 +20,49 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased relative">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
 
     <!-- Toast Notification -->
-    <div id="toastNotification" class="fixed top-20 right-5 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none">
+    <div id="toastNotification" class="fixed top-20 right-4 sm:right-5 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none">
         <i class="fa-solid fa-circle-check text-xl"></i>
         <div>
-            <h5 class="font-bold text-sm">Sincronización</h5>
+            <h5 class="font-bold text-xs sm:text-sm">Sincronización</h5>
             <p class="text-xs text-emerald-100" id="toastMsg">Base de datos cargada desde Google Sheets.</p>
         </div>
     </div>
 
     <!-- Navbar -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold text-xl flex items-center justify-center">
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold text-lg sm:text-xl flex items-center justify-center shrink-0">
                     <i class="fa-solid fa-car-side"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight text-white hidden sm:inline">Canana Automotive</span>
+                <span class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white hidden md:inline">Canana Automotive</span>
                 
-                <div class="bg-slate-700 p-1 rounded-lg flex space-x-1 border border-slate-600 ml-2">
-                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition">
-                        <i class="fa-solid fa-wrench mr-1"></i> Mantenimiento
+                <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex space-x-1 border border-slate-200 dark:border-slate-600">
+                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition">
+                        <i class="fa-solid fa-wrench mr-1"></i> <span class="hidden sm:inline">Mantenimiento</span>
                     </button>
-                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-boxes-packing mr-1"></i> Recambios
+                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+                        <i class="fa-solid fa-boxes-packing mr-1"></i> <span class="hidden sm:inline">Recambios</span>
                     </button>
                 </div>
             </div>
             
-            <div class="flex items-center space-x-3">
-                <button onclick="reloadData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg border border-slate-600 text-sm font-medium transition flex items-center" title="Recargar">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Theme Switcher Button -->
+                <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium transition flex items-center justify-center shrink-0" title="Cambiar tema claro/oscuro">
+                    <i id="themeIcon" class="fa-solid fa-sun text-amber-500 dark:text-amber-400"></i>
+                </button>
+
+                <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium transition flex items-center shrink-0" title="Recargar">
                     <i class="fa-solid fa-arrows-rotate mr-1.5"></i>
                     <span class="hidden md:inline">Recargar</span>
                 </button>
-                <div class="relative">
-                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 focus:ring-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium">
+                
+                <div class="relative max-w-[140px] sm:max-w-none">
+                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 focus:ring-emerald-500 block w-full p-2.5 pr-8 appearance-none cursor-pointer font-medium truncate">
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
                         <i class="fa-solid fa-chevron-down text-xs"></i>
@@ -68,24 +72,24 @@
         </div>
     </header>
 
-    <!-- Main Content con espacio inferior ajustado para navegadores móviles (pb-24) -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 space-y-6">
+    <!-- Main Content con espacio inferior holgado para móviles (pb-28) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-28 space-y-4 sm:space-y-6">
 
-        <section id="vehicleCard" class="bg-slate-800 rounded-xl p-5 border border-slate-700/60 shadow-lg relative overflow-hidden">
+        <section id="vehicleCard" class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md relative overflow-hidden transition-colors duration-200">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div class="flex items-center space-x-3">
-                        <h1 id="carTitle" class="text-2xl font-extrabold text-white">--</h1>
-                        <span id="carPlate" class="bg-slate-700 text-slate-200 text-xs px-2.5 py-1 rounded font-mono font-semibold border border-slate-600">--</span>
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <h1 id="carTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">--</h1>
+                        <span id="carPlate" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-2.5 py-1 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0">--</span>
                     </div>
-                    <p id="carSub" class="text-slate-400 text-sm mt-1">--</p>
+                    <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">--</p>
                 </div>
-                <div class="flex items-center space-x-6 text-sm">
-                    <div class="text-center md:text-right">
-                        <div class="text-slate-400 text-xs">Kilometraje Actual</div>
-                        <div id="carKm" class="text-2xl font-bold text-emerald-400">-- km</div>
+                <div class="flex items-center justify-between md:justify-end space-x-4 sm:space-x-6 text-sm pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
+                    <div class="text-left md:text-right">
+                        <div class="text-slate-500 dark:text-slate-400 text-xs">Kilometraje Actual</div>
+                        <div id="carKm" class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">-- km</div>
                     </div>
-                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg font-semibold shadow-lg transition flex items-center space-x-2">
+                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold shadow-lg transition flex items-center space-x-1.5 shrink-0">
                         <i class="fa-solid fa-circle-plus"></i>
                         <span id="lblHeaderAdd">Añadir Registro</span>
                     </button>
@@ -94,56 +98,56 @@
         </section>
 
         <!-- VIEW 1: MAINTENANCE DASHBOARD -->
-        <div id="viewMaintenance" class="space-y-6">
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                    <div class="p-3 bg-blue-500/10 text-blue-400 rounded-lg text-xl"><i class="fa-solid fa-euro-sign"></i></div>
-                    <div><div class="text-xs text-slate-400">Gasto Total Acumulado</div><div id="kpiTotalCost" class="text-xl font-bold text-white">0,00 €</div></div>
+        <div id="viewMaintenance" class="space-y-4 sm:space-y-6">
+            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4 transition-colors duration-200">
+                    <div class="p-2.5 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-euro-sign"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Gasto Acumulado</div><div id="kpiTotalCost" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-wrench"></i></div>
-                    <div><div class="text-xs text-slate-400">Revisiones Realizadas</div><div id="kpiTotalCount" class="text-xl font-bold text-white">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4 transition-colors duration-200">
+                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-wrench"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Revisiones</div><div id="kpiTotalCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                    <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div><div class="text-xs text-slate-400">Alertas Pendientes</div><div id="kpiAlertCount" class="text-xl font-bold text-white">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4 transition-colors duration-200">
+                    <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Alertas</div><div id="kpiAlertCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex items-center space-x-4">
-                    <div class="p-3 bg-purple-500/10 text-purple-400 rounded-lg text-xl"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div><div class="text-xs text-slate-400">Combustible</div><div id="kpiFuel" class="text-xl font-bold text-white">--</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4 transition-colors duration-200">
+                    <div class="p-2.5 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
+                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Combustible</div><div id="kpiFuel" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">--</div></div>
                 </div>
             </section>
 
             <section id="alertsContainer" class="space-y-3"></section>
 
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
-                    <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-emerald-400 mr-2"></i> Gastos por Categoría</h2>
-                    <div class="h-56 sm:h-64 relative"><canvas id="categoryChart"></canvas></div>
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm transition-colors duration-200">
+                    <h2 class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-emerald-500 dark:text-emerald-400 mr-2"></i> Gastos por Categoría</h2>
+                    <div class="h-52 sm:h-64 relative"><canvas id="categoryChart"></canvas></div>
                 </div>
-                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700/60 shadow">
-                    <h2 class="text-base font-semibold text-white mb-4 flex items-center"><i class="fa-solid fa-chart-column text-blue-400 mr-2"></i> Evolución de Gastos</h2>
-                    <div class="h-56 sm:h-64 relative"><canvas id="timeChart"></canvas></div>
+                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm transition-colors duration-200">
+                    <h2 class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center"><i class="fa-solid fa-chart-column text-blue-500 dark:text-blue-400 mr-2"></i> Evolución de Gastos</h2>
+                    <div class="h-52 sm:h-64 relative"><canvas id="timeChart"></canvas></div>
                 </div>
             </section>
 
-            <!-- Historial de Mantenimiento con Filtro de Fechas -->
-            <section class="bg-slate-800 rounded-xl border border-slate-700/60 shadow overflow-hidden">
-                <div class="p-5 border-b border-slate-700/60 space-y-4">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <h2 class="text-lg font-bold text-white flex items-center">
-                            <i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-2"></i> Historial de Mantenimiento
+            <!-- Historial de Mantenimiento -->
+            <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden transition-colors duration-200">
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3 sm:space-y-4">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                            <i class="fa-solid fa-clock-rotate-left text-emerald-500 dark:text-emerald-400 mr-2"></i> Historial de Mantenimiento
                         </h2>
                         
-                        <!-- Barra de controles de filtrado -->
-                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-700 text-white text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-44">
+                        <!-- Barra de controles de filtrado responsiva -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full">
                             
-                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-700 text-white text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2">
+                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full">
                                 <option value="ALL">Todas las Categorías</option>
                             </select>
 
-                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-700 text-emerald-400 font-medium text-xs sm:text-sm rounded-lg border border-slate-600 px-3 py-2 cursor-pointer">
+                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-medium text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 cursor-pointer w-full">
                                 <option value="date-desc">Fecha: Recientes primero</option>
                                 <option value="date-asc">Fecha: Antiguos primero</option>
                                 <option value="km-desc">KM: Mayor a Menor</option>
@@ -152,105 +156,107 @@
                         </div>
                     </div>
 
-                    <!-- Fila del Filtro de Rango de Fechas -->
-                    <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-700/40 text-xs">
-                        <span class="text-slate-400 font-semibold flex items-center">
-                            <i class="fa-solid fa-calendar-days text-emerald-400 mr-1.5"></i> Rango de Fechas:
-                        </span>
-                        <div class="flex items-center space-x-2">
-                            <label class="text-slate-400">Desde:</label>
-                            <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-700 text-white text-xs rounded-lg border border-slate-600 px-2.5 py-1.5">
+                    <!-- Filtro de Rango de Fechas -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
+                                <i class="fa-solid fa-calendar-days text-emerald-500 dark:text-emerald-400 mr-1.5"></i> Fechas:
+                            </span>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Desde:</label>
+                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Hasta:</label>
+                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="text-slate-400">Hasta:</label>
-                            <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-700 text-white text-xs rounded-lg border border-slate-600 px-2.5 py-1.5">
-                        </div>
-                        <button onclick="clearDateFilter()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-600 transition flex items-center space-x-1" title="Limpiar fechas">
+                        <button onclick="clearDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
                             <i class="fa-solid fa-xmark text-xs"></i>
-                            <span>Limpiar Fechas</span>
+                            <span>Limpiar</span>
                         </button>
                     </div>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-300">
-                        <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase font-semibold">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                        <thead class="bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-semibold">
                             <tr>
-                                <th class="px-4 py-3">Fecha</th>
-                                <th class="px-4 py-3">Km</th>
-                                <th class="px-4 py-3">Tipo Mantenimiento</th>
-                                <th class="px-4 py-3">Detalle / Trabajo</th>
-                                <th class="px-4 py-3">Taller</th>
-                                <th class="px-4 py-3 text-right">Coste (€)</th>
-                                <th class="px-4 py-3 text-center">Acción</th>
+                                <th class="px-3 sm:px-4 py-3">Fecha</th>
+                                <th class="px-3 sm:px-4 py-3">Km</th>
+                                <th class="px-3 sm:px-4 py-3">Tipo Mantenimiento</th>
+                                <th class="px-3 sm:px-4 py-3">Detalle / Trabajo</th>
+                                <th class="px-3 sm:px-4 py-3">Taller</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Coste (€)</th>
+                                <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="recordsTableBody" class="divide-y divide-slate-700/50"></tbody>
+                        <tbody id="recordsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50"></tbody>
                     </table>
                 </div>
             </section>
         </div>
 
         <!-- VIEW 2: SPARE PARTS -->
-        <div id="viewParts" class="space-y-6 hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800 p-4 rounded-xl border border-slate-700/60">
+        <div id="viewParts" class="space-y-4 sm:space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 transition-colors duration-200">
                 <div>
-                    <h2 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-400 mr-2"></i> Guía de Piezas y Recambios</h2>
-                    <p class="text-xs text-slate-400 mt-1">Busca referencias exactas y detalles técnicos para comprar recambios compatibles con este vehículo.</p>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-500 dark:text-emerald-400 mr-2"></i> Guía de Piezas y Recambios</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas e información técnica para la compra de piezas compatibles.</p>
                 </div>
-                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o notas..." class="bg-slate-700 text-white text-sm rounded-lg border border-slate-600 px-3 py-2 w-full sm:w-64">
+                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o notas..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
             </div>
 
-            <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
 
     </main>
 
     <!-- Modal Form: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
-            <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 id="recordModalTitle" class="text-xl font-bold text-white mb-4">Añadir Mantenimiento</h3>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 sm:p-6 relative transition-colors duration-200">
+            <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 id="recordModalTitle" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4">Añadir Mantenimiento</h3>
             
-            <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-4">
+            <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-3 sm:space-y-4">
                 <input type="hidden" id="recordId">
                 <input type="hidden" id="recordRowIndex">
                 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
+                        <input type="date" id="formFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Kilómetros *</label>
-                        <input type="number" id="formKms" required min="0" placeholder="Ej. 165500" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo de Mantenimiento (Columna D) *</label>
-                    <select id="formTipo" required class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Coste (€) *</label>
-                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Taller / Proveedor</label>
-                        <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
+                        <input type="number" id="formKms" required min="0" placeholder="Ej. 165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Detalle / Trabajo (Columna E)</label>
-                    <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento (Columna D) *</label>
+                    <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm"></select>
                 </div>
 
-                <div class="flex justify-end space-x-3 pt-3">
-                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg">Guardar</button>
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Coste (€) *</label>
+                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Taller / Proveedor</label>
+                        <input type="text" id="formTaller" placeholder="Ej. Caldereros Villarejo..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo (Columna E)</label>
+                    <textarea id="formDetalle" rows="3" placeholder="Ej. Cambio de aceite Total Quartz 0W30..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs sm:text-sm font-semibold shadow-lg">Guardar</button>
                 </div>
             </form>
         </div>
@@ -258,30 +264,30 @@
 
     <!-- Modal Form: Añadir Recambio -->
     <div id="partModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
-            <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-xl font-bold text-white mb-4">Añadir Nueva Referencia de Recambio</h3>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 sm:p-6 relative transition-colors duration-200">
+            <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4">Añadir Nueva Referencia</h3>
             
-            <form id="partForm" onsubmit="handleSavePart(event)" class="space-y-4">
+            <form id="partForm" onsubmit="handleSavePart(event)" class="space-y-3 sm:space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Categoría / Pieza *</label>
-                    <input type="text" id="partPieza" required placeholder="Ej. Filtro de Aceite, Bombilla H7..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoría / Pieza *</label>
+                    <input type="text" id="partPieza" required placeholder="Ej. Filtro de Aceite, Bombilla H7..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Marca</label>
-                    <input type="text" id="partMarca" placeholder="Ej. Mann-Filter, Bosch..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Marca</label>
+                    <input type="text" id="partMarca" placeholder="Ej. Mann-Filter, Bosch..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Observaciones / Notas *</label>
-                    <textarea id="partNotas" rows="3" required placeholder="Ej. HU 711/51 x (incluye junta)" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Observaciones / Notas *</label>
+                    <textarea id="partNotas" rows="3" required placeholder="Ej. HU 711/51 x (incluye junta)" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Enlace de Compra (Opcional)</label>
-                    <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm">
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace de Compra (Opcional)</label>
+                    <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-slate-800 dark:text-white text-xs sm:text-sm">
                 </div>
-                <div class="flex justify-end space-x-3 pt-3">
-                    <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg text-sm">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold shadow-lg">Guardar Referencia</button>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs sm:text-sm font-semibold shadow-lg">Guardar Referencia</button>
                 </div>
             </form>
         </div>
@@ -309,9 +315,43 @@
         let timeChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
+            initTheme();
             initApp();
             reloadData();
         });
+
+        // Theme Switcher Logic
+        function initTheme() {
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme === "light") {
+                document.documentElement.classList.remove("dark");
+                updateThemeIcon(false);
+            } else {
+                document.documentElement.classList.add("dark");
+                updateThemeIcon(true);
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle("dark");
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+            updateThemeIcon(isDark);
+            
+            // Redibujar gráficos para actualizar el color del texto de la leyenda
+            const car = getActiveVehicle();
+            if (car) renderCharts(car);
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById("themeIcon");
+            if (icon) {
+                if (isDark) {
+                    icon.className = "fa-solid fa-sun text-amber-400";
+                } else {
+                    icon.className = "fa-solid fa-moon text-indigo-600";
+                }
+            }
+        }
 
         function initApp() {
             populateCategories();
@@ -328,14 +368,14 @@
             const lblAdd = document.getElementById("lblHeaderAdd");
 
             if (tab === 'maintenance') {
-                btnMaint.className = "px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
-                btnParts.className = "px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition";
+                btnMaint.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnParts.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition";
                 viewMaint.classList.remove("hidden");
                 viewParts.classList.add("hidden");
                 lblAdd.innerText = "Añadir Registro";
             } else {
-                btnParts.className = "px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
-                btnMaint.className = "px-3 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition";
+                btnParts.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnMaint.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition";
                 viewParts.classList.remove("hidden");
                 viewMaint.classList.add("hidden");
                 lblAdd.innerText = "Añadir Recambio";
@@ -415,16 +455,24 @@
 
             document.getElementById("kpiAlertCount").innerText = alerts.length;
             alerts.forEach(a => {
-                const color = a.type === 'warning' ? 'amber' : 'blue';
+                const isWarning = a.type === 'warning';
+                const bgClass = isWarning ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30 dark:border-amber-700/50' : 'bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30 dark:border-blue-700/50';
+                const titleClass = isWarning ? 'text-amber-800 dark:text-amber-200' : 'text-blue-800 dark:text-blue-200';
+                const iconClass = isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400';
+
                 container.innerHTML += `
-                    <div class="bg-${color}-950/40 border border-${color}-700/50 p-4 rounded-xl flex items-start space-x-3 text-sm">
-                        <i class="fa-solid fa-triangle-exclamation text-${color}-400 text-lg mt-0.5"></i>
-                        <div><h4 class="font-bold text-${color}-200">${a.title}</h4><p class="text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                    <div class="${bgClass} border p-3.5 sm:p-4 rounded-xl flex items-start space-x-3 text-xs sm:text-sm">
+                        <i class="fa-solid fa-triangle-exclamation ${iconClass} text-base sm:text-lg mt-0.5 shrink-0"></i>
+                        <div><h4 class="font-bold ${titleClass}">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
                     </div>`;
             });
         }
 
         function renderCharts(car) {
+            const isDark = document.documentElement.classList.contains("dark");
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
+
             const catMap = {};
             car.records.forEach(r => { 
                 let cat = (r.tipo || "Otros").trim();
@@ -455,7 +503,7 @@
             categoryChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
                 data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 11 } } } } }
             });
 
             const yearMap = {};
@@ -466,7 +514,7 @@
             timeChartInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: { labels: Object.keys(yearMap), datasets: [{ label: 'Gasto (€)', data: Object.values(yearMap), backgroundColor: '#3b82f6' }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } } }, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor }, grid: { display: false } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -476,8 +524,8 @@
             const catFilter = document.getElementById("categoryFilter").value;
             const sortOrder = document.getElementById("sortSelector").value;
             
-            const dateFromVal = document.getElementById("dateFrom").value; // Formato YYYY-MM-DD
-            const dateToVal = document.getElementById("dateTo").value;     // Formato YYYY-MM-DD
+            const dateFromVal = document.getElementById("dateFrom").value;
+            const dateToVal = document.getElementById("dateTo").value;
 
             let filtered = car.records.filter(r => {
                 const tipoStr = (r.tipo || '').toLowerCase();
@@ -485,10 +533,8 @@
                 const tallerStr = (r.taller || '').toLowerCase();
                 const recordFecha = formatDateDisplay(r.fecha);
 
-                // 1. Buscador texto libre
                 const matchesSearch = detalleStr.includes(search) || tallerStr.includes(search) || tipoStr.includes(search);
                 
-                // 2. Filtro Categoría
                 let matchesCat = true;
                 if (catFilter !== 'ALL') {
                     const filterLower = catFilter.toLowerCase();
@@ -499,14 +545,9 @@
                     matchesCat = tipoNormalized.includes(filterNormalized) || detalleNormalized.includes(filterNormalized);
                 }
 
-                // 3. Filtro Rango de Fechas (Desde / Hasta)
                 let matchesDate = true;
-                if (dateFromVal && recordFecha < dateFromVal) {
-                    matchesDate = false;
-                }
-                if (dateToVal && recordFecha > dateToVal) {
-                    matchesDate = false;
-                }
+                if (dateFromVal && recordFecha < dateFromVal) matchesDate = false;
+                if (dateToVal && recordFecha > dateToVal) matchesDate = false;
                 
                 return matchesSearch && matchesCat && matchesDate;
             });
@@ -521,22 +562,22 @@
 
             const tbody = document.getElementById("recordsTableBody");
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No hay mantenimientos registrados en este rango o búsqueda</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No hay mantenimientos registrados en este rango o búsqueda</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(r => `
-                <tr class="hover:bg-slate-700/30 transition">
-                    <td class="px-4 py-3 font-mono text-slate-300">${formatDateDisplay(r.fecha)}</td>
-                    <td class="px-4 py-3 font-mono text-slate-300">${Number(r.kms || 0).toLocaleString()} km</td>
-                    <td class="px-4 py-3"><span class="px-2.5 py-1 rounded text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">${r.tipo}</span></td>
-                    <td class="px-4 py-3 text-slate-200">${r.detalle}</td>
-                    <td class="px-4 py-3 text-slate-400">${r.taller || '--'}</td>
-                    <td class="px-4 py-3 text-right font-semibold text-white">${Number(r.coste || 0).toFixed(2)} €</td>
-                    <td class="px-4 py-3 text-center">
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                    <td class="px-3 sm:px-4 py-3 font-mono text-slate-600 dark:text-slate-300">${formatDateDisplay(r.fecha)}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono text-slate-600 dark:text-slate-300">${Number(r.kms || 0).toLocaleString()} km</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">${r.tipo}</span></td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-800 dark:text-slate-200">${r.detalle}</td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-500 dark:text-slate-400">${r.taller || '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">${Number(r.coste || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-center">
                         <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-400 p-1" title="Editar"><i class="fa-solid fa-pencil text-xs"></i></button>
-                            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-400 p-1" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button onclick="openRecordModal(${r.id})" class="text-slate-400 hover:text-blue-500 p-1" title="Editar"><i class="fa-solid fa-pencil text-xs"></i></button>
+                            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -558,8 +599,8 @@
 
             if (filtered.length === 0) {
                 container.innerHTML = `
-                    <div class="col-span-full bg-slate-800 p-8 rounded-xl border border-slate-700/60 text-center text-slate-400">
-                        <i class="fa-solid fa-boxes-packing text-3xl mb-2 text-slate-500"></i>
+                    <div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700/60 text-center text-slate-400">
+                        <i class="fa-solid fa-boxes-packing text-3xl mb-2 text-slate-400 dark:text-slate-500"></i>
                         <p class="font-semibold text-sm">No hay referencias anotadas para este vehículo.</p>
                         <button onclick="openPartModal()" class="mt-3 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold">Añadir primera referencia</button>
                     </div>`;
@@ -572,22 +613,22 @@
                 const endadoUrl = `https://www.endado.com/busqueda?q=${querySearch}`;
 
                 return `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 shadow hover:border-slate-600 transition flex flex-col justify-between">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition flex flex-col justify-between">
                         <div>
                             <div class="flex items-start justify-between">
-                                <h3 class="font-bold text-white text-base">${p.pieza}</h3>
-                                ${p.marca ? `<span class="bg-slate-700 text-emerald-400 text-xs px-2 py-0.5 rounded font-mono font-bold">${p.marca}</span>` : ''}
+                                <h3 class="font-bold text-slate-900 dark:text-white text-base">${p.pieza}</h3>
+                                ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 text-xs px-2 py-0.5 rounded font-mono font-bold">${p.marca}</span>` : ''}
                             </div>
-                            <div class="mt-2 bg-slate-900/60 p-3 rounded-lg border border-slate-700 flex items-center justify-between">
-                                <p class="text-sm text-slate-200 font-sans leading-relaxed">${p.notas}</p>
-                                <button onclick="copyToClipboard('${p.pieza}: ${p.marca} ${p.notas}')" class="text-xs text-slate-400 hover:text-emerald-400 p-1 ml-2" title="Copiar detalles"><i class="fa-solid fa-copy"></i></button>
+                            <div class="mt-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <p class="text-sm text-slate-700 dark:text-slate-200 font-sans leading-relaxed">${p.notas}</p>
+                                <button onclick="copyToClipboard('${p.pieza}: ${p.marca} ${p.notas}')" class="text-xs text-slate-400 hover:text-emerald-500 p-1 ml-2 shrink-0" title="Copiar detalles"><i class="fa-solid fa-copy"></i></button>
                             </div>
                         </div>
-                        <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between text-xs">
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs">
                             <span class="text-slate-500">Comprar en:</span>
                             <div class="flex space-x-2">
-                                <a href="${endadoUrl}" target="_blank" class="bg-blue-600/20 text-blue-300 hover:bg-blue-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-solid fa-cart-shopping mr-1"></i>Endado</a>
-                                <a href="${amazonUrl}" target="_blank" class="bg-amber-600/20 text-amber-300 hover:bg-amber-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-brands fa-amazon mr-1"></i>Amazon</a>
+                                <a href="${endadoUrl}" target="_blank" class="bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-solid fa-cart-shopping mr-1"></i>Endado</a>
+                                <a href="${amazonUrl}" target="_blank" class="bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-600/40 px-2.5 py-1 rounded font-semibold transition"><i class="fa-brands fa-amazon mr-1"></i>Amazon</a>
                             </div>
                         </div>
                     </div>`;
@@ -712,7 +753,7 @@
             const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
             
             window[callbackName] = function(data) {
-                delete window[callbackName];
+                delete window[window[callbackName]];
                 const existingScript = document.getElementById('jsonp_script');
                 if (existingScript) existingScript.remove();
 
