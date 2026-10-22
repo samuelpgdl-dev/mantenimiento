@@ -227,6 +227,27 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Filtros de Fecha para Repostajes -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
+                                <i class="fa-solid fa-calendar-days text-purple-500 mr-1.5"></i> Fechas:
+                            </span>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Desde:</label>
+                                <input type="date" id="fuelDateFrom" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <label class="text-slate-400">Hasta:</label>
+                                <input type="date" id="fuelDateTo" onchange="renderFuelTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                            </div>
+                        </div>
+                        <button onclick="clearFuelDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                            <span>Limpiar</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -517,6 +538,14 @@
             renderTable();
         }
 
+        function clearFuelDateFilter() {
+            const dateFromElem = document.getElementById("fuelDateFrom");
+            const dateToElem = document.getElementById("fuelDateTo");
+            if (dateFromElem) dateFromElem.value = "";
+            if (dateToElem) dateToElem.value = "";
+            renderFuelTable();
+        }
+
         function showToast(text = "Sincronizado con Google Sheets.") {
             const toast = document.getElementById("toastNotification");
             document.getElementById("toastMsg").innerText = text;
@@ -670,17 +699,29 @@
             `).join('');
         }
 
-        // REPOSTAJES (GASOIL)
+        // REPOSTAJES (GASOIL) CON FILTRO DE FECHAS
         function renderFuelDashboard() { renderFuelTable(); }
 
         function renderFuelTable() {
             const filterVeh = document.getElementById("fuelVehicleFilter").value;
+            const dateFromVal = document.getElementById("fuelDateFrom") ? document.getElementById("fuelDateFrom").value : "";
+            const dateToVal = document.getElementById("fuelDateTo") ? document.getElementById("fuelDateTo").value : "";
+
             let filtered = fuelRecords;
 
             if (filterVeh !== 'ALL') {
                 const targetVeh = vehicles.find(v => v.id === filterVeh);
-                if (targetVeh) filtered = fuelRecords.filter(f => String(f.vehiculo) === String(targetVeh.excelName));
+                if (targetVeh) filtered = filtered.filter(f => String(f.vehiculo) === String(targetVeh.excelName));
             }
+
+            // Aplicar filtros de fecha en repostajes
+            filtered = filtered.filter(f => {
+                const recordFecha = formatDateDisplay(f.fecha);
+                let matchesDate = true;
+                if (dateFromVal && recordFecha && recordFecha < dateFromVal) matchesDate = false;
+                if (dateToVal && recordFecha && recordFecha > dateToVal) matchesDate = false;
+                return matchesDate;
+            });
 
             const total = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
             const count = filtered.length;
@@ -693,7 +734,7 @@
 
             const tbody = document.getElementById("fuelTableBody");
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay repostajes registrados en la pestaña GASOIL.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay repostajes registrados en la pestaña GASOIL con los filtros seleccionados.</td></tr>`;
                 return;
             }
 
