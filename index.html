@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canana Automotive - Control de Mantenimiento y Combustible</title>
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2310b981'/><path fill='%230f172a' d='M20 55 l10 -20 h40 l10 20 h10 v15 h-10 a8 8 0 0 1 -16 0 h-28 a8 8 0 0 1 -16 0 h-10 v-15 z'/></svg>">
+    <!-- Favicon personalizado -->
+    <link rel="icon" type="image/jpeg" href="Gemini_Generated_Image_37p3m337p3m337p3.jpeg">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -123,7 +125,7 @@
             </section>
 
             <!-- Tarjeta Próxima Revisión Estimada -->
-            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors">
                 <div class="flex items-center space-x-4">
                     <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-2xl shrink-0">
                         <i class="fa-solid fa-calendar-check"></i>
@@ -641,8 +643,11 @@
             const cardMonth = document.getElementById("nextServiceMonth");
             const cardDetail = document.getElementById("nextServiceDetail");
             const cardKm = document.getElementById("nextServiceKm");
+            const cardElem = document.getElementById("nextServiceCard");
 
             if (!cardMonth || !car) return;
+
+            cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
 
             // 1. Obtener la última revisión oficial realizada
             const revisions = (car.records || []).filter(r => {
@@ -651,44 +656,49 @@
                 return t.includes("revisión") || d.includes("revisión");
             }).sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
 
-            const lastRevision = revisions[0] || (car.records || [])[0];
-            
-            const lastDate = lastRevision ? (parseDate(lastRevision.fecha) || new Date()) : new Date();
-            const lastKm = lastRevision ? Number(lastRevision.kms || car.kms || 0) : Number(car.kms || 0);
+            const hasRevision = revisions.length > 0;
+            const lastRevision = hasRevision ? revisions[0] : null;
+
+            // Caso A: Sin registros de revisión previa
+            if (!hasRevision) {
+                cardMonth.innerText = "Sin registro de revisión previa";
+                cardMonth.className = "text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
+                cardDetail.innerText = `Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses. Introduce una revisión para calcular.`;
+                cardKm.innerText = "-- km";
+                cardKm.className = "text-base sm:text-lg font-extrabold text-slate-400";
+                return;
+            }
+
+            const lastDate = parseDate(lastRevision.fecha) || new Date();
+            const lastKm = Number(lastRevision.kms || 0);
             const currentKm = Number(car.kms || lastKm);
 
-            // Intervalos personalizados desde el objeto car
             const intervalKm = car.intervalKm || 15000;
             const intervalMonths = car.intervalMonths || 12;
 
-            // 2. Calcular ritmo medio de conducción (km / mes) mediante el histórico de repostajes
-            let monthlyKmRate = 1000; // Valor por defecto si no hay suficientes datos
+            // 2. Ritmo medio de conducción (km / mes) desde repostajes
+            let monthlyKmRate = 1000;
             const carFuel = fuelRecords.filter(f => String(f.vehiculo) === String(car.excelName));
-            
             if (carFuel.length >= 2) {
                 const sortedFuel = [...carFuel].sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
                 const firstLog = sortedFuel[0];
                 const lastLog = sortedFuel[sortedFuel.length - 1];
-                
                 const d1 = parseDate(firstLog.fecha);
                 const d2 = parseDate(lastLog.fecha);
                 const kmDiff = Number(lastLog.kms || 0) - Number(firstLog.kms || 0);
-
                 if (d1 && d2 && d2 > d1 && kmDiff > 0) {
                     const monthsDiff = (d2 - d1) / (1000 * 60 * 60 * 24 * 30.44);
-                    if (monthsDiff >= 0.5) {
-                        monthlyKmRate = kmDiff / monthsDiff;
-                    }
+                    if (monthsDiff >= 0.5) monthlyKmRate = kmDiff / monthsDiff;
                 }
             }
 
-            // 3. Proyecciones por Tiempo vs Kilometraje
+            // 3. Proyecciones
             const targetDateByTime = new Date(lastDate);
             targetDateByTime.setMonth(targetDateByTime.getMonth() + intervalMonths);
 
             const targetKm = lastKm + intervalKm;
-            const remainingKm = Math.max(0, targetKm - currentKm);
-            
+            const remainingKm = targetKm - currentKm;
+
             const monthsToKmTarget = monthlyKmRate > 0 ? (remainingKm / monthlyKmRate) : intervalMonths;
             const targetDateByKm = new Date();
             targetDateByKm.setMonth(targetDateByKm.getMonth() + Math.round(monthsToKmTarget));
@@ -696,17 +706,43 @@
             const finalTargetDate = targetDateByTime < targetDateByKm ? targetDateByTime : targetDateByKm;
             const isLimitedByTime = targetDateByTime < targetDateByKm;
 
+            const today = new Date();
+            const isOverdueTime = targetDateByTime < today;
+            const isOverdueKm = remainingKm <= 0;
+
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             const monthStr = `${monthNames[finalTargetDate.getMonth()]} de ${finalTargetDate.getFullYear()}`;
 
-            cardMonth.innerText = monthStr;
-            cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
-            
-            const reasonText = isLimitedByTime 
-                ? `Límite por tiempo (${intervalMonths} meses desde ${formatDateDisplay(lastDate)})` 
-                : `Límite por km (${targetKm.toLocaleString('es-ES')} km aprox.)`;
+            // Caso B: Revisión Vencida (por tiempo o por kilometraje)
+            if (isOverdueTime || isOverdueKm) {
+                cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
                 
-            cardDetail.innerText = `${reasonText} • Ritmo: ~${Math.round(monthlyKmRate).toLocaleString('es-ES')} km/mes`;
+                if (isOverdueTime) {
+                    cardMonth.innerText = `¡Revisión Vencida! (${monthStr})`;
+                    cardMonth.className = "text-lg sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
+                    cardDetail.innerText = `Superó los ${intervalMonths} meses de plazo (última: ${formatDateDisplay(lastDate)}).`;
+                } else {
+                    cardMonth.innerText = `¡Kilometraje superado!`;
+                    cardMonth.className = "text-lg sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
+                    cardDetail.innerText = `Límite recomendado de ${targetKm.toLocaleString('es-ES')} km alcanzado.`;
+                }
+                
+                cardKm.innerText = remainingKm <= 0 ? `Excedido en ${Math.abs(remainingKm).toLocaleString('es-ES')} km` : `0 km`;
+                cardKm.className = "text-base sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
+            } 
+            // Caso C: En fecha correcta
+            else {
+                cardMonth.innerText = monthStr;
+                cardMonth.className = "text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
+                cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
+                cardKm.className = "text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400";
+
+                const reasonText = isLimitedByTime 
+                    ? `Límite por tiempo (${intervalMonths} meses desde ${formatDateDisplay(lastDate)})` 
+                    : `Límite por km (${targetKm.toLocaleString('es-ES')} km aprox.)`;
+
+                cardDetail.innerText = `${reasonText} • Ritmo: ~${Math.round(monthlyKmRate).toLocaleString('es-ES')} km/mes`;
+            }
         }
 
         function createITVStickerHTML(title, desc) {
