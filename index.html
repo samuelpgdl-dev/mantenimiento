@@ -786,26 +786,49 @@
 
             const lastDate = parseDate(lastRevision.fecha) || new Date();
             const lastKm = Number(lastRevision.kms || 0);
-            const currentKm = Number(car.kms || lastKm);
+
+            // Reunir puntos de kilometraje de mantenimientos y repostajes
+            const pts = [];
+            (car.records || []).forEach(r => {
+                const d = parseDate(r.fecha);
+                const km = Number(r.kms || 0);
+                if (d && km > 0) pts.push({ date: d, km: km });
+            });
+
+            const carFuel = fuelRecords.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
+            carFuel.forEach(f => {
+                const d = parseDate(f.fecha);
+                const km = Number(f.kms || 0);
+                if (d && km > 0) pts.push({ date: d, km: km });
+            });
+
+            pts.sort((a, b) => a.date - b.date);
+
+            let currentKm = car.kms || lastKm;
+            if (pts.length > 0 && pts[pts.length - 1].km > currentKm) {
+                currentKm = pts[pts.length - 1].km;
+            }
+
+            let monthlyKmRate = 1000;
+            if (pts.length >= 2) {
+                const latest = pts[pts.length - 1];
+                let earliest = pts[0];
+                for (let i = pts.length - 2; i >= 0; i--) {
+                    const daysDiff = (latest.date - pts[i].date) / (1000 * 60 * 60 * 24);
+                    if (daysDiff >= 30 && (latest.km - pts[i].km) > 0) {
+                        earliest = pts[i];
+                        if (daysDiff >= 90) break;
+                    }
+                }
+                const daysDiff = (latest.date - earliest.date) / (1000 * 60 * 60 * 24);
+                const kmDiff = latest.km - earliest.km;
+                if (daysDiff >= 15 && kmDiff > 0) {
+                    monthlyKmRate = kmDiff / (daysDiff / 30.44);
+                }
+            }
 
             const intervalKm = car.intervalKm || 15000;
             const intervalMonths = car.intervalMonths || 12;
-
-            let monthlyKmRate = 1000;
-            const carFuel = fuelRecords.filter(f => String(f.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(f.vehiculo).toLowerCase()));
-            
-            if (carFuel.length >= 2) {
-                const sortedFuel = [...carFuel].sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
-                const firstLog = sortedFuel[0];
-                const lastLog = sortedFuel[sortedFuel.length - 1];
-                const d1 = parseDate(firstLog.fecha);
-                const d2 = parseDate(lastLog.fecha);
-                const kmDiff = Number(lastLog.kms || 0) - Number(firstLog.kms || 0);
-                if (d1 && d2 && d2 > d1 && kmDiff > 0) {
-                    const monthsDiff = (d2 - d1) / (1000 * 60 * 60 * 24 * 30.44);
-                    if (monthsDiff >= 0.5) monthlyKmRate = kmDiff / monthsDiff;
-                }
-            }
 
             const targetDateByTime = new Date(lastDate);
             targetDateByTime.setMonth(targetDateByTime.getMonth() + intervalMonths);
