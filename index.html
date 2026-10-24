@@ -36,6 +36,8 @@
     <!-- Librerías para Exportar a Excel y PDF -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Tesseract.js para OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
 
@@ -498,12 +500,22 @@
         </div>
     </div>
 
-    <!-- Modal Form: Repostaje -->
+    <!-- Modal Form: Repostaje con OCR de Ticket -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             <h3 id="fuelModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Gasoil</h3>
             
+            <!-- Botón OCR para escanear foto de ticket -->
+            <div class="mb-3 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60 text-center">
+                <label for="ocrInput" class="cursor-pointer inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Escanear Foto de Ticket (OCR)</span>
+                </label>
+                <input type="file" id="ocrInput" accept="image/*" capture="environment" onchange="processTicketOCR(event)" class="hidden">
+                <div id="ocrStatus" class="text-[11px] text-purple-600 dark:text-purple-300 mt-1 hidden font-medium">Procesando imagen con OCR...</div>
+            </div>
+
             <form id="fuelForm" onsubmit="handleSaveFuel(event)" class="space-y-2.5">
                 <input type="hidden" id="fuelRowIndex">
                 <div>
@@ -1016,6 +1028,57 @@
             document.getElementById("toastMsg").innerText = text;
             toast.classList.remove("translate-y-[-100px]", "opacity-0", "pointer-events-none");
             setTimeout(() => { toast.classList.add("translate-y-[-100px]", "opacity-0", "pointer-events-none"); }, 3500);
+        }
+
+        // Lógica de lectura OCR con Tesseract.js
+        async function processTicketOCR(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusElem = document.getElementById("ocrStatus");
+            statusElem.innerText = "Escaneando ticket... por favor espera";
+            statusElem.classList.remove("hidden");
+
+            try {
+                const worker = await Tesseract.createWorker('spa');
+                const ret = await worker.recognize(file);
+                await worker.terminate();
+
+                const text = ret.data.text;
+                console.log("Texto extraído por OCR:", text);
+
+                // 1. Buscar Importe / Total
+                const totalMatch = text.match(/(?:TOTAL|IMPORTE|EUR|€)\s*:?\s*(\d+[\.,]\d{2})/i) || text.match(/(\d+[\.,]\d{2})\s*€/i);
+                if (totalMatch) {
+                    const priceVal = parseFloat(totalMatch[1].replace(',', '.'));
+                    if (!isNaN(priceVal)) document.getElementById("fuelFormImporte").value = priceVal.toFixed(2);
+                }
+
+                // 2. Buscar Fecha (Formatos DD/MM/YYYY o DD-MM-YYYY)
+                const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](20\d\d)/);
+                if (dateMatch) {
+                    const day = dateMatch[1].padStart(2, '0');
+                    const month = dateMatch[2].padStart(2, '0');
+                    const year = dateMatch[3];
+                    document.getElementById("fuelFormFecha").value = `${year}-${month}-${day}`;
+                }
+
+                // 3. Buscar Gasolinera conocida
+                const textLower = text.toLowerCase();
+                const knownStations = ["Repsol", "Plenoil", "Ballenoil", "Cepsa", "BP", "Shell", "Petroprix", "Galp"];
+                for (const station of knownStations) {
+                    if (textLower.includes(station.toLowerCase())) {
+                        document.getElementById("fuelFormNotas").value = station;
+                        break;
+                    }
+                }
+
+                statusElem.innerText = "¡Datos del ticket extraídos correctamente!";
+                setTimeout(() => statusElem.classList.add("hidden"), 3000);
+            } catch (err) {
+                console.error("Error al procesar OCR:", err);
+                statusElem.innerText = "Error al leer la imagen del ticket";
+            }
         }
 
         function renderDashboard() {
