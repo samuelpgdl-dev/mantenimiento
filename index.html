@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canana Automotive - Control de Mantenimiento y Combustible</title>
 
-    <!-- Favicon universal y compatibilidad con Safari / iOS -->
+    <!-- Favicon universal -->
     <link rel="icon" type="image/jpeg" href="Gemini_Generated_Image_37p3m337p3m337p3.jpeg?v=2">
     <link rel="apple-touch-icon" href="Gemini_Generated_Image_37p3m337p3m337p3.jpeg">
 
@@ -24,6 +24,8 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Cliente oficial de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
 
@@ -32,7 +34,7 @@
         <i class="fa-solid fa-circle-check text-xl"></i>
         <div>
             <h5 class="font-bold text-xs sm:text-sm">Sincronización</h5>
-            <p class="text-xs text-emerald-100" id="toastMsg">Base de datos cargada desde Google Sheets.</p>
+            <p class="text-xs text-emerald-100" id="toastMsg">Base de datos cargada desde Supabase.</p>
         </div>
     </div>
 
@@ -235,7 +237,7 @@
                 </div>
             </section>
 
-            <!-- Tarjeta de Análisis de Precio Medio y Variabilidad por Rango -->
+            <!-- Tarjeta de Análisis de Precio Medio y Variabilidad -->
             <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
                     <div class="flex items-center space-x-2">
@@ -276,9 +278,8 @@
                 </p>
             </section>
 
-            <!-- Estadísticas de Gasoil: Ranking y Evolución de Precio -->
+            <!-- Estadísticas de Gasoil: Ranking y Evolución -->
             <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <!-- Ranking Gasolineras (1 columna) -->
                 <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
                         <i class="fa-solid fa-trophy text-amber-500"></i>
@@ -289,7 +290,6 @@
                     </div>
                 </div>
 
-                <!-- Gráfica Evolución Precio €/L (2 columnas) -->
                 <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
                         <i class="fa-solid fa-chart-line text-emerald-500"></i>
@@ -412,7 +412,7 @@
         </div>
     </div>
 
-    <!-- Modal Form: Añadir / Editar Repostaje (GASOIL) -->
+    <!-- Modal Form: Añadir / Editar Repostaje -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -487,9 +487,12 @@
         </div>
     </div>
 
-    <!-- Script Logic -->
+    <!-- Script Logic con Supabase SDK -->
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLgA7wyack-Q7_bLOhHOXzYipa7pUQDoyjcTvrH2dMvMuBZ2MX7NX7BsCejxHzBXo2/exec";
+        // CONFIGURACIÓN DE SUPABASE
+        const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         const MAINTENANCE_CATEGORIES = [
             "Revisión anual", "Cambio distribución", "Cambio embrague", "Cambio neumáticos",
@@ -536,18 +539,6 @@
             renderDashboard();
         }
 
-        function fetchJSONP(url, callback) {
-            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
-            window[callbackName] = function(data) {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                callback(data);
-            };
-            const script = document.createElement('script');
-            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-            document.body.appendChild(script);
-        }
-
         function updateCarKms(car) {
             if (!car) return;
             let maxKm = Number(car.kms || 0);
@@ -573,40 +564,45 @@
             car.kms = maxKm;
         }
 
-        function reloadData() {
-            const car = getActiveVehicle();
-            if (!car) return;
+        async function reloadData() {
+            showToast("Sincronizando con Supabase...");
+            if (!supabaseClient) {
+                showToast("Configura SUPABASE_URL y SUPABASE_ANON_KEY.");
+                return;
+            }
 
-            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getMaintenance&hoja=${encodeURIComponent(car.sheetName)}`, (data) => {
-                car.records = Array.isArray(data) ? data : [];
-                updateCarKms(car);
+            try {
+                const [maintRes, fuelRes, partsRes] = await Promise.all([
+                    supabaseClient.from('mantenimiento').select('*'),
+                    supabaseClient.from('repostajes').select('*'),
+                    supabaseClient.from('recambios').select('*')
+                ]);
+
+                const maintData = maintRes.data || [];
+                fuelRecords = fuelRes.data || [];
+                const partsData = partsRes.data || [];
+
+                vehicles.forEach(car => {
+                    car.records = maintData.filter(r => 
+                        String(r.vehiculo || '').toLowerCase().includes(car.excelName.toLowerCase()) ||
+                        car.excelName.toLowerCase().includes(String(r.vehiculo || '').toLowerCase())
+                    );
+                    car.parts = partsData.filter(p => 
+                        String(p.vehiculo || '').toLowerCase().includes(car.refSheetName.toLowerCase()) ||
+                        car.refSheetName.toLowerCase().includes(String(p.vehiculo || '').toLowerCase()) ||
+                        String(p.vehiculo || '').toLowerCase().includes(car.excelName.toLowerCase())
+                    );
+                    updateCarKms(car);
+                });
+
                 renderDashboard();
-            });
-
-            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getReferences&hoja=${encodeURIComponent(car.refSheetName)}`, (data) => {
-                car.parts = Array.isArray(data) ? data : [];
-                renderParts();
-            });
-
-            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getAlerts`, (data) => {
-                const allAlerts = Array.isArray(data) ? data : [];
-                car.alerts = allAlerts.filter(a => String(a.vehiculo).toLowerCase().includes(car.excelName.toLowerCase()) || car.excelName.toLowerCase().includes(String(a.vehiculo).toLowerCase()));
-                renderAlerts(car);
-            });
-
-            fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getFuel`, (data) => {
-                fuelRecords = Array.isArray(data) ? data : [];
-                const activeCar = getActiveVehicle();
-                if (activeCar) {
-                    updateCarKms(activeCar);
-                    renderDashboard();
-                }
-                if (activeMainTab === 'fuel') {
-                    renderFuelDashboard();
-                }
-            });
-
-            showToast("Sincronizando con Google Sheets...");
+                if (activeMainTab === 'fuel') renderFuelDashboard();
+                if (activeMainTab === 'parts') renderParts();
+                showToast("Datos cargados correctamente.");
+            } catch (err) {
+                console.error("Error al consultar Supabase:", err);
+                showToast("Error al conectar con Supabase.");
+            }
         }
 
         function switchMainTab(tab) {
@@ -671,10 +667,7 @@
         function changeActiveVehicle(id) {
             activeVehicleId = id;
             renderDashboard();
-            if (activeMainTab === 'fuel') {
-                renderFuelDashboard();
-            }
-            reloadData();
+            if (activeMainTab === 'fuel') renderFuelDashboard();
         }
 
         function getActiveVehicle() { return vehicles.find(v => v.id === activeVehicleId); }
@@ -687,9 +680,7 @@
 
             if (str.includes('/')) {
                 let parts = str.split('/');
-                if (parts.length === 3) {
-                    return new Date(parts[2], parts[1] - 1, parts[0]);
-                }
+                if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
             }
 
             if (str.includes('-')) {
@@ -739,7 +730,7 @@
             renderFuelDashboard();
         }
 
-        function showToast(text = "Sincronizado con Google Sheets.") {
+        function showToast(text = "Sincronizado con Supabase.") {
             const toast = document.getElementById("toastNotification");
             document.getElementById("toastMsg").innerText = text;
             toast.classList.remove("translate-y-[-100px]", "opacity-0", "pointer-events-none");
@@ -755,15 +746,10 @@
             document.getElementById("carTitle").innerText = car.name;
 
             let identifierText = "";
-            if (car.plate && car.vin) {
-                identifierText = `${car.plate} • ${car.vin}`;
-            } else if (car.plate) {
-                identifierText = car.plate;
-            } else if (car.vin) {
-                identifierText = car.vin;
-            } else {
-                identifierText = "--";
-            }
+            if (car.plate && car.vin) identifierText = `${car.plate} • ${car.vin}`;
+            else if (car.plate) identifierText = car.plate;
+            else if (car.vin) identifierText = car.vin;
+            else identifierText = "--";
 
             document.getElementById("carPlate").innerText = identifierText;
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
@@ -812,7 +798,6 @@
             const lastDate = parseDate(lastRevision.fecha) || new Date();
             const lastKm = Number(lastRevision.kms || 0);
 
-            // Reunir puntos de kilometraje de mantenimientos y repostajes
             const pts = [];
             (car.records || []).forEach(r => {
                 const d = parseDate(r.fecha);
@@ -1106,8 +1091,8 @@
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openRecordModal(${r.rowIndex})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteRecord(${r.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="openRecordModal('${r.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deleteRecord('${r.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1177,7 +1162,7 @@
                 }
             }
 
-            // 2. ANÁLISIS DE PRECIO Y VARIABILIDAD EN PERIODO
+            // 2. ANÁLISIS DE PRECIO Y VARIABILIDAD
             const validPrices = filteredList
                 .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
                 .map(r => Number((Number(r.importe) / Number(r.litros)).toFixed(3)));
@@ -1373,8 +1358,8 @@
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openFuelModal(${f.rowIndex})" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteFuelRecord(${f.rowIndex})" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="openFuelModal('${f.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <button onclick="deleteFuelRecord('${f.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1435,192 +1420,239 @@
                                 <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${p.pieza}</h3>
                                 ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">${p.marca}</span>` : ''}
                             </div>
-                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 whitespace-pre-line">${cleanNotas || p.notas || ''}</p>
+                            ${cleanNotas ? `<p class="text-xs text-slate-600 dark:text-slate-300 mt-2 font-mono bg-slate-50 dark:bg-slate-700/40 p-2 rounded border border-slate-100 dark:border-slate-700/50">${cleanNotas}</p>` : ''}
                         </div>
-                        ${linksHTML}
+                        <div class="flex items-center justify-between pt-1">
+                            ${linksHTML}
+                            <button onclick="deletePart('${p.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition ml-auto" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // MODALS & GUARDADO
-        function openRecordModal(rowIndex = null) {
+        // MODAL HANDLERS - MANTENIMIENTO
+        function openRecordModal(id = null) {
+            const modal = document.getElementById("recordModal");
+            const title = document.getElementById("recordModalTitle");
+            const recordRowIndex = document.getElementById("recordRowIndex");
+            const formFecha = document.getElementById("formFecha");
+            const formKms = document.getElementById("formKms");
+            const formTipo = document.getElementById("formTipo");
+            const formCoste = document.getElementById("formCoste");
+            const formTaller = document.getElementById("formTaller");
+            const formDetalle = document.getElementById("formDetalle");
+
             const car = getActiveVehicle();
             if (!car) return;
 
-            document.getElementById("recordRowIndex").value = rowIndex || "";
-            document.getElementById("recordModalTitle").innerText = rowIndex ? "Editar Mantenimiento" : "Añadir Mantenimiento";
-
-            if (rowIndex) {
-                const record = car.records.find(r => r.rowIndex === rowIndex);
+            if (id) {
+                const record = car.records.find(r => String(r.id) === String(id));
                 if (record) {
-                    document.getElementById("formFecha").value = formatDateISO(record.fecha);
-                    document.getElementById("formKms").value = record.kms || "";
-                    document.getElementById("formTipo").value = record.detalle || "Otros";
-                    document.getElementById("formCoste").value = record.coste || "";
-                    document.getElementById("formTaller").value = record.taller || "";
-                    document.getElementById("formDetalle").value = record.tipo || "";
+                    title.innerText = "Editar Mantenimiento";
+                    recordRowIndex.value = record.id;
+                    formFecha.value = formatDateISO(record.fecha);
+                    formKms.value = record.kms || "";
+                    formTipo.value = record.detalle || MAINTENANCE_CATEGORIES[0];
+                    formCoste.value = record.coste || "";
+                    formTaller.value = record.taller || "";
+                    formDetalle.value = record.tipo || "";
                 }
             } else {
-                document.getElementById("recordForm").reset();
-                document.getElementById("formFecha").value = formatDateISO(new Date());
-                document.getElementById("formKms").value = car.kms || "";
+                title.innerText = "Añadir Mantenimiento";
+                recordRowIndex.value = "";
+                formFecha.value = formatDateISO(new Date());
+                formKms.value = car.kms || "";
+                formTipo.value = MAINTENANCE_CATEGORIES[0];
+                formCoste.value = "";
+                formTaller.value = "";
+                formDetalle.value = "";
             }
 
-            document.getElementById("recordModal").classList.remove("hidden");
+            modal.classList.remove("hidden");
         }
 
-        function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
+        function closeRecordModal() {
+            document.getElementById("recordModal").classList.add("hidden");
+        }
 
-        function handleSaveRecord(e) {
+        async function handleSaveRecord(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            if (!car) return;
+            if (!car || !supabaseClient) return;
 
-            const payload = {
-                hojaVehiculo: car.sheetName,
-                rowIndex: document.getElementById("recordRowIndex").value,
+            const id = document.getElementById("recordRowIndex").value;
+            const recordData = {
+                vehiculo: car.excelName,
                 fecha: document.getElementById("formFecha").value,
-                kms: document.getElementById("formKms").value,
-                detalle: document.getElementById("formTipo").value, // Categoría
-                tipo: document.getElementById("formDetalle").value,  // Descripción
+                kms: parseInt(document.getElementById("formKms").value) || 0,
+                detalle: document.getElementById("formTipo").value,
+                tipo: document.getElementById("formDetalle").value,
                 taller: document.getElementById("formTaller").value,
-                coste: document.getElementById("formCoste").value
+                coste: parseFloat(document.getElementById("formCoste").value) || 0
             };
 
-            closeRecordModal();
-            showToast("Guardando en Google Sheets...");
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                setTimeout(reloadData, 1500);
-            }).catch(err => alert("Error al guardar: " + err));
-        }
-
-        function deleteRecord(rowIndex) {
-            const car = getActiveVehicle();
-            if (!car || !confirm("¿Seguro que deseas eliminar este registro de mantenimiento?")) return;
-
-            showToast("Eliminando registro...");
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "delete", hojaVehiculo: car.sheetName, rowIndex: rowIndex })
-            }).then(() => {
-                setTimeout(reloadData, 1500);
-            });
-        }
-
-        function openFuelModal(rowIndex = null) {
-            const car = getActiveVehicle();
-            document.getElementById("fuelForm").reset();
-            document.getElementById("fuelRowIndex").value = rowIndex || "";
-            
-            const modalTitle = document.getElementById("fuelModalTitle");
-            if (modalTitle) {
-                modalTitle.innerHTML = `<i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> ${rowIndex ? 'Editar Repostaje de Gasoil' : 'Repostaje de Gasoil'}`;
+            try {
+                if (id) {
+                    await supabaseClient.from('mantenimiento').update(recordData).eq('id', id);
+                    showToast("Mantenimiento actualizado en Supabase.");
+                } else {
+                    await supabaseClient.from('mantenimiento').insert([recordData]);
+                    showToast("Mantenimiento añadido a Supabase.");
+                }
+                closeRecordModal();
+                await reloadData();
+            } catch (err) {
+                console.error("Error al guardar mantenimiento:", err);
+                showToast("Error al guardar datos.");
             }
+        }
 
-            if (rowIndex) {
-                const fuelRec = fuelRecords.find(f => f.rowIndex === rowIndex);
-                if (fuelRec) {
-                    document.getElementById("fuelFormVehicle").value = fuelRec.vehiculo || (car ? car.excelName : "");
-                    document.getElementById("fuelFormFecha").value = formatDateISO(fuelRec.fecha);
-                    document.getElementById("fuelFormKms").value = fuelRec.kms || "";
-                    document.getElementById("fuelFormImporte").value = fuelRec.importe || "";
-                    document.getElementById("fuelFormLitros").value = fuelRec.litros || "";
-                    document.getElementById("fuelFormNotas").value = fuelRec.notas || "";
+        async function deleteRecord(id) {
+            if (!confirm("¿Seguro que deseas eliminar este registro de mantenimiento?") || !supabaseClient) return;
+            try {
+                await supabaseClient.from('mantenimiento').delete().eq('id', id);
+                showToast("Registro eliminado.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al eliminar registro:", err);
+                showToast("Error al eliminar registro.");
+            }
+        }
+
+        // MODAL HANDLERS - REPOSTAJE
+        function openFuelModal(id = null) {
+            const modal = document.getElementById("fuelModal");
+            const title = document.getElementById("fuelModalTitle");
+            const fuelRowIndex = document.getElementById("fuelRowIndex");
+            const fuelFormVehicle = document.getElementById("fuelFormVehicle");
+            const fuelFormFecha = document.getElementById("fuelFormFecha");
+            const fuelFormKms = document.getElementById("fuelFormKms");
+            const fuelFormImporte = document.getElementById("fuelFormImporte");
+            const fuelFormLitros = document.getElementById("fuelFormLitros");
+            const fuelFormNotas = document.getElementById("fuelFormNotas");
+
+            const car = getActiveVehicle();
+
+            if (id) {
+                const record = fuelRecords.find(r => String(r.id) === String(id));
+                if (record) {
+                    title.innerHTML = `<i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Editar Repostaje`;
+                    fuelRowIndex.value = record.id;
+                    fuelFormVehicle.value = record.vehiculo || (car ? car.excelName : vehicles[0].excelName);
+                    fuelFormFecha.value = formatDateISO(record.fecha);
+                    fuelFormKms.value = record.kms || "";
+                    fuelFormImporte.value = record.importe || "";
+                    fuelFormLitros.value = record.litros || "";
+                    fuelFormNotas.value = record.notas || "";
                 }
             } else {
-                document.getElementById("fuelFormFecha").value = formatDateISO(new Date());
-                if (car) {
-                    document.getElementById("fuelFormVehicle").value = car.excelName;
-                    document.getElementById("fuelFormKms").value = car.kms || "";
-                }
+                title.innerHTML = `<i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Nuevo Repostaje`;
+                fuelRowIndex.value = "";
+                fuelFormVehicle.value = car ? car.excelName : vehicles[0].excelName;
+                fuelFormFecha.value = formatDateISO(new Date());
+                fuelFormKms.value = car ? car.kms : "";
+                fuelFormImporte.value = "";
+                fuelFormLitros.value = "";
+                fuelFormNotas.value = "";
             }
 
-            document.getElementById("fuelModal").classList.remove("hidden");
+            modal.classList.remove("hidden");
         }
 
-        function closeFuelModal() { document.getElementById("fuelModal").classList.add("hidden"); }
+        function closeFuelModal() {
+            document.getElementById("fuelModal").classList.add("hidden");
+        }
 
-        function handleSaveFuel(e) {
+        async function handleSaveFuel(e) {
             e.preventDefault();
-            const payload = {
-                type: "fuel",
-                hojaVehiculo: "GASOIL",
-                rowIndex: document.getElementById("fuelRowIndex").value,
+            if (!supabaseClient) return;
+
+            const id = document.getElementById("fuelRowIndex").value;
+            const fuelData = {
                 vehiculo: document.getElementById("fuelFormVehicle").value,
                 fecha: document.getElementById("fuelFormFecha").value,
-                kms: document.getElementById("fuelFormKms").value,
-                importe: document.getElementById("fuelFormImporte").value,
-                litros: document.getElementById("fuelFormLitros").value,
+                kms: parseInt(document.getElementById("fuelFormKms").value) || null,
+                importe: parseFloat(document.getElementById("fuelFormImporte").value) || 0,
+                litros: parseFloat(document.getElementById("fuelFormLitros").value) || null,
                 notas: document.getElementById("fuelFormNotas").value
             };
 
-            closeFuelModal();
-            showToast("Guardando repostaje...");
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                setTimeout(reloadData, 1500);
-            });
+            try {
+                if (id) {
+                    await supabaseClient.from('repostajes').update(fuelData).eq('id', id);
+                    showToast("Repostaje actualizado en Supabase.");
+                } else {
+                    await supabaseClient.from('repostajes').insert([fuelData]);
+                    showToast("Repostaje guardado en Supabase.");
+                }
+                closeFuelModal();
+                await reloadData();
+            } catch (err) {
+                console.error("Error al guardar repostaje:", err);
+                showToast("Error al guardar el repostaje.");
+            }
         }
 
-        function deleteFuelRecord(rowIndex) {
-            if (!confirm("¿Seguro que deseas eliminar este repostaje?")) return;
-            showToast("Eliminando repostaje...");
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "delete", hojaVehiculo: "GASOIL", rowIndex: rowIndex })
-            }).then(() => {
-                setTimeout(reloadData, 1500);
-            });
+        async function deleteFuelRecord(id) {
+            if (!confirm("¿Seguro que deseas eliminar este repostaje?") || !supabaseClient) return;
+            try {
+                await supabaseClient.from('repostajes').delete().eq('id', id);
+                showToast("Repostaje eliminado.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al eliminar repostaje:", err);
+                showToast("Error al eliminar el repostaje.");
+            }
         }
 
+        // MODAL HANDLERS - RECAMBIOS
         function openPartModal() {
-            document.getElementById("partForm").reset();
+            document.getElementById("partPieza").value = "";
+            document.getElementById("partMarca").value = "";
+            document.getElementById("partNotas").value = "";
+            document.getElementById("partLink").value = "";
             document.getElementById("partModal").classList.remove("hidden");
         }
 
-        function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
+        function closePartModal() {
+            document.getElementById("partModal").classList.add("hidden");
+        }
 
-        function handleSavePart(e) {
+        async function handleSavePart(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            if (!car) return;
+            if (!car || !supabaseClient) return;
 
-            const payload = {
-                type: "reference",
-                hojaVehiculo: car.refSheetName,
+            const partData = {
+                vehiculo: car.refSheetName,
                 pieza: document.getElementById("partPieza").value,
                 marca: document.getElementById("partMarca").value,
                 notas: document.getElementById("partNotas").value,
                 link: document.getElementById("partLink").value
             };
 
-            closePartModal();
-            showToast("Guardando recambio...");
+            try {
+                await supabaseClient.from('recambios').insert([partData]);
+                showToast("Referencia guardada en Supabase.");
+                closePartModal();
+                await reloadData();
+            } catch (err) {
+                console.error("Error al guardar recambio:", err);
+                showToast("Error al guardar recambio.");
+            }
+        }
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                setTimeout(reloadData, 1500);
-            });
+        async function deletePart(id) {
+            if (!confirm("¿Seguro que deseas eliminar este recambio?") || !supabaseClient) return;
+            try {
+                await supabaseClient.from('recambios').delete().eq('id', id);
+                showToast("Referencia eliminada.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al eliminar referencia:", err);
+                showToast("Error al eliminar referencia.");
+            }
         }
     </script>
 </body>
