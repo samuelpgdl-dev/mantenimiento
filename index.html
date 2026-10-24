@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Canana Automotive - Control de Mantenimiento y Combustible</title>
 
+    <!-- Enlace a Manifest PWA e Icono para iOS -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Canana Auto">
+    
     <!-- Favicon universal -->
     <link rel="icon" type="image/jpeg" href="Gemini_Generated_Image_37p3m337p3m337p3.jpeg?v=2">
     <link rel="apple-touch-icon" href="Gemini_Generated_Image_37p3m337p3m337p3.jpeg">
@@ -2249,6 +2256,17 @@
                 showToast("Error al guardar el vehículo.");
             }
         }
+       // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado correctamente', reg))
+                    .catch(err => console.error('Error al registrar Service Worker', err));
+            });
+        }
+    </script>
+</body>
+</html> 
     </script>
 </body>
 </html>
