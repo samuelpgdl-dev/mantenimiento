@@ -26,6 +26,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Cliente oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Librerías para Exportar a Excel y PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
 
@@ -370,8 +373,48 @@
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
 
+        <!-- NUEVA SECCIÓN AL FINAL: EXPORTACIÓN Y COPIAS DE SEGURIDAD -->
+        <section class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
+            <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
+                <div class="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xl">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Centro de Exportación y Informes</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados del vehículo activo.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
+                    <input type="checkbox" id="chkExportMaint" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Historial de Mantenimiento</span>
+                </label>
+                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
+                    <input type="checkbox" id="chkExportFuel" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Repostajes y Combustible</span>
+                </label>
+                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
+                    <input type="checkbox" id="chkExportParts" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Referencias y Recambios</span>
+                </label>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                <button onclick="exportToExcel()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>Exportar a Excel (CSV / XLSX)</span>
+                </button>
+                <button onclick="exportToPDF()" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Generar Informe en PDF</span>
+                </button>
+            </div>
+        </section>
+
     </main>
 
+    <!-- Modales anteriores (Mantenimiento, Repostaje, Recambios, Alertas, Vehículo) -->
     <!-- Modal Form: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
@@ -595,7 +638,7 @@
     <script>
         // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6InVpbm4iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         const MAINTENANCE_CATEGORIES = [
@@ -604,7 +647,6 @@
             "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
-        // Se carga 100% dinámicamente desde Supabase
         let vehicles = [];
         let fuelRecords = [];
         let activeVehicleId = "c3";
@@ -1330,7 +1372,6 @@
                 return matchesDate;
             });
 
-            // 1. RANKING DE GASOLINERAS
             const stationCounts = {};
             filteredList.forEach(r => {
                 let station = (r.notas || 'Sin especificar').trim();
@@ -1369,7 +1410,6 @@
                 }
             }
 
-            // 2. ANÁLISIS DE PRECIO Y VARIABILIDAD
             const validPrices = filteredList
                 .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
                 .map(r => Number((Number(r.importe) / Number(r.litros)).toFixed(3)));
@@ -1426,7 +1466,6 @@
                 commentElem.innerText = "No se encontraron registros de repostaje con litros e importe en el rango de fechas seleccionado.";
             }
 
-            // 3. GRÁFICA DE EVOLUCIÓN DE PRECIO
             const validRecords = filteredList
                 .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
                 .map(r => ({
@@ -1638,7 +1677,190 @@
             }).join('');
         }
 
-        // MODAL HANDLERS - MANTENIMIENTO
+        // FUNCIONES DE EXPORTACIÓN (EXCEL Y PDF)
+        function exportToExcel() {
+            const car = getActiveVehicle();
+            if (!car) {
+                showToast("Selecciona un vehículo primero.");
+                return;
+            }
+
+            const includeMaint = document.getElementById("chkExportMaint").checked;
+            const includeFuel = document.getElementById("chkExportFuel").checked;
+            const includeParts = document.getElementById("chkExportParts").checked;
+
+            if (!includeMaint && !includeFuel && !includeParts) {
+                showToast("Selecciona al menos una categoría para exportar.");
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            if (includeMaint) {
+                const maintData = (car.records || []).map(r => ({
+                    Fecha: formatDateDisplay(r.fecha),
+                    Kilometros: Number(r.kms || 0),
+                    Categoria: r.detalle || "",
+                    Detalle_Trabajo: r.tipo || "",
+                    Taller: r.taller || "",
+                    Coste_Euros: Number(r.coste || 0)
+                }));
+                const wsMaint = XLSX.utils.json_to_sheet(maintData);
+                XLSX.utils.book_append_sheet(wb, wsMaint, "Mantenimiento");
+            }
+
+            if (includeFuel) {
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName).map(f => ({
+                    Vehiculo: f.vehiculo,
+                    Fecha: formatDateDisplay(f.fecha),
+                    Kilometros: Number(f.kms || 0),
+                    Importe_Euros: Number(f.importe || 0),
+                    Litros: Number(f.litros || 0),
+                    Gasolinera_Notas: f.notas || ""
+                }));
+                const wsFuel = XLSX.utils.json_to_sheet(carFuel);
+                XLSX.utils.book_append_sheet(wb, wsFuel, "Repostajes");
+            }
+
+            if (includeParts) {
+                const partsData = (car.parts || []).map(p => ({
+                    Pieza: p.pieza || "",
+                    Marca: p.marca || "",
+                    Notas: p.notas || "",
+                    Enlace: p.link || ""
+                }));
+                const wsParts = XLSX.utils.json_to_sheet(partsData);
+                XLSX.utils.book_append_sheet(wb, wsParts, "Recambios");
+            }
+
+            const fileName = `Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showToast("Archivo Excel descargado correctamente.");
+        }
+
+        function exportToPDF() {
+            const car = getActiveVehicle();
+            if (!car) {
+                showToast("Selecciona un vehículo primero.");
+                return;
+            }
+
+            const includeMaint = document.getElementById("chkExportMaint").checked;
+            const includeFuel = document.getElementById("chkExportFuel").checked;
+            const includeParts = document.getElementById("chkExportParts").checked;
+
+            if (!includeMaint && !includeFuel && !includeParts) {
+                showToast("Selecciona al menos una categoría para el informe.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let y = 15;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("CANANA AUTOMOTIVE - INFORME TÉCNICO", 15, y);
+
+            y += 8;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text(`Vehículo: ${car.name}`, 15, y);
+            y += 5;
+            doc.text(`Matrícula / Bastidor: ${car.plate || '--'} / ${car.vin || '--'}`, 15, y);
+            y += 5;
+            doc.text(`Kilometraje Actual: ${Number(car.kms || 0).toLocaleString('es-ES')} km | Combustible: ${car.fuel}`, 15, y);
+            y += 8;
+
+            doc.setLineWidth(0.5);
+            doc.line(15, y, 195, y);
+            y += 10;
+
+            if (includeMaint) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Historial de Mantenimiento", 15, y);
+                y += 6;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text("Fecha", 15, y);
+                doc.text("Km", 45, y);
+                doc.text("Trabajo", 75, y);
+                doc.text("Coste", 175, y, { align: "right" });
+                y += 5;
+
+                doc.setFont("helvetica", "normal");
+                (car.records || []).forEach(r => {
+                    if (y > 275) { doc.addPage(); y = 15; }
+                    doc.text(formatDateDisplay(r.fecha), 15, y);
+                    doc.text(Number(r.kms || 0).toLocaleString('es-ES') + " km", 45, y);
+                    doc.text(String(r.detalle || r.tipo || "").substring(0, 45), 75, y);
+                    doc.text(Number(r.coste || 0).toFixed(2) + " €", 195, y, { align: "right" });
+                    y += 5;
+                });
+                y += 8;
+            }
+
+            if (includeFuel) {
+                if (y > 250) { doc.addPage(); y = 15; }
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Historial de Repostajes", 15, y);
+                y += 6;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text("Fecha", 15, y);
+                doc.text("Km", 45, y);
+                doc.text("Litros", 85, y);
+                doc.text("Gasolinera / Notas", 120, y);
+                doc.text("Importe", 195, y, { align: "right" });
+                y += 5;
+
+                doc.setFont("helvetica", "normal");
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName);
+                carFuel.forEach(f => {
+                    if (y > 275) { doc.addPage(); y = 15; }
+                    doc.text(formatDateDisplay(f.fecha), 15, y);
+                    doc.text(f.kms ? Number(f.kms).toLocaleString('es-ES') + " km" : "--", 45, y);
+                    doc.text(f.litros ? Number(f.litros).toFixed(2) + " L" : "--", 85, y);
+                    doc.text(String(f.notas || "--").substring(0, 35), 120, y);
+                    doc.text(Number(f.importe || 0).toFixed(2) + " €", 195, y, { align: "right" });
+                    y += 5;
+                });
+                y += 8;
+            }
+
+            if (includeParts) {
+                if (y > 250) { doc.addPage(); y = 15; }
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Referencias y Recambios Guardados", 15, y);
+                y += 6;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text("Pieza", 15, y);
+                doc.text("Marca", 75, y);
+                doc.text("Observaciones / Referencia", 120, y);
+                y += 5;
+
+                doc.setFont("helvetica", "normal");
+                (car.parts || []).forEach(p => {
+                    if (y > 275) { doc.addPage(); y = 15; }
+                    doc.text(String(p.pieza || "").substring(0, 30), 15, y);
+                    doc.text(String(p.marca || "--").substring(0, 20), 75, y);
+                    doc.text(String(p.notas || "").substring(0, 45), 120, y);
+                    y += 5;
+                });
+            }
+
+            doc.save(`Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+            showToast("Informe PDF generado correctamente.");
+        }
+
+        // MODAL HANDLERS (Mantenimiento, Repostaje, Recambios, Alertas, Vehículo)
         function openRecordModal(id = null) {
             const modal = document.getElementById("recordModal");
             const title = document.getElementById("recordModalTitle");
@@ -1727,7 +1949,6 @@
             }
         }
 
-        // MODAL HANDLERS - REPOSTAJE
         function openFuelModal(id = null) {
             const modal = document.getElementById("fuelModal");
             const title = document.getElementById("fuelModalTitle");
@@ -1813,7 +2034,6 @@
             }
         }
 
-        // MODAL HANDLERS - RECAMBIOS
         function openPartModal() {
             document.getElementById("partPieza").value = "";
             document.getElementById("partMarca").value = "";
@@ -1862,7 +2082,6 @@
             }
         }
 
-        // MODAL HANDLERS - ALERTAS
         function openAlertModal(id = null) {
             const modal = document.getElementById("alertModal");
             const title = document.getElementById("alertModalTitle");
@@ -1942,7 +2161,6 @@
             }
         }
 
-        // MODAL HANDLERS - VEHÍCULOS
         function openVehicleModal() {
             document.getElementById("vehName").value = "";
             document.getElementById("vehPlate").value = "";
