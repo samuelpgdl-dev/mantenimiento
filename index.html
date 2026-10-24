@@ -225,11 +225,11 @@
                             </span>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
                             </div>
                         </div>
                         <button onclick="clearDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
@@ -356,11 +356,11 @@
                             </span>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
                             </div>
                         </div>
                         <button onclick="clearFuelDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
@@ -461,7 +461,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="date" id="formFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-1.5 py-1.5 text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
@@ -513,7 +513,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="fuelFormFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-1.5 py-1.5 text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
@@ -595,7 +595,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Día Exacto / Vencimiento</label>
-                        <input type="date" id="alertFecha" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <input type="date" id="alertFecha" class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-1.5 py-1.5 text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
