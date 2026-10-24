@@ -495,23 +495,30 @@
     <div id="alertModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
             <button onclick="closeAlertModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Añadir Alerta Manual</h3>
+            <h3 id="alertModalTitle" class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Configurar Alerta</h3>
             <form id="alertForm" onsubmit="handleSaveAlert(event)" class="space-y-3">
+                <input type="hidden" id="alertRowIndex">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título de la Alerta *</label>
                     <input type="text" id="alertTitulo" required placeholder="Próxima ITV, Cambio de seguro..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Alerta *</label>
-                    <select id="alertTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
-                        <option value="itv">Inspección Técnica (Pegatina ITV)</option>
-                        <option value="warning">Aviso importante (Naranja)</option>
-                        <option value="info">Información (Azul)</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Alerta *</label>
+                        <select id="alertTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                            <option value="itv">Inspección Técnica (ITV)</option>
+                            <option value="warning">Aviso importante (Naranja)</option>
+                            <option value="info">Información (Azul)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Día Exacto / Vencimiento</label>
+                        <input type="date" id="alertFecha" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Detalles *</label>
-                    <textarea id="alertDescripcion" rows="2" required placeholder="Vence en Octubre de 2027..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
+                    <textarea id="alertDescripcion" rows="2" required placeholder="Detalles o notas sobre la alerta..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
                 </div>
                 <div class="flex justify-end space-x-3 pt-2">
                     <button type="button" onclick="closeAlertModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
@@ -625,6 +632,7 @@
                         title: a.titulo,
                         desc: a.descripcion,
                         type: a.tipo || 'warning',
+                        fecha: a.fecha || null,
                         isManual: true
                     }));
 
@@ -641,12 +649,12 @@
                         if (lastItvDate) {
                             const nextItvDate = new Date(lastItvDate);
                             nextItvDate.setFullYear(nextItvDate.getFullYear() + 1);
-                            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                             autoItvAlert = {
                                 id: 'auto-itv',
                                 title: 'Próxima ITV',
-                                desc: `Inspección prevista para ${monthNames[nextItvDate.getMonth()]} de ${nextItvDate.getFullYear()}`,
+                                desc: `Inspección prevista para el ${formatDateDisplay(nextItvDate)}`,
                                 type: 'itv',
+                                fecha: formatDateISO(nextItvDate),
                                 isManual: false
                             };
                         }
@@ -959,23 +967,28 @@
             }
         }
 
-        function createITVStickerHTML(title, desc, id = null, isManual = false) {
-            let yearMatch = desc.match(/\b(20\d\d)\b/);
-            let yearVal = yearMatch ? yearMatch[1] : "2027";
+        function createITVStickerHTML(title, desc, id = null, isManual = false, rawFecha = null) {
+            let targetDate = parseDate(rawFecha);
+            
+            // Intenta extraer la fecha si está incrustada en el texto
+            if (!targetDate) {
+                let match = desc.match(/(\d{1,2})[/.-](\d{1,2})[/.-](20\d\d)/);
+                if (match) targetDate = new Date(match[3], match[2] - 1, match[1]);
+            }
+
+            let yearVal = targetDate ? String(targetDate.getFullYear()) : "2027";
             let shortYear = yearVal.slice(-2);
             let yearNum = parseInt(yearVal);
+            let monthNum = targetDate ? (targetDate.getMonth() + 1) : 10;
 
-            let monthNum = 10;
-            const monthsMap = {
-                "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
-                "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
-            };
-            
-            let descLower = desc.toLowerCase();
-            for (let [mName, mNum] of Object.entries(monthsMap)) {
-                if (descLower.includes(mName)) {
-                    monthNum = mNum;
-                    break;
+            if (!targetDate) {
+                const monthsMap = {
+                    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+                    "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
+                };
+                let descLower = desc.toLowerCase();
+                for (let [mName, mNum] of Object.entries(monthsMap)) {
+                    if (descLower.includes(mName)) { monthNum = mNum; break; }
                 }
             }
 
@@ -1000,11 +1013,21 @@
                 return `<span class="opacity-60 text-[8px] sm:text-[9px] font-bold">${m}</span>`;
             }).join('');
 
-            const deleteBtnHTML = (isManual && id) ? `
-                <button onclick="deleteAlert('${id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition shrink-0" title="Eliminar Alerta">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
-                </button>
+            const actionBtnsHTML = (isManual && id) ? `
+                <div class="flex items-center space-x-1 shrink-0">
+                    <button onclick="openAlertModal('${id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar Alerta">
+                        <i class="fa-solid fa-pen-to-square text-sm"></i>
+                    </button>
+                    <button onclick="deleteAlert('${id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="Eliminar Alerta">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                </div>
             ` : '';
+
+            let detailText = desc;
+            if (targetDate) {
+                detailText = `Vence el día ${formatDateDisplay(targetDate)} • ${desc}`;
+            }
 
             return `
                 <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-4">
@@ -1029,10 +1052,10 @@
                         <div>
                             <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-amber-500/20">Inspección Técnica</span>
                             <h4 class="font-extrabold text-slate-900 dark:text-white text-base mt-1">${title}</h4>
-                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${desc}</p>
+                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${detailText}</p>
                         </div>
                     </div>
-                    ${deleteBtnHTML}
+                    ${actionBtnsHTML}
                 </div>
             `;
         }
@@ -1049,23 +1072,33 @@
                 const typeLower = String(a.type || '').toLowerCase();
 
                 if (titleLower.includes("itv") || descLower.includes("itv") || typeLower.includes("itv")) {
-                    container.innerHTML += createITVStickerHTML(a.title || "Próxima ITV", a.desc || "", a.id, a.isManual);
+                    container.innerHTML += createITVStickerHTML(a.title || "Próxima ITV", a.desc || "", a.id, a.isManual, a.fecha);
                 } else {
                     const isWarning = typeLower === 'warning';
                     const bgClass = isWarning ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30' : 'bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30';
-                    const deleteBtnHTML = (a.isManual && a.id) ? `
-                        <button onclick="deleteAlert('${a.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition shrink-0 ml-auto" title="Eliminar Alerta">
-                            <i class="fa-solid fa-trash-can text-sm"></i>
-                        </button>
+                    const actionBtnsHTML = (a.isManual && a.id) ? `
+                        <div class="flex items-center space-x-1 shrink-0 ml-auto">
+                            <button onclick="openAlertModal('${a.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar Alerta">
+                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </button>
+                            <button onclick="deleteAlert('${a.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="Eliminar Alerta">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
                     ` : '';
+
+                    let detailText = a.desc || "";
+                    if (a.fecha) {
+                        detailText = `Vencimiento: ${formatDateDisplay(a.fecha)} • ${detailText}`;
+                    }
 
                     container.innerHTML += `
                         <div class="${bgClass} border p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
                             <div class="flex items-start space-x-3">
                                 <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-lg mt-0.5"></i>
-                                <div><h4 class="font-bold">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                                <div><h4 class="font-bold">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${detailText}</p></div>
                             </div>
-                            ${deleteBtnHTML}
+                            ${actionBtnsHTML}
                         </div>`;
                 }
             });
@@ -1742,11 +1775,37 @@
         }
 
         // MODAL HANDLERS - ALERTAS
-        function openAlertModal() {
-            document.getElementById("alertTitulo").value = "";
-            document.getElementById("alertTipo").value = "itv";
-            document.getElementById("alertDescripcion").value = "";
-            document.getElementById("alertModal").classList.remove("hidden");
+        function openAlertModal(id = null) {
+            const modal = document.getElementById("alertModal");
+            const title = document.getElementById("alertModalTitle");
+            const alertRowIndex = document.getElementById("alertRowIndex");
+            const alertTitulo = document.getElementById("alertTitulo");
+            const alertTipo = document.getElementById("alertTipo");
+            const alertFecha = document.getElementById("alertFecha");
+            const alertDescripcion = document.getElementById("alertDescripcion");
+
+            const car = getActiveVehicle();
+
+            if (id && car) {
+                const alert = car.alerts.find(a => String(a.id) === String(id));
+                if (alert) {
+                    title.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Editar Alerta`;
+                    alertRowIndex.value = alert.id;
+                    alertTitulo.value = alert.title || "";
+                    alertTipo.value = alert.type || "warning";
+                    alertFecha.value = alert.fecha ? formatDateISO(alert.fecha) : "";
+                    alertDescripcion.value = alert.desc || "";
+                }
+            } else {
+                title.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Nueva Alerta`;
+                alertRowIndex.value = "";
+                alertTitulo.value = "";
+                alertTipo.value = "itv";
+                alertFecha.value = "";
+                alertDescripcion.value = "";
+            }
+
+            modal.classList.remove("hidden");
         }
 
         function closeAlertModal() {
@@ -1758,16 +1817,23 @@
             const car = getActiveVehicle();
             if (!car || !supabaseClient) return;
 
+            const id = document.getElementById("alertRowIndex").value;
             const alertData = {
                 vehiculo: car.dbName,
                 titulo: document.getElementById("alertTitulo").value,
                 tipo: document.getElementById("alertTipo").value,
-                descripcion: document.getElementById("alertDescripcion").value
+                descripcion: document.getElementById("alertDescripcion").value,
+                fecha: document.getElementById("alertFecha").value || null
             };
 
             try {
-                await supabaseClient.from('alertas').insert([alertData]);
-                showToast("Alerta guardada en Supabase.");
+                if (id) {
+                    await supabaseClient.from('alertas').update(alertData).eq('id', id);
+                    showToast("Alerta actualizada en Supabase.");
+                } else {
+                    await supabaseClient.from('alertas').insert([alertData]);
+                    showToast("Alerta guardada en Supabase.");
+                }
                 closeAlertModal();
                 await reloadData();
             } catch (err) {
