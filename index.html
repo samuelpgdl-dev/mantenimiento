@@ -548,16 +548,38 @@
             document.body.appendChild(script);
         }
 
+        function updateCarKms(car) {
+            if (!car) return;
+            let maxKm = Number(car.kms || 0);
+
+            if (Array.isArray(car.records)) {
+                car.records.forEach(r => {
+                    const km = Number(r.kms || 0);
+                    if (km > maxKm) maxKm = km;
+                });
+            }
+
+            if (Array.isArray(fuelRecords)) {
+                const carFuel = fuelRecords.filter(f => 
+                    String(f.vehiculo || '').toLowerCase().includes(car.excelName.toLowerCase()) || 
+                    car.excelName.toLowerCase().includes(String(f.vehiculo || '').toLowerCase())
+                );
+                carFuel.forEach(f => {
+                    const km = Number(f.kms || 0);
+                    if (km > maxKm) maxKm = km;
+                });
+            }
+
+            car.kms = maxKm;
+        }
+
         function reloadData() {
             const car = getActiveVehicle();
             if (!car) return;
 
             fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getMaintenance&hoja=${encodeURIComponent(car.sheetName)}`, (data) => {
                 car.records = Array.isArray(data) ? data : [];
-                if (car.records.length > 0) {
-                    const sorted = [...car.records].sort((a, b) => Number(b.kms || 0) - Number(a.kms || 0));
-                    if (sorted[0].kms) car.kms = Number(sorted[0].kms);
-                }
+                updateCarKms(car);
                 renderDashboard();
             });
 
@@ -574,12 +596,13 @@
 
             fetchJSONP(`${GOOGLE_SCRIPT_URL}?action=getFuel`, (data) => {
                 fuelRecords = Array.isArray(data) ? data : [];
-                if (activeMainTab === 'fuel') {
-                    renderFuelDashboard();
-                }
                 const activeCar = getActiveVehicle();
                 if (activeCar) {
-                    renderNextServiceEstimations(activeCar);
+                    updateCarKms(activeCar);
+                    renderDashboard();
+                }
+                if (activeMainTab === 'fuel') {
+                    renderFuelDashboard();
                 }
             });
 
@@ -726,6 +749,8 @@
         function renderDashboard() {
             const car = getActiveVehicle();
             if (!car) return;
+
+            updateCarKms(car);
 
             document.getElementById("carTitle").innerText = car.name;
 
