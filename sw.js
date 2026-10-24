@@ -1,9 +1,14 @@
-const CACHE_NAME = 'canana-auto-v1';
+const CACHE_NAME = 'canana-auto-v2';
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json',
-  './Gemini_Generated_Image_37p3m337p3m337p3.jpeg'
+  './site.webmanifest',
+  './favicon-96x96.png',
+  './favicon.svg',
+  './favicon.ico',
+  './apple-touch-icon.png',
+  './web-app-manifest-192x192.png',
+  './web-app-manifest-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -16,7 +21,18 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
