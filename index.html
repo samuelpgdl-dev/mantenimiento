@@ -2,7 +2,7 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Canana Automotive - Control de Mantenimiento y Combustible</title>
 
     <!-- Favicon universal -->
@@ -33,125 +33,141 @@
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
 
     <!-- Toast Notification -->
-    <div id="toastNotification" class="fixed top-20 right-4 sm:right-5 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none">
-        <i class="fa-solid fa-circle-check text-xl"></i>
-        <div>
+    <div id="toastNotification" class="fixed top-4 right-4 sm:top-20 sm:right-5 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none max-w-[90vw]">
+        <i class="fa-solid fa-circle-check text-xl shrink-0"></i>
+        <div class="min-w-0">
             <h5 class="font-bold text-xs sm:text-sm">Sincronización</h5>
-            <p class="text-xs text-emerald-100" id="toastMsg">Base de datos cargada desde Supabase.</p>
+            <p class="text-xs text-emerald-100 truncate" id="toastMsg">Base de datos cargada desde Supabase.</p>
         </div>
     </div>
 
-    <!-- Navbar -->
+    <!-- Header Optimizado para Móvil y Desktop -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-200">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                <img src="Gemini_Generated_Image_37p3m337p3m337p3.jpeg" alt="Canana Logo" class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-700">
-                <span class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white hidden md:inline">Canana Automotive</span>
-                
-                <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-lg flex space-x-1 border border-slate-200 dark:border-slate-600">
-                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition">
-                        <i class="fa-solid fa-wrench mr-1"></i> <span class="hidden sm:inline">Mantenimiento</span>
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 space-y-2">
+            
+            <!-- Fila Superior: Marca + Acciones de Control -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-2 shrink-0">
+                    <img src="Gemini_Generated_Image_37p3m337p3m337p3.jpeg" alt="Canana Logo" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-700">
+                    <span class="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">Canana Automotive</span>
+                </div>
+
+                <div class="flex items-center space-x-1.5 shrink-0">
+                    <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-600 text-xs font-semibold transition flex items-center" title="Añadir vehículo">
+                        <i class="fa-solid fa-car text-xs sm:mr-1.5"></i>
+                        <span class="hidden sm:inline">+ Vehículo</span>
                     </button>
-                    <button id="btnTabFuel" onclick="switchMainTab('fuel')" class="px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
-                        <i class="fa-solid fa-gas-pump mr-1"></i> <span class="hidden sm:inline">Repostajes</span>
+
+                    <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0" title="Cambiar tema">
+                        <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
                     </button>
-                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
-                        <i class="fa-solid fa-boxes-packing mr-1"></i> <span class="hidden sm:inline">Recambios</span>
+
+                    <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0" title="Recargar">
+                        <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
                 </div>
             </div>
-            
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-2.5 rounded-lg border border-emerald-600 text-xs sm:text-sm font-semibold transition flex items-center shrink-0" title="Añadir vehículo">
-                    <i class="fa-solid fa-car mr-1.5"></i>
-                    <span class="hidden md:inline">+ Vehículo</span>
-                </button>
 
-                <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium transition flex items-center justify-center shrink-0" title="Cambiar tema">
-                    <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
-                </button>
-
-                <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium transition flex items-center shrink-0" title="Recargar">
-                    <i class="fa-solid fa-arrows-rotate mr-1.5"></i>
-                    <span class="hidden md:inline">Recargar</span>
-                </button>
+            <!-- Fila Inferior: Selector de Vehículo + Navegación entre Pestañas -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
                 
-                <div class="relative max-w-[140px] sm:max-w-none">
-                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2.5 pr-8 appearance-none font-medium truncate">
+                <!-- Selector del Vehículo Activo (Ancho adaptativo) -->
+                <div class="relative w-full sm:w-72 shrink-0">
+                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2 pr-8 appearance-none font-bold truncate">
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
                         <i class="fa-solid fa-chevron-down text-xs"></i>
                     </div>
                 </div>
+
+                <!-- Tabs principales en formato Segmented Control -->
+                <div class="bg-slate-100 dark:bg-slate-700/80 p-1 rounded-lg flex items-center space-x-1 border border-slate-200 dark:border-slate-600 w-full sm:w-auto justify-between">
+                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center">
+                        <i class="fa-solid fa-wrench mr-1"></i> <span>Mantenimiento</span>
+                    </button>
+                    <button id="btnTabFuel" onclick="switchMainTab('fuel')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
+                        <i class="fa-solid fa-gas-pump mr-1"></i> <span>Repostajes</span>
+                    </button>
+                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
+                        <i class="fa-solid fa-boxes-packing mr-1"></i> <span>Recambios</span>
+                    </button>
+                </div>
+
             </div>
+
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-28 space-y-4 sm:space-y-6">
+    <!-- Main Content con Padding Inferior para evitar Solapamiento con Navegadores Móviles -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-36 space-y-4 sm:space-y-6">
 
+        <!-- Tarjeta del Vehículo Optimizada -->
         <section id="vehicleCard" class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md relative overflow-hidden transition-colors duration-200">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <div class="flex items-center space-x-2 sm:space-x-3">
-                        <h1 id="carTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">--</h1>
-                        <span id="carPlate" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-2.5 py-1 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0">--</span>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 id="carTitle" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">--</h1>
+                        <span id="carPlate" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0">--</span>
                     </div>
-                    <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">--</p>
+                    <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs font-medium">--</p>
                 </div>
-                <div class="flex items-center justify-between md:justify-end space-x-2 sm:space-x-3 text-sm pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
-                    <div class="text-left md:text-right mr-2">
-                        <div class="text-slate-500 dark:text-slate-400 text-xs">Kilometraje Actual</div>
-                        <div id="carKm" class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">-- km</div>
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
+                    <div class="text-left md:text-right">
+                        <div class="text-slate-500 dark:text-slate-400 text-[11px] uppercase font-bold tracking-wider">Kilometraje Actual</div>
+                        <div id="carKm" class="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
                     </div>
-                    <button onclick="openAlertModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold shadow-md transition flex items-center space-x-1.5 shrink-0" title="Añadir Alerta">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="hidden sm:inline">Nueva Alerta</span>
-                    </button>
-                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold shadow-lg transition flex items-center space-x-1.5 shrink-0">
-                        <i class="fa-solid fa-circle-plus"></i>
-                        <span id="lblHeaderAdd">Añadir Mantenimiento</span>
-                    </button>
+                    
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <button onclick="openAlertModal()" class="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition flex items-center justify-center space-x-1.5" title="Añadir Alerta">
+                            <i class="fa-solid fa-bell"></i>
+                            <span>Alerta</span>
+                        </button>
+                        <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-circle-plus"></i>
+                            <span id="lblHeaderAdd">Añadir Mantenimiento</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- VISTA 1: MANTENIMIENTO -->
         <div id="viewMaintenance" class="space-y-4 sm:space-y-6">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4">
-                    <div class="p-2.5 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-euro-sign"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Gasto Acumulado</div><div id="kpiTotalCost" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+            <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
+                    <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-euro-sign"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Gasto Acumulado</div><div id="kpiTotalCost" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4">
-                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-wrench"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Revisiones</div><div id="kpiTotalCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
+                    <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-wrench"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Revisiones</div><div id="kpiTotalCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4">
-                    <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Alertas</div><div id="kpiAlertCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
+                    <div class="p-2 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Alertas</div><div id="kpiAlertCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 sm:space-x-4">
-                    <div class="p-2.5 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg sm:text-xl shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Combustible</div><div id="kpiFuel" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">--</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
+                    <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Combustible</div><div id="kpiFuel" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">--</div></div>
                 </div>
             </section>
 
             <!-- Tarjeta Próxima Revisión Estimada -->
-            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors">
-                <div class="flex items-center space-x-4">
-                    <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-2xl shrink-0">
+            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-xl sm:text-2xl shrink-0">
                         <i class="fa-solid fa-calendar-check"></i>
                     </div>
                     <div>
-                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Próxima Revisión Estimada</span>
-                        <h3 id="nextServiceMonth" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">--</h3>
-                        <p id="nextServiceDetail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+                        <span class="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Próxima Revisión Estimada</span>
+                        <h3 id="nextServiceMonth" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">--</h3>
+                        <p id="nextServiceDetail" class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
                     </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-200/60 dark:border-slate-600/60 text-right w-full sm:w-auto shrink-0">
-                    <div class="text-[11px] text-slate-400 font-medium">Faltan aproximadamente</div>
-                    <div id="nextServiceKm" class="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 sm:p-3 rounded-lg border border-slate-200/60 dark:border-slate-600/60 text-left sm:text-right w-full sm:w-auto shrink-0">
+                    <div class="text-[10px] text-slate-400 font-medium">Faltan aproximadamente</div>
+                    <div id="nextServiceKm" class="text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
                 </div>
             </section>
 
@@ -230,58 +246,58 @@
 
         <!-- VISTA 2: REPOSTAJES (GASOIL) -->
         <div id="viewFuel" class="space-y-4 sm:space-y-6 hidden">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Total Gasoil</div><div id="kpiFuelTotal" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+            <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
+                    <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Total Gasoil</div><div id="kpiFuelTotal" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-calculator"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Repostajes</div><div id="kpiFuelCount" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
+                    <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-calculator"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Repostajes</div><div id="kpiFuelCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gauge-high"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Consumo Medio</div><div id="kpiFuelAvgConsumption" class="text-base sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">-- L/100km</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
+                    <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gauge-high"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Consumo Medio</div><div id="kpiFuelAvgConsumption" class="text-sm sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">-- L/100km</div></div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3">
-                    <div class="p-2.5 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
-                    <div class="min-w-0"><div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Precio Medio Total</div><div id="kpiFuelAvgPriceLiter" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
+                    <div class="p-2 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Precio Medio Total</div><div id="kpiFuelAvgPriceLiter" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
                 </div>
             </section>
 
-            <!-- Tarjeta de Análisis de Precio Medio y Variabilidad -->
+            <!-- Tarjeta de Análisis de Precio Medio -->
             <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-3">
                     <div class="flex items-center space-x-2">
                         <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-base shrink-0">
                             <i class="fa-solid fa-chart-line"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Análisis de Precio en Periodo Seleccionado</h3>
-                            <p class="text-[11px] text-slate-400">Varía al ajustar el rango de fechas inferior</p>
+                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Análisis de Precio en Periodo Seleccionado</h3>
+                            <p class="text-[10px] text-slate-400">Varía al ajustar el rango de fechas inferior</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <span id="periodVariabilityBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">Sin datos</span>
+                        <span id="periodVariabilityBadge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">Sin datos</span>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs pt-1">
                     <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
                         <div class="text-slate-400 text-[10px] uppercase font-semibold">Precio Medio Periodo</div>
-                        <div id="periodAvgPrice" class="text-base font-extrabold text-slate-900 dark:text-white mt-0.5">-- €/L</div>
+                        <div id="periodAvgPrice" class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-0.5">-- €/L</div>
                     </div>
                     <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
                         <div class="text-slate-400 text-[10px] uppercase font-semibold">Mínimo Registrado</div>
-                        <div id="periodMinPrice" class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">-- €/L</div>
+                        <div id="periodMinPrice" class="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">-- €/L</div>
                     </div>
                     <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
                         <div class="text-slate-400 text-[10px] uppercase font-semibold">Máximo Registrado</div>
-                        <div id="periodMaxPrice" class="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">-- €/L</div>
+                        <div id="periodMaxPrice" class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">-- €/L</div>
                     </div>
                     <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
                         <div class="text-slate-400 text-[10px] uppercase font-semibold">Diferencia Mín / Máx</div>
-                        <div id="periodDiffPrice" class="text-base font-bold text-slate-800 dark:text-slate-200 mt-0.5">-- €/L</div>
+                        <div id="periodDiffPrice" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200 mt-0.5">-- €/L</div>
                     </div>
                 </div>
 
@@ -374,18 +390,18 @@
         </div>
 
         <!-- SECCIÓN INFERIOR: EXPORTACIÓN Y COPIAS DE SEGURIDAD -->
-        <section class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
+        <section class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
             <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                <div class="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xl">
+                <div class="p-2 sm:p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg sm:text-xl shrink-0">
                     <i class="fa-solid fa-file-arrow-down"></i>
                 </div>
                 <div>
-                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Centro de Exportación e Informes</h2>
+                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Centro de Exportación e Informes</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados del vehículo activo.</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
                     <input type="checkbox" id="chkExportMaint" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Historial de Mantenimiento</span>
@@ -394,13 +410,13 @@
                     <input type="checkbox" id="chkExportFuel" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Repostajes y Combustible</span>
                 </label>
-                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600/50 transition">
+                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
                     <input type="checkbox" id="chkExportParts" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Referencias y Recambios</span>
                 </label>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
                 <button onclick="exportToExcel()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm">
                     <i class="fa-solid fa-file-excel"></i>
                     <span>Exportar a Excel (CSV / XLSX)</span>
@@ -685,7 +701,6 @@
             if (val === null || val === undefined) return 0;
             if (typeof val === 'number') return val;
             let str = String(val).replace(/€/g, '').trim();
-            // Si tiene formato español ej "12.240,50" o "1.335"
             if (str.includes('.') && str.includes(',')) {
                 str = str.replace(/\./g, '').replace(',', '.');
             } else if (str.includes(',')) {
@@ -709,7 +724,7 @@
             }
 
             if (Array.isArray(fuelRecords)) {
-                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName);
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
                 carFuel.forEach(f => {
                     const km = Number(f.kms || 0);
                     if (km > maxKm) maxKm = km;
@@ -741,12 +756,11 @@
                 const alertsData = alertsRes.data || [];
                 let vehData = vehRes.data || [];
 
-                // Si la tabla vehiculos está vacía en Supabase, creamos un set por defecto basado en los nombres detectados en mantenimiento
                 if (vehData.length === 0) {
                     vehData = [
-                        { id: 1, id_alias: 'c3', name: 'Citroën C3 - 2805JRB', db_name: 'Citroën C3 - 2805JRB', plate: '2805JRB', vin: 'VF7SCBHY6GW586838', year: 2016, kms: 165900, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
-                        { id: 2, id_alias: 'p308', name: 'Peugeot 308 - 1184JMB', db_name: 'Peugeot 308 - 1184JMB', plate: '1184JMB', vin: 'VF3LBBHZ3FS336588', year: 2017, kms: 62066, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
-                        { id: 3, id_alias: 'p207', name: 'Peugeot 207 - 3323FMY', db_name: 'Peugeot 207 - 3323FMY', plate: '3323FMY', vin: 'VF3WC9HXC33655626', year: 2010, kms: 250000, fuel: 'Diésel', interval_km: 10000, interval_months: 12 }
+                        { id: 1, id_alias: 'c3', name: 'Citroën C3 - 2805JRB', db_name: 'Citroën C3 - 2805JRB', plate: '2805JRB', vin: 'VF7SCBHY6GW586838', year: 2016, kms: 165992, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
+                        { id: 2, id_alias: 'p308', name: 'Peugeot 308 - 1184JMB', db_name: 'Peugeot 308 - 1184JMB', plate: '1184JMB', vin: 'VF3LBBHZ3FS336588', year: 2017, kms: 71000, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
+                        { id: 3, id_alias: 'p207', name: 'Peugeot 207 - 3323FMY', db_name: 'Peugeot 207 - 3323FMY', plate: '3323FMY', vin: 'VF3WC9HXC33655626', year: 2010, kms: 281500, fuel: 'Diésel', interval_km: 10000, interval_months: 12 }
                     ];
                 }
 
@@ -842,25 +856,25 @@
             const viewParts = document.getElementById("viewParts");
             const lblAdd = document.getElementById("lblHeaderAdd");
 
-            btnMaint.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition";
-            btnFuel.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition";
-            btnParts.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition";
+            btnMaint.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
+            btnFuel.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
+            btnParts.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
 
             viewMaint.classList.add("hidden");
             viewFuel.classList.add("hidden");
             viewParts.classList.add("hidden");
 
             if (tab === 'maintenance') {
-                btnMaint.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnMaint.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
                 viewMaint.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Mantenimiento";
             } else if (tab === 'fuel') {
-                btnFuel.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold bg-purple-600 text-white transition";
+                btnFuel.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-purple-600 text-white transition text-center shadow-sm";
                 viewFuel.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Repostaje";
                 renderFuelDashboard();
             } else {
-                btnParts.className = "px-2.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition";
+                btnParts.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
                 viewParts.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Recambio";
                 renderParts();
@@ -1011,7 +1025,7 @@
 
             if (!cardMonth || !car) return;
 
-            cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
+            cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
 
             const revisions = (car.records || []).filter(r => {
                 const t = String(r.tipo || '').toLowerCase();
@@ -1024,10 +1038,10 @@
 
             if (!hasRevision) {
                 cardMonth.innerText = "Sin registro de revisión previa";
-                cardMonth.className = "text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
+                cardMonth.className = "text-base sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
                 cardDetail.innerText = `Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses. Introduce una revisión para calcular.`;
                 cardKm.innerText = "-- km";
-                cardKm.className = "text-base sm:text-lg font-extrabold text-slate-400";
+                cardKm.className = "text-sm sm:text-lg font-extrabold text-slate-400";
                 return;
             }
 
@@ -1097,25 +1111,25 @@
             const monthStr = `${monthNames[finalTargetDate.getMonth()]} de ${finalTargetDate.getFullYear()}`;
 
             if (isOverdueTime || isOverdueKm) {
-                cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors";
+                cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
                 
                 if (isOverdueTime) {
                     cardMonth.innerText = `¡Revisión Vencida! (${monthStr})`;
-                    cardMonth.className = "text-lg sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
+                    cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
                     cardDetail.innerText = `Superó los ${intervalMonths} meses de plazo (última: ${formatDateDisplay(lastDate)}).`;
                 } else {
                     cardMonth.innerText = `¡Kilometraje superado!`;
-                    cardMonth.className = "text-lg sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
+                    cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
                     cardDetail.innerText = `Límite recomendado de ${targetKm.toLocaleString('es-ES')} km alcanzado.`;
                 }
                 
                 cardKm.innerText = remainingKm <= 0 ? `Excedido en ${Math.abs(remainingKm).toLocaleString('es-ES')} km` : `0 km`;
-                cardKm.className = "text-base sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
+                cardKm.className = "text-sm sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
             } else {
                 cardMonth.innerText = monthStr;
-                cardMonth.className = "text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
+                cardMonth.className = "text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
                 cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
-                cardKm.className = "text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400";
+                cardKm.className = "text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400";
 
                 const reasonText = isLimitedByTime 
                     ? `Límite por tiempo (${intervalMonths} meses desde ${formatDateDisplay(lastDate)})` 
@@ -1165,9 +1179,9 @@
             let monthBarHTML = romanMonths.map((m, idx) => {
                 let isPunched = (idx + 1) === monthNum;
                 if (isPunched) {
-                    return `<span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[9px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/20">${m}</span>`;
+                    return `<span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[8px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/20">${m}</span>`;
                 }
-                return `<span class="opacity-60 text-[8px] sm:text-[9px] font-bold">${m}</span>`;
+                return `<span class="opacity-60 text-[7px] sm:text-[9px] font-bold">${m}</span>`;
             }).join('');
 
             const actionBtnsHTML = (isManual && id) ? `
@@ -1187,29 +1201,29 @@
             }
 
             return `
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-4">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-28 sm:w-32 h-20 sm:h-24 ${colorBg} rounded-lg border-2 shadow-md flex flex-col justify-between p-1.5 relative shrink-0 select-none overflow-hidden font-sans">
-                            <div class="flex items-center justify-between border-b border-black/20 pb-1 px-0.5">
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
+                        <div class="w-24 sm:w-32 h-18 sm:h-24 ${colorBg} rounded-lg border-2 shadow-md flex flex-col justify-between p-1 sm:p-1.5 relative shrink-0 select-none overflow-hidden font-sans">
+                            <div class="flex items-center justify-between border-b border-black/20 pb-0.5 sm:pb-1 px-0.5">
                                 ${monthBarHTML}
                             </div>
                             <div class="flex items-center justify-between px-1 my-auto">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] sm:text-[10px] font-black tracking-tighter opacity-80 leading-none">ITV</span>
-                                    <span class="text-[7px] font-bold opacity-60 uppercase mt-0.5">V-19</span>
+                                    <span class="text-[8px] sm:text-[10px] font-black tracking-tighter opacity-80 leading-none">ITV</span>
+                                    <span class="text-[6px] sm:text-[7px] font-bold opacity-60 uppercase mt-0.5">V-19</span>
                                 </div>
-                                <span class="text-2xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
+                                <span class="text-xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
                             </div>
-                            <div class="flex items-center justify-between text-[7px] font-bold opacity-50 border-t border-black/10 pt-0.5 px-0.5 uppercase">
+                            <div class="flex items-center justify-between text-[6px] sm:text-[7px] font-bold opacity-50 border-t border-black/10 pt-0.5 px-0.5 uppercase">
                                 <span>España</span>
-                                <i class="fa-solid fa-shield-halved text-[8px]"></i>
+                                <i class="fa-solid fa-shield-halved text-[7px] sm:text-[8px]"></i>
                             </div>
                         </div>
 
-                        <div>
-                            <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-amber-500/20">Inspección Técnica</span>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-base mt-1">${title}</h4>
-                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${detailText}</p>
+                        <div class="min-w-0">
+                            <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] sm:text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-amber-500/20">Inspección Técnica</span>
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5 truncate">${title}</h4>
+                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5 line-clamp-2">${detailText}</p>
                         </div>
                     </div>
                     ${actionBtnsHTML}
@@ -1250,10 +1264,10 @@
                     }
 
                     container.innerHTML += `
-                        <div class="${bgClass} border p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
-                            <div class="flex items-start space-x-3">
-                                <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-lg mt-0.5"></i>
-                                <div><h4 class="font-bold">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${detailText}</p></div>
+                        <div class="${bgClass} border p-3 sm:p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
+                            <div class="flex items-start space-x-3 min-w-0">
+                                <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-base sm:text-lg mt-0.5 shrink-0"></i>
+                                <div class="min-w-0"><h4 class="font-bold truncate">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5 line-clamp-2">${detailText}</p></div>
                             </div>
                             ${actionBtnsHTML}
                         </div>`;
@@ -1281,7 +1295,7 @@
             categoryChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
                 data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12 } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 10, font: { size: 10 } } } } }
             });
 
             const yearMap = {};
@@ -1296,7 +1310,7 @@
             timeChartInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: { labels: Object.keys(yearMap), datasets: [{ label: 'Gasto (€)', data: Object.values(yearMap), backgroundColor: '#3b82f6' }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor }, grid: { display: false } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } }, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } } }, plugins: { legend: { display: false } } }
             });
         }
 
@@ -1361,14 +1375,14 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
-                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
-                    <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.tipo || ""}</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] sm:text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
+                    <td class="px-3 sm:px-4 py-3 min-w-[160px]">${r.tipo || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openRecordModal('${r.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteRecord('${r.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
+                            <button onclick="openRecordModal('${r.id}')" class="text-slate-400 hover:text-blue-500 p-1 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
+                            <button onclick="deleteRecord('${r.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1480,7 +1494,7 @@
                     commentText = `Alta volatilidad detectada en el periodo. Se registró una brecha de ${centsDiff} céntimos por litro entre el repostaje más económico y el más costoso.`;
                 }
 
-                badgeElem.className = `px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}`;
+                badgeElem.className = `px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${badgeClass}`;
                 badgeElem.innerText = badgeText;
                 commentElem.innerText = commentText;
             } else if (avgPriceElem) {
@@ -1488,7 +1502,7 @@
                 minPriceElem.innerText = "-- €/L";
                 maxPriceElem.innerText = "-- €/L";
                 diffPriceElem.innerText = "-- €/L";
-                badgeElem.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500";
+                badgeElem.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500";
                 badgeElem.innerText = "Sin datos";
                 commentElem.innerText = "No se encontraron registros de repostaje con litros e importe en el rango de fechas seleccionado.";
             }
@@ -1630,9 +1644,9 @@
                     <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-2">
-                            <button onclick="openFuelModal('${f.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <button onclick="deleteFuelRecord('${f.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
+                            <button onclick="openFuelModal('${f.id}')" class="text-slate-400 hover:text-blue-500 p-1 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
+                            <button onclick="deleteFuelRecord('${f.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
