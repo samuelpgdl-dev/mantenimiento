@@ -59,6 +59,11 @@
             </div>
             
             <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-2.5 rounded-lg border border-emerald-600 text-xs sm:text-sm font-semibold transition flex items-center shrink-0" title="Añadir vehículo">
+                    <i class="fa-solid fa-car mr-1.5"></i>
+                    <span class="hidden md:inline">+ Vehículo</span>
+                </button>
+
                 <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-sm font-medium transition flex items-center justify-center shrink-0" title="Cambiar tema">
                     <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
                 </button>
@@ -528,6 +533,64 @@
         </div>
     </div>
 
+    <!-- Modal Form: Nuevo Vehículo -->
+    <div id="vehicleModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
+            <button onclick="closeVehicleModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-car text-emerald-500 mr-2"></i> Registrar Nuevo Vehículo</h3>
+            
+            <form id="vehicleForm" onsubmit="handleSaveVehicle(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial y Matrícula *</label>
+                    <input type="text" id="vehName" required placeholder="Seat León - 5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Matrícula *</label>
+                        <input type="text" id="vehPlate" required placeholder="5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Combustible *</label>
+                        <select id="vehFuel" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                            <option value="Diésel">Diésel</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="Híbrido">Híbrido</option>
+                            <option value="Eléctrico">Eléctrico</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Año</label>
+                        <input type="number" id="vehYear" placeholder="2019" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
+                        <input type="number" id="vehKms" placeholder="120000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bastidor (VIN)</label>
+                        <input type="text" id="vehVin" placeholder="VSSZZZ..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Intervalo Revisión (km)</label>
+                        <input type="number" id="vehIntervalKm" value="15000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Intervalo Revisión (meses)</label>
+                        <input type="number" id="vehIntervalMonths" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeVehicleModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar Vehículo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Script Logic con Supabase SDK -->
     <script>
         // CONFIGURACIÓN DE SUPABASE
@@ -541,12 +604,8 @@
             "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
-        let vehicles = [
-            { id: "c3", name: "Citroën C3 - 2805JRB", dbName: "Citroën C3 - 2805JRB", plate: "2805JRB", vin: "VF7SCBHY6GW586838", year: 2016, kms: 165900, fuel: "Diésel", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
-            { id: "p308", name: "Peugeot 308 - 1184JMB", dbName: "Peugeot 308 - 1184JMB", plate: "1184JMB", vin: "VF3LBBHZ3FS336588", year: 2017, kms: 62066, fuel: "Diésel", intervalKm: 15000, intervalMonths: 12, records: [], parts: [], alerts: [] },
-            { id: "p207", name: "Peugeot 207 - 3323FMY", dbName: "Peugeot 207 - 3323FMY", plate: "3323FMY", vin: "VF3WC9HXC33655626", year: 2010, kms: 250000, fuel: "Diésel", intervalKm: 10000, intervalMonths: 12, records: [], parts: [], alerts: [] }
-        ];
-
+        // Se carga 100% dinámicamente desde Supabase
+        let vehicles = [];
         let fuelRecords = [];
         let activeVehicleId = "c3";
         let activeMainTab = "maintenance";
@@ -610,23 +669,44 @@
             }
 
             try {
-                const [maintRes, fuelRes, partsRes, alertsRes] = await Promise.all([
+                const [maintRes, fuelRes, partsRes, alertsRes, vehRes] = await Promise.all([
                     supabaseClient.from('mantenimiento').select('*'),
                     supabaseClient.from('repostajes').select('*'),
                     supabaseClient.from('recambios').select('*'),
-                    supabaseClient.from('alertas').select('*')
+                    supabaseClient.from('alertas').select('*'),
+                    supabaseClient.from('vehiculos').select('*')
                 ]);
 
                 const maintData = maintRes.data || [];
                 fuelRecords = fuelRes.data || [];
                 const partsData = partsRes.data || [];
                 const alertsData = alertsRes.data || [];
+                const vehData = vehRes.data || [];
+
+                vehicles = vehData.map(v => ({
+                    id: v.id_alias || String(v.id),
+                    name: v.name,
+                    dbName: v.db_name,
+                    plate: v.plate,
+                    vin: v.vin,
+                    year: v.year,
+                    kms: v.kms || 0,
+                    fuel: v.fuel,
+                    intervalKm: v.interval_km || 15000,
+                    intervalMonths: v.interval_months || 12,
+                    records: [],
+                    parts: [],
+                    alerts: []
+                }));
+
+                if (vehicles.length > 0 && !vehicles.some(v => v.id === activeVehicleId)) {
+                    activeVehicleId = vehicles[0].id;
+                }
 
                 vehicles.forEach(car => {
                     car.records = maintData.filter(r => r.vehiculo === car.dbName);
                     car.parts = partsData.filter(p => p.vehiculo === car.dbName);
 
-                    // Alertas manuales desde la tabla de Supabase
                     const dbAlerts = alertsData.filter(a => a.vehiculo === car.dbName).map(a => ({
                         id: a.id,
                         title: a.titulo,
@@ -636,7 +716,6 @@
                         isManual: true
                     }));
 
-                    // Alerta calculada automáticamente para la ITV desde el historial
                     let autoItvAlert = null;
                     const itvRecords = (car.records || []).filter(r => {
                         const t = String(r.tipo || '').toLowerCase();
@@ -660,7 +739,6 @@
                         }
                     }
 
-                    // Si hay alertas manuales de ITV, no duplicamos con la automática
                     const hasManualItv = dbAlerts.some(a => String(a.type).toLowerCase() === 'itv' || String(a.title).toLowerCase().includes('itv'));
                     if (hasManualItv) {
                         car.alerts = dbAlerts;
@@ -673,6 +751,7 @@
                     updateCarKms(car);
                 });
 
+                populateVehicleSelector();
                 renderDashboard();
                 if (activeMainTab === 'fuel') renderFuelDashboard();
                 if (activeMainTab === 'parts') renderParts();
@@ -737,7 +816,10 @@
             const fuelFormVehicle = document.getElementById("fuelFormVehicle");
 
             selector.innerHTML = vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-            selector.value = activeVehicleId;
+            if (vehicles.length > 0) {
+                if (!vehicles.some(v => v.id === activeVehicleId)) activeVehicleId = vehicles[0].id;
+                selector.value = activeVehicleId;
+            }
 
             fuelFormVehicle.innerHTML = vehicles.map(v => `<option value="${v.dbName}">${v.name}</option>`).join('');
         }
@@ -817,7 +899,14 @@
 
         function renderDashboard() {
             const car = getActiveVehicle();
-            if (!car) return;
+            if (!car) {
+                document.getElementById("carTitle").innerText = "Sin vehículos";
+                document.getElementById("carPlate").innerText = "--";
+                document.getElementById("carSub").innerText = "Añade un vehículo con el botón '+ Vehículo'";
+                document.getElementById("carKm").innerText = "0 km";
+                document.getElementById("recordsTableBody").innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay vehículos registrados.</td></tr>`;
+                return;
+            }
 
             updateCarKms(car);
 
@@ -970,7 +1059,6 @@
         function createITVStickerHTML(title, desc, id = null, isManual = false, rawFecha = null) {
             let targetDate = parseDate(rawFecha);
             
-            // Intenta extraer la fecha si está incrustada en el texto
             if (!targetDate) {
                 let match = desc.match(/(\d{1,2})[/.-](\d{1,2})[/.-](20\d\d)/);
                 if (match) targetDate = new Date(match[3], match[2] - 1, match[1]);
@@ -1851,6 +1939,55 @@
             } catch (err) {
                 console.error("Error al eliminar alerta:", err);
                 showToast("Error al eliminar la alerta.");
+            }
+        }
+
+        // MODAL HANDLERS - VEHÍCULOS
+        function openVehicleModal() {
+            document.getElementById("vehName").value = "";
+            document.getElementById("vehPlate").value = "";
+            document.getElementById("vehVin").value = "";
+            document.getElementById("vehYear").value = new Date().getFullYear();
+            document.getElementById("vehKms").value = "";
+            document.getElementById("vehFuel").value = "Diésel";
+            document.getElementById("vehIntervalKm").value = 15000;
+            document.getElementById("vehIntervalMonths").value = 12;
+            document.getElementById("vehicleModal").classList.remove("hidden");
+        }
+
+        function closeVehicleModal() {
+            document.getElementById("vehicleModal").classList.add("hidden");
+        }
+
+        async function handleSaveVehicle(e) {
+            e.preventDefault();
+            if (!supabaseClient) return;
+
+            const nameVal = document.getElementById("vehName").value.trim();
+            const plateVal = document.getElementById("vehPlate").value.trim();
+            const idAlias = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+            const vehicleData = {
+                id_alias: idAlias,
+                name: nameVal,
+                db_name: nameVal,
+                plate: plateVal,
+                vin: document.getElementById("vehVin").value.trim() || "",
+                year: parseInt(document.getElementById("vehYear").value) || new Date().getFullYear(),
+                kms: parseInt(document.getElementById("vehKms").value) || 0,
+                fuel: document.getElementById("vehFuel").value,
+                interval_km: parseInt(document.getElementById("vehIntervalKm").value) || 15000,
+                interval_months: parseInt(document.getElementById("vehIntervalMonths").value) || 12
+            };
+
+            try {
+                await supabaseClient.from('vehiculos').insert([vehicleData]);
+                showToast("Vehículo guardado en Supabase.");
+                closeVehicleModal();
+                await reloadData();
+            } catch (err) {
+                console.error("Error al guardar vehículo:", err);
+                showToast("Error al guardar el vehículo.");
             }
         }
     </script>
