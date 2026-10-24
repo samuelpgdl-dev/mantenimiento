@@ -373,14 +373,14 @@
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
 
-        <!-- NUEVA SECCIÓN AL FINAL: EXPORTACIÓN Y COPIAS DE SEGURIDAD -->
+        <!-- SECCIÓN INFERIOR: EXPORTACIÓN Y COPIAS DE SEGURIDAD -->
         <section class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
             <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
                 <div class="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xl">
                     <i class="fa-solid fa-file-arrow-down"></i>
                 </div>
                 <div>
-                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Centro de Exportación y Informes</h2>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Centro de Exportación e Informes</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados del vehículo activo.</p>
                 </div>
             </div>
@@ -394,7 +394,7 @@
                     <input type="checkbox" id="chkExportFuel" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Repostajes y Combustible</span>
                 </label>
-                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
+                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600/50 transition">
                     <input type="checkbox" id="chkExportParts" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Referencias y Recambios</span>
                 </label>
@@ -414,7 +414,7 @@
 
     </main>
 
-    <!-- Modales anteriores (Mantenimiento, Repostaje, Recambios, Alertas, Vehículo) -->
+    <!-- Modales -->
     <!-- Modal Form: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
@@ -638,7 +638,7 @@
     <script>
         // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6InVpbm4iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         const MAINTENANCE_CATEGORIES = [
@@ -679,6 +679,22 @@
             populateCategories();
             populateVehicleSelector();
             renderDashboard();
+        }
+
+        function parseCost(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return val;
+            let str = String(val).replace(/€/g, '').trim();
+            // Si tiene formato español ej "12.240,50" o "1.335"
+            if (str.includes('.') && str.includes(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes(',')) {
+                str = str.replace(',', '.');
+            } else if (str.split('.').length > 2) {
+                str = str.replace(/\./g, '');
+            }
+            let num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
         }
 
         function updateCarKms(car) {
@@ -723,17 +739,26 @@
                 fuelRecords = fuelRes.data || [];
                 const partsData = partsRes.data || [];
                 const alertsData = alertsRes.data || [];
-                const vehData = vehRes.data || [];
+                let vehData = vehRes.data || [];
+
+                // Si la tabla vehiculos está vacía en Supabase, creamos un set por defecto basado en los nombres detectados en mantenimiento
+                if (vehData.length === 0) {
+                    vehData = [
+                        { id: 1, id_alias: 'c3', name: 'Citroën C3 - 2805JRB', db_name: 'Citroën C3 - 2805JRB', plate: '2805JRB', vin: 'VF7SCBHY6GW586838', year: 2016, kms: 165900, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
+                        { id: 2, id_alias: 'p308', name: 'Peugeot 308 - 1184JMB', db_name: 'Peugeot 308 - 1184JMB', plate: '1184JMB', vin: 'VF3LBBHZ3FS336588', year: 2017, kms: 62066, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
+                        { id: 3, id_alias: 'p207', name: 'Peugeot 207 - 3323FMY', db_name: 'Peugeot 207 - 3323FMY', plate: '3323FMY', vin: 'VF3WC9HXC33655626', year: 2010, kms: 250000, fuel: 'Diésel', interval_km: 10000, interval_months: 12 }
+                    ];
+                }
 
                 vehicles = vehData.map(v => ({
                     id: v.id_alias || String(v.id),
                     name: v.name,
-                    dbName: v.db_name,
+                    dbName: v.db_name || v.name,
                     plate: v.plate,
                     vin: v.vin,
                     year: v.year,
                     kms: v.kms || 0,
-                    fuel: v.fuel,
+                    fuel: v.fuel || 'Diésel',
                     intervalKm: v.interval_km || 15000,
                     intervalMonths: v.interval_months || 12,
                     records: [],
@@ -746,10 +771,12 @@
                 }
 
                 vehicles.forEach(car => {
-                    car.records = maintData.filter(r => r.vehiculo === car.dbName);
-                    car.parts = partsData.filter(p => p.vehiculo === car.dbName);
+                    car.records = maintData.filter(r => r.vehiculo === car.dbName || r.vehiculo === car.name);
+                    car.records.forEach(r => { r.coste = parseCost(r.coste); });
 
-                    const dbAlerts = alertsData.filter(a => a.vehiculo === car.dbName).map(a => ({
+                    car.parts = partsData.filter(p => p.vehiculo === car.dbName || p.vehiculo === car.name);
+
+                    const dbAlerts = alertsData.filter(a => a.vehiculo === car.dbName || a.vehiculo === car.name).map(a => ({
                         id: a.id,
                         title: a.titulo,
                         desc: a.descripcion,
@@ -797,7 +824,7 @@
                 renderDashboard();
                 if (activeMainTab === 'fuel') renderFuelDashboard();
                 if (activeMainTab === 'parts') renderParts();
-                showToast("Datos cargados correctamente.");
+                showToast("Datos sincronizados con éxito.");
             } catch (err) {
                 console.error("Error al consultar Supabase:", err);
                 showToast("Error al conectar con Supabase.");
@@ -1014,7 +1041,7 @@
                 if (d && km > 0) pts.push({ date: d, km: km });
             });
 
-            const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName);
+            const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
             carFuel.forEach(f => {
                 const d = parseDate(f.fecha);
                 const km = Number(f.kms || 0);
@@ -1337,7 +1364,7 @@
                     <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
                     <td class="px-3 sm:px-4 py-3 min-w-[180px]">${r.tipo || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-2">
                             <button onclick="openRecordModal('${r.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
@@ -1358,7 +1385,7 @@
             const car = getActiveVehicle();
             let rawList = fuelRecords;
             if (car) {
-                rawList = rawList.filter(f => f.vehiculo === car.dbName);
+                rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
             }
 
             const dateFromVal = document.getElementById("fuelDateFrom") ? document.getElementById("fuelDateFrom").value : "";
@@ -1529,7 +1556,7 @@
             let rawList = fuelRecords;
 
             if (car) {
-                rawList = rawList.filter(f => f.vehiculo === car.dbName);
+                rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
             }
 
             let sortedAsc = [...rawList].sort((a, b) => {
@@ -1710,7 +1737,7 @@
             }
 
             if (includeFuel) {
-                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName).map(f => ({
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name).map(f => ({
                     Vehiculo: f.vehiculo,
                     Fecha: formatDateDisplay(f.fecha),
                     Kilometros: Number(f.kms || 0),
@@ -1796,7 +1823,7 @@
                     doc.text(formatDateDisplay(r.fecha), 15, y);
                     doc.text(Number(r.kms || 0).toLocaleString('es-ES') + " km", 45, y);
                     doc.text(String(r.detalle || r.tipo || "").substring(0, 45), 75, y);
-                    doc.text(Number(r.coste || 0).toFixed(2) + " €", 195, y, { align: "right" });
+                    doc.text(Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2}) + " €", 195, y, { align: "right" });
                     y += 5;
                 });
                 y += 8;
@@ -1819,7 +1846,7 @@
                 y += 5;
 
                 doc.setFont("helvetica", "normal");
-                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName);
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
                 carFuel.forEach(f => {
                     if (y > 275) { doc.addPage(); y = 15; }
                     doc.text(formatDateDisplay(f.fecha), 15, y);
@@ -1860,7 +1887,7 @@
             showToast("Informe PDF generado correctamente.");
         }
 
-        // MODAL HANDLERS (Mantenimiento, Repostaje, Recambios, Alertas, Vehículo)
+        // MODAL HANDLERS
         function openRecordModal(id = null) {
             const modal = document.getElementById("recordModal");
             const title = document.getElementById("recordModalTitle");
