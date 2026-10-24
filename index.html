@@ -75,14 +75,23 @@
                 </div>
             </div>
 
-            <!-- Fila Inferior: Selector de Vehículo + Navegación entre Pestañas -->
+            <!-- Fila Inferior: Selector de Vehículo con Logo de Marca + Navegación entre Pestañas -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
                 
-                <div class="relative w-full sm:w-72 shrink-0">
-                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2 pr-8 appearance-none font-bold truncate">
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                <div class="flex items-center space-x-2 w-full sm:w-72 shrink-0">
+                    <!-- Icono dinámico de la marca -->
+                    <div id="brandLogoContainer" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center p-1.5 shrink-0 transition">
+                        <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
+                        <i id="brandLogoFallback" class="fa-solid fa-car text-slate-400 text-xs"></i>
+                    </div>
+
+                    <!-- Desplegable de Vehículos -->
+                    <div class="relative w-full">
+                        <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2 pr-8 appearance-none font-bold truncate cursor-pointer">
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -700,6 +709,27 @@
             renderDashboard();
         }
 
+        function getBrandLogoUrl(vehicleName) {
+            const name = String(vehicleName || '').toLowerCase();
+            
+            if (name.includes('citroen') || name.includes('citroën')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg';
+            if (name.includes('peugeot')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/peugeot.svg';
+            if (name.includes('seat')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/seat.svg';
+            if (name.includes('renault')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/renault.svg';
+            if (name.includes('volkswagen') || name.includes('vw')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/volkswagen.svg';
+            if (name.includes('bmw')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/bmw.svg';
+            if (name.includes('audi')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/audi.svg';
+            if (name.includes('ford')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/ford.svg';
+            if (name.includes('toyota')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/toyota.svg';
+            if (name.includes('opel')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/opel.svg';
+            if (name.includes('mercedes')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/mercedes.svg';
+            if (name.includes('fiat')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/fiat.svg';
+            if (name.includes('hyundai')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hyundai.svg';
+            if (name.includes('kia')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/kia.svg';
+            
+            return null;
+        }
+
         function parseCost(val) {
             if (val === null || val === undefined) return 0;
             if (typeof val === 'number') return val;
@@ -997,6 +1027,20 @@
             updateCarKms(car);
 
             document.getElementById("carTitle").innerText = car.name;
+
+            // Actualizar el logo dinámico de la marca junto al selector
+            const logoImg = document.getElementById("brandLogoImg");
+            const logoFallback = document.getElementById("brandLogoFallback");
+            const logoUrl = getBrandLogoUrl(car.name);
+
+            if (logoUrl) {
+                logoImg.src = logoUrl;
+                logoImg.classList.remove("hidden");
+                logoFallback.classList.add("hidden");
+            } else {
+                logoImg.classList.add("hidden");
+                logoFallback.classList.remove("hidden");
+            }
 
             let identifierText = "";
             if (car.plate && car.vin) identifierText = `${car.plate} • ${car.vin}`;
@@ -2249,7 +2293,7 @@
             }
         }
 
-        // Registro de Service Worker para la PWA
+        // Registro de Service Worker para PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
