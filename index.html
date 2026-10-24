@@ -91,11 +91,15 @@
                     </div>
                     <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">--</p>
                 </div>
-                <div class="flex items-center justify-between md:justify-end space-x-4 sm:space-x-6 text-sm pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
-                    <div class="text-left md:text-right">
+                <div class="flex items-center justify-between md:justify-end space-x-2 sm:space-x-3 text-sm pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
+                    <div class="text-left md:text-right mr-2">
                         <div class="text-slate-500 dark:text-slate-400 text-xs">Kilometraje Actual</div>
                         <div id="carKm" class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">-- km</div>
                     </div>
+                    <button onclick="openAlertModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold shadow-md transition flex items-center space-x-1.5 shrink-0" title="Añadir Alerta">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="hidden sm:inline">Nueva Alerta</span>
+                    </button>
                     <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold shadow-lg transition flex items-center space-x-1.5 shrink-0">
                         <i class="fa-solid fa-circle-plus"></i>
                         <span id="lblHeaderAdd">Añadir Mantenimiento</span>
@@ -487,6 +491,36 @@
         </div>
     </div>
 
+    <!-- Modal Form: Alertas -->
+    <div id="alertModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-lg shadow-2xl p-5 relative">
+            <button onclick="closeAlertModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Añadir Alerta Manual</h3>
+            <form id="alertForm" onsubmit="handleSaveAlert(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título de la Alerta *</label>
+                    <input type="text" id="alertTitulo" required placeholder="Próxima ITV, Cambio de seguro..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Alerta *</label>
+                    <select id="alertTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <option value="itv">Inspección Técnica (Pegatina ITV)</option>
+                        <option value="warning">Aviso importante (Naranja)</option>
+                        <option value="info">Información (Azul)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Detalles *</label>
+                    <textarea id="alertDescripcion" rows="2" required placeholder="Vence en Octubre de 2027..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeAlertModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold">Guardar Alerta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Script Logic con Supabase SDK -->
     <script>
         // CONFIGURACIÓN DE SUPABASE
@@ -572,15 +606,17 @@
             }
 
             try {
-                const [maintRes, fuelRes, partsRes] = await Promise.all([
+                const [maintRes, fuelRes, partsRes, alertsRes] = await Promise.all([
                     supabaseClient.from('mantenimiento').select('*'),
                     supabaseClient.from('repostajes').select('*'),
-                    supabaseClient.from('recambios').select('*')
+                    supabaseClient.from('recambios').select('*'),
+                    supabaseClient.from('alertas').select('*')
                 ]);
 
                 const maintData = maintRes.data || [];
                 fuelRecords = fuelRes.data || [];
                 const partsData = partsRes.data || [];
+                const alertsData = alertsRes.data || [];
 
                 vehicles.forEach(car => {
                     car.records = maintData.filter(r => 
@@ -592,6 +628,53 @@
                         car.refSheetName.toLowerCase().includes(String(p.vehiculo || '').toLowerCase()) ||
                         String(p.vehiculo || '').toLowerCase().includes(car.excelName.toLowerCase())
                     );
+
+                    // Alertas manuales desde la tabla de Supabase
+                    const dbAlerts = alertsData.filter(a =>
+                        String(a.vehiculo || '').toLowerCase().includes(car.excelName.toLowerCase()) ||
+                        car.excelName.toLowerCase().includes(String(a.vehiculo || '').toLowerCase())
+                    ).map(a => ({
+                        id: a.id,
+                        title: a.titulo,
+                        desc: a.descripcion,
+                        type: a.tipo || 'warning',
+                        isManual: true
+                    }));
+
+                    // Alerta calculada automáticamente para la ITV desde el historial
+                    let autoItvAlert = null;
+                    const itvRecords = (car.records || []).filter(r => {
+                        const t = String(r.tipo || '').toLowerCase();
+                        const d = String(r.detalle || '').toLowerCase();
+                        return t.includes("itv") || d.includes("itv");
+                    }).sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
+
+                    if (itvRecords.length > 0) {
+                        const lastItvDate = parseDate(itvRecords[0].fecha);
+                        if (lastItvDate) {
+                            const nextItvDate = new Date(lastItvDate);
+                            nextItvDate.setFullYear(nextItvDate.getFullYear() + 1);
+                            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                            autoItvAlert = {
+                                id: 'auto-itv',
+                                title: 'Próxima ITV',
+                                desc: `Inspección prevista para ${monthNames[nextItvDate.getMonth()]} de ${nextItvDate.getFullYear()}`,
+                                type: 'itv',
+                                isManual: false
+                            };
+                        }
+                    }
+
+                    // Si hay alertas manuales de ITV, no duplicamos con la automática
+                    const hasManualItv = dbAlerts.some(a => String(a.type).toLowerCase() === 'itv' || String(a.title).toLowerCase().includes('itv'));
+                    if (hasManualItv) {
+                        car.alerts = dbAlerts;
+                    } else if (autoItvAlert) {
+                        car.alerts = [autoItvAlert, ...dbAlerts];
+                    } else {
+                        car.alerts = dbAlerts;
+                    }
+
                     updateCarKms(car);
                 });
 
@@ -889,9 +972,9 @@
             }
         }
 
-        function createITVStickerHTML(title, desc) {
+        function createITVStickerHTML(title, desc, id = null, isManual = false) {
             let yearMatch = desc.match(/\b(20\d\d)\b/);
-            let yearVal = yearMatch ? yearMatch[1] : "2026";
+            let yearVal = yearMatch ? yearMatch[1] : "2027";
             let shortYear = yearVal.slice(-2);
             let yearNum = parseInt(yearVal);
 
@@ -930,6 +1013,12 @@
                 return `<span class="opacity-60 text-[8px] sm:text-[9px] font-bold">${m}</span>`;
             }).join('');
 
+            const deleteBtnHTML = (isManual && id) ? `
+                <button onclick="deleteAlert('${id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition shrink-0" title="Eliminar Alerta">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+            ` : '';
+
             return `
                 <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-4">
                     <div class="flex items-center space-x-4">
@@ -956,6 +1045,7 @@
                             <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${desc}</p>
                         </div>
                     </div>
+                    ${deleteBtnHTML}
                 </div>
             `;
         }
@@ -972,14 +1062,23 @@
                 const typeLower = String(a.type || '').toLowerCase();
 
                 if (titleLower.includes("itv") || descLower.includes("itv") || typeLower.includes("itv")) {
-                    container.innerHTML += createITVStickerHTML(a.title || "Próxima ITV", a.desc || "");
+                    container.innerHTML += createITVStickerHTML(a.title || "Próxima ITV", a.desc || "", a.id, a.isManual);
                 } else {
                     const isWarning = typeLower === 'warning';
                     const bgClass = isWarning ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30' : 'bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30';
+                    const deleteBtnHTML = (a.isManual && a.id) ? `
+                        <button onclick="deleteAlert('${a.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition shrink-0 ml-auto" title="Eliminar Alerta">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    ` : '';
+
                     container.innerHTML += `
-                        <div class="${bgClass} border p-3.5 rounded-xl flex items-start space-x-3 text-xs sm:text-sm">
-                            <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-lg mt-0.5"></i>
-                            <div><h4 class="font-bold">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                        <div class="${bgClass} border p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
+                            <div class="flex items-start space-x-3">
+                                <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-lg mt-0.5"></i>
+                                <div><h4 class="font-bold">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                            </div>
+                            ${deleteBtnHTML}
                         </div>`;
                 }
             });
@@ -1652,6 +1751,53 @@
             } catch (err) {
                 console.error("Error al eliminar referencia:", err);
                 showToast("Error al eliminar referencia.");
+            }
+        }
+
+        // MODAL HANDLERS - ALERTAS
+        function openAlertModal() {
+            document.getElementById("alertTitulo").value = "";
+            document.getElementById("alertTipo").value = "itv";
+            document.getElementById("alertDescripcion").value = "";
+            document.getElementById("alertModal").classList.remove("hidden");
+        }
+
+        function closeAlertModal() {
+            document.getElementById("alertModal").classList.add("hidden");
+        }
+
+        async function handleSaveAlert(e) {
+            e.preventDefault();
+            const car = getActiveVehicle();
+            if (!car || !supabaseClient) return;
+
+            const alertData = {
+                vehiculo: car.excelName,
+                titulo: document.getElementById("alertTitulo").value,
+                tipo: document.getElementById("alertTipo").value,
+                descripcion: document.getElementById("alertDescripcion").value
+            };
+
+            try {
+                await supabaseClient.from('alertas').insert([alertData]);
+                showToast("Alerta guardada en Supabase.");
+                closeAlertModal();
+                await reloadData();
+            } catch (err) {
+                console.error("Error al guardar alerta:", err);
+                showToast("Error al guardar la alerta.");
+            }
+        }
+
+        async function deleteAlert(id) {
+            if (!confirm("¿Seguro que deseas eliminar esta alerta?") || !supabaseClient) return;
+            try {
+                await supabaseClient.from('alertas').delete().eq('id', id);
+                showToast("Alerta eliminada.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al eliminar alerta:", err);
+                showToast("Error al eliminar la alerta.");
             }
         }
     </script>
