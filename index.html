@@ -60,16 +60,16 @@
                 </div>
 
                 <div class="flex items-center space-x-1.5 shrink-0">
-                    <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-600 text-xs font-semibold transition flex items-center" title="Añadir vehículo">
+                    <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-600 text-xs font-semibold transition flex items-center active:scale-95" title="Añadir vehículo">
                         <i class="fa-solid fa-car text-xs sm:mr-1.5"></i>
                         <span class="hidden sm:inline">+ Vehículo</span>
                     </button>
 
-                    <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0" title="Cambiar tema">
+                    <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Cambiar tema">
                         <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
                     </button>
 
-                    <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0" title="Recargar">
+                    <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Recargar">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
                 </div>
@@ -133,11 +133,11 @@
                     </div>
                     
                     <div class="flex items-center space-x-2 w-full sm:w-auto">
-                        <button onclick="openAlertModal()" class="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition flex items-center justify-center space-x-1.5" title="Añadir Alerta">
+                        <button onclick="openAlertModal()" class="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition flex items-center justify-center space-x-1.5 active:scale-95" title="Añadir Alerta">
                             <i class="fa-solid fa-bell"></i>
                             <span>Alerta</span>
                         </button>
-                        <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5">
+                        <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5 active:scale-95">
                             <i class="fa-solid fa-circle-plus"></i>
                             <span id="lblHeaderAdd">Añadir Mantenimiento</span>
                         </button>
@@ -207,9 +207,9 @@
                         </h2>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
-                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full">
-                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full"></select>
-                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-medium text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 cursor-pointer w-full">
+                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full">
+                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full"></select>
+                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-medium text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 cursor-pointer w-full">
                                 <option value="date-desc">Fecha: Recientes primero</option>
                                 <option value="date-asc">Fecha: Antiguos primero</option>
                                 <option value="km-desc">KM: Mayor a Menor</option>
@@ -225,11 +225,11 @@
                             </span>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                         </div>
                         <button onclick="clearDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
@@ -247,7 +247,7 @@
                                 <th class="px-3 sm:px-4 py-3">Km</th>
                                 <th class="px-3 sm:px-4 py-3">Tipo Mantenimiento</th>
                                 <th class="px-3 sm:px-4 py-3">Detalle / Trabajo</th>
-                                <th class="px-3 sm:px-4 py-3">Taller</th>
+                                <th class="px-3 sm:px-4 py-3 hidden sm:table-cell">Taller</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Coste (€)</th>
                                 <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
@@ -356,11 +356,11 @@
                             </span>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
+                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-2 py-1.5">
                             </div>
                         </div>
                         <button onclick="clearFuelDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
@@ -374,14 +374,14 @@
                     <table class="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-300">
                         <thead class="bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-semibold">
                             <tr>
-                                <th class="px-3 sm:px-4 py-3">Vehículo</th>
+                                <th class="px-3 sm:px-4 py-3 hidden sm:table-cell">Vehículo</th>
                                 <th class="px-3 sm:px-4 py-3">Fecha</th>
-                                <th class="px-3 sm:px-4 py-3">Km Actuales</th>
+                                <th class="px-3 sm:px-4 py-3">Km</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Importe (€)</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Litros</th>
-                                <th class="px-3 sm:px-4 py-3 text-right">Precio/L</th>
+                                <th class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">Precio/L</th>
                                 <th class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">Consumo</th>
-                                <th class="px-3 sm:px-4 py-3">Gasolinera / Notas</th>
+                                <th class="px-3 sm:px-4 py-3">Gasolinera</th>
                                 <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -398,7 +398,7 @@
                     <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-500 mr-2"></i> Guía de Piezas y Recambios</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas e información técnica para la compra de piezas compatibles.</p>
                 </div>
-                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
+                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
             </div>
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
@@ -431,11 +431,11 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
-                <button onclick="exportToExcel()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm">
+                <button onclick="exportToExcel()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm active:scale-95">
                     <i class="fa-solid fa-file-excel"></i>
                     <span>Exportar a Excel (CSV / XLSX)</span>
                 </button>
-                <button onclick="exportToPDF()" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm">
+                <button onclick="exportToPDF()" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm active:scale-95">
                     <i class="fa-solid fa-file-pdf"></i>
                     <span>Generar Informe en PDF</span>
                 </button>
@@ -443,6 +443,11 @@
         </section>
 
     </main>
+
+    <!-- Botón Flotante (FAB) Acción Rápida Móvil -->
+    <button onclick="openModalForCurrentView()" class="sm:hidden fixed bottom-6 right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-transform active:scale-90" title="Añadir nuevo registro">
+        <i class="fa-solid fa-plus text-2xl"></i>
+    </button>
 
     <!-- Modales -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
@@ -456,33 +461,33 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="date" id="formFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
-                        <input type="number" id="formKms" required min="0" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="formKms" required min="0" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento *</label>
-                    <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></select>
+                    <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Coste (€) *</label>
-                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="formCoste" step="0.01" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Taller</label>
-                        <input type="text" id="formTaller" placeholder="Caldereros Villarejo..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="text" id="formTaller" placeholder="Caldereros Villarejo..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo</label>
-                    <textarea id="formDetalle" rows="2" placeholder="Cambio bombillas W5W..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
+                    <textarea id="formDetalle" rows="2" placeholder="Cambio bombillas W5W..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-2">
@@ -503,31 +508,31 @@
                 <input type="hidden" id="fuelRowIndex">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vehículo *</label>
-                    <select id="fuelFormVehicle" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white"></select>
+                    <select id="fuelFormVehicle" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"></select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="fuelFormFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                        <input type="date" id="fuelFormFecha" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
-                        <input type="number" id="fuelFormKms" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="fuelFormKms" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Importe (€) *</label>
-                        <input type="number" id="fuelFormImporte" step="0.01" required placeholder="50.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="fuelFormImporte" step="0.01" required placeholder="50.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Litros (Opcional)</label>
-                        <input type="number" id="fuelFormLitros" step="0.01" placeholder="35.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="fuelFormLitros" step="0.01" placeholder="35.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Gasolinera / Notas</label>
-                    <input type="text" id="fuelFormNotas" placeholder="Repsol Arganda, Plenoil..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-xs text-slate-800 dark:text-white">
+                    <input type="text" id="fuelFormNotas" placeholder="Repsol Arganda, Plenoil..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-2">
@@ -546,19 +551,19 @@
             <form id="partForm" onsubmit="handleSavePart(event)" class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoría / Pieza *</label>
-                    <input type="text" id="partPieza" required placeholder="Filtro de Aceite..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    <input type="text" id="partPieza" required placeholder="Filtro de Aceite..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Marca</label>
-                    <input type="text" id="partMarca" placeholder="Mann-Filter..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    <input type="text" id="partMarca" placeholder="Mann-Filter..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Observaciones / Notas *</label>
-                    <textarea id="partNotas" rows="2" required placeholder="Ref. HU 711/51..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
+                    <textarea id="partNotas" rows="2" required placeholder="Ref. HU 711/51..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace de Compra</label>
-                    <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div class="flex justify-end space-x-3 pt-2">
                     <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
@@ -577,12 +582,12 @@
                 <input type="hidden" id="alertRowIndex">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título de la Alerta *</label>
-                    <input type="text" id="alertTitulo" required placeholder="Próxima ITV, Cambio de seguro..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    <input type="text" id="alertTitulo" required placeholder="Próxima ITV, Cambio de seguro..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Alerta *</label>
-                        <select id="alertTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <select id="alertTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                             <option value="itv">Inspección Técnica (ITV)</option>
                             <option value="warning">Aviso importante (Naranja)</option>
                             <option value="info">Información (Azul)</option>
@@ -590,12 +595,12 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Día Exacto / Vencimiento</label>
-                        <input type="date" id="alertFecha" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="date" id="alertFecha" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Detalles *</label>
-                    <textarea id="alertDescripcion" rows="2" required placeholder="Detalles o notas sobre la alerta..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white"></textarea>
+                    <textarea id="alertDescripcion" rows="2" required placeholder="Detalles o notas sobre la alerta..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
                 </div>
                 <div class="flex justify-end space-x-3 pt-2">
                     <button type="button" onclick="closeAlertModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
@@ -614,16 +619,16 @@
             <form id="vehicleForm" onsubmit="handleSaveVehicle(event)" class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial y Matrícula *</label>
-                    <input type="text" id="vehName" required placeholder="Seat León - 5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                    <input type="text" id="vehName" required placeholder="Seat León - 5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Matrícula *</label>
-                        <input type="text" id="vehPlate" required placeholder="5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="text" id="vehPlate" required placeholder="5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Combustible *</label>
-                        <select id="vehFuel" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <select id="vehFuel" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             <option value="Diésel">Diésel</option>
                             <option value="Gasolina">Gasolina</option>
                             <option value="Híbrido">Híbrido</option>
@@ -634,25 +639,25 @@
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Año</label>
-                        <input type="number" id="vehYear" placeholder="2019" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="vehYear" placeholder="2019" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
-                        <input type="number" id="vehKms" placeholder="120000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="vehKms" placeholder="120000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bastidor (VIN)</label>
-                        <input type="text" id="vehVin" placeholder="VSSZZZ..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="text" id="vehVin" placeholder="VSSZZZ..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Intervalo Revisión (km)</label>
-                        <input type="number" id="vehIntervalKm" value="15000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="vehIntervalKm" value="15000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Intervalo Revisión (meses)</label>
-                        <input type="number" id="vehIntervalMonths" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-xs text-slate-800 dark:text-white">
+                        <input type="number" id="vehIntervalMonths" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
                 <div class="flex justify-end space-x-3 pt-2">
@@ -1233,11 +1238,11 @@
 
             const actionBtnsHTML = (isManual && id) ? `
                 <div class="flex items-center space-x-1 shrink-0">
-                    <button onclick="openAlertModal('${id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar Alerta">
-                        <i class="fa-solid fa-pen-to-square text-sm"></i>
+                    <button onclick="openAlertModal('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar Alerta">
+                        <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
                     </button>
-                    <button onclick="deleteAlert('${id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="Eliminar Alerta">
-                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    <button onclick="deleteAlert('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar Alerta">
+                        <i class="fa-solid fa-trash-can text-xs sm:text-sm"></i>
                     </button>
                 </div>
             ` : '';
@@ -1296,11 +1301,11 @@
                     const bgClass = isWarning ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30' : 'bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30';
                     const actionBtnsHTML = (a.isManual && a.id) ? `
                         <div class="flex items-center space-x-1 shrink-0 ml-auto">
-                            <button onclick="openAlertModal('${a.id}')" class="text-slate-400 hover:text-blue-500 p-1.5 rounded transition" title="Editar Alerta">
-                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            <button onclick="openAlertModal('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar Alerta">
+                                <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
                             </button>
-                            <button onclick="deleteAlert('${a.id}')" class="text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="Eliminar Alerta">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            <button onclick="deleteAlert('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar Alerta">
+                                <i class="fa-solid fa-trash-can text-xs sm:text-sm"></i>
                             </button>
                         </div>
                     ` : '';
@@ -1423,13 +1428,13 @@
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
                     <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] sm:text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
-                    <td class="px-3 sm:px-4 py-3 min-w-[160px]">${r.tipo || ""}</td>
-                    <td class="px-3 sm:px-4 py-3 text-slate-500">${r.taller || '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 min-w-[140px]">${r.tipo || ""}</td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-500 hidden sm:table-cell">${r.taller || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            <button onclick="openRecordModal('${r.id}')" class="text-slate-400 hover:text-blue-500 p-1 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
-                            <button onclick="deleteRecord('${r.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-1 sm:space-x-1.5">
+                            <button onclick="openRecordModal('${r.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
+                            <button onclick="deleteRecord('${r.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1681,18 +1686,18 @@
 
             tbody.innerHTML = filtered.map(f => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                    <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${f.vehiculo}</td>
+                    <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400 hidden sm:table-cell">${f.vehiculo}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${formatDateDisplay(f.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            <button onclick="openFuelModal('${f.id}')" class="text-slate-400 hover:text-blue-500 p-1 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
-                            <button onclick="deleteFuelRecord('${f.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-1 sm:space-x-1.5">
+                            <button onclick="openFuelModal('${f.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
+                            <button onclick="deleteFuelRecord('${f.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1756,7 +1761,7 @@
                         </div>
                         <div class="flex items-center justify-between pt-1">
                             ${linksHTML}
-                            <button onclick="deletePart('${p.id}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded transition ml-auto" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="deletePart('${p.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition ml-auto" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                 `;
