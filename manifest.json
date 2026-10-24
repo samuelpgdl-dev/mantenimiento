@@ -1,0 +1,22 @@
+{
+  "name": "Canana Automotive",
+  "short_name": "Canana Auto",
+  "description": "Control de Mantenimiento y Combustible de Vehículos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "Gemini_Generated_Image_37p3m337p3m337p3.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "Gemini_Generated_Image_37p3m337p3m337p3.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
