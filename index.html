@@ -67,14 +67,23 @@
         </div>
     </div>
 
-    <!-- MODAL INICIO DE SESIÓN / REGISTRO -->
+    <!-- MODAL INICIO DE SESIÓN / REGISTRO / PASSKEY -->
     <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 relative">
             <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center space-y-2">
                 <img src="apple-touch-icon.png" alt="Canana Logo" class="w-16 h-16 rounded-2xl mx-auto shadow-md border border-slate-200 dark:border-slate-700 object-cover">
                 <h2 class="text-xl font-black text-slate-900 dark:text-white">Canana Automotive</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Inicia sesión para gestionar o editar tus vehículos</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Inicia sesión o usa biometría para gestionar tus vehículos</p>
+            </div>
+
+            <!-- Botón de Inicio con Passkey (Biometría) -->
+            <div id="passkeyLoginContainer" class="space-y-2 pb-2 border-b border-slate-100 dark:border-slate-700">
+                <button type="button" onclick="loginWithPasskey()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-fingerprint text-base"></i>
+                    <span>Iniciar Sesión con Face ID / Huella</span>
+                </button>
+                <div class="text-center text-[10px] text-slate-400 font-medium">O introduce tus credenciales:</div>
             </div>
 
             <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
@@ -99,7 +108,7 @@
         </div>
     </div>
 
-    <!-- MODAL PANEL DE ADMINISTRACIÓN -->
+    <!-- MODAL PANEL DE ADMINISTRACIÓN Y GESTIÓN DE PASSKEYS -->
     <div id="adminModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto relative">
             <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -108,9 +117,24 @@
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Panel de Administración</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Reasigna la propiedad de los vehículos entre usuarios registrados</p>
+                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Panel de Control de Usuario</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Administra tus accesos biométricos y permisos de vehículos</p>
                 </div>
+            </div>
+
+            <!-- Registro de Biometría Passkey -->
+            <div class="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-fingerprint text-purple-600 dark:text-purple-400 text-2xl"></i>
+                    <div>
+                        <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Acceso con Biometría (Passkey)</h4>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular tu Face ID, Touch ID o huella para no escribir contraseña</p>
+                    </div>
+                </div>
+                <button onclick="registerNewPasskey()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs transition shrink-0 active:scale-95 flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Vincular este dispositivo</span>
+                </button>
             </div>
 
             <div id="adminVehiclesList" class="space-y-3 pt-2">
@@ -130,7 +154,7 @@
                 </div>
 
                 <div class="flex items-center space-x-1.5 shrink-0">
-                    <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-2 sm:p-2.5 rounded-lg border border-amber-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Panel Admin">
+                    <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-2 sm:p-2.5 rounded-lg border border-amber-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Panel de Usuario / Admin">
                         <i class="fa-solid fa-shield-halved"></i>
                     </button>
 
@@ -749,7 +773,11 @@
     <script>
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        
+        // Habilitar soporte experimental de Passkeys en el cliente de Supabase
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { experimental: { passkey: true } }
+        }) : null;
 
         const MAINTENANCE_CATEGORIES = [
             "Revisión anual", "Cambio distribución", "Cambio embrague", "Cambio neumáticos",
@@ -773,7 +801,6 @@
             initTheme();
             await initApp();
 
-            // Detección de atajos PWA desde URL (Shortcuts del Manifest)
             const urlParams = new URLSearchParams(window.location.search);
             const action = urlParams.get('action');
 
@@ -837,7 +864,7 @@
             }
             const btnAdmin = document.getElementById("btnAdminPanel");
             if (btnAdmin) {
-                if (isAdmin) btnAdmin.classList.remove("hidden");
+                if (currentUser) btnAdmin.classList.remove("hidden");
                 else btnAdmin.classList.add("hidden");
             }
         }
@@ -885,13 +912,16 @@
             isAuthSignUpMode = !isAuthSignUpMode;
             const btnSubmit = document.getElementById("btnAuthSubmit");
             const btnToggle = document.getElementById("btnToggleAuth");
+            const passkeyContainer = document.getElementById("passkeyLoginContainer");
             
             if (isAuthSignUpMode) {
                 btnSubmit.innerText = "Crear Cuenta Nueva";
                 btnToggle.innerText = "¿Ya tienes cuenta? Inicia sesión aquí";
+                if (passkeyContainer) passkeyContainer.classList.add("hidden");
             } else {
                 btnSubmit.innerText = "Iniciar Sesión";
                 btnToggle.innerText = "¿No tienes cuenta? Regístrate aquí";
+                if (passkeyContainer) passkeyContainer.classList.remove("hidden");
             }
         }
 
@@ -919,13 +949,58 @@
             }
         }
 
-        // --- PANEL DE ADMINISTRACIÓN ---
+        // --- FUNCIONALIDAD PASSKEYS (WEBAUTHN / BIOMETRÍA) ---
+
+        async function registerNewPasskey() {
+            if (!currentUser || !supabaseClient) return checkAuthOrLogin();
+            showToast("Verificando biometría del dispositivo...");
+
+            try {
+                const deviceName = navigator.userAgent.includes("iPhone") ? "iPhone" : 
+                                   navigator.userAgent.includes("iPad") ? "iPad" : 
+                                   navigator.userAgent.includes("Android") ? "Móvil Android" : "Navegador Web";
+                
+                const { data, error } = await supabaseClient.auth.passkey.register({
+                    name: `Acceso desde ${deviceName}`
+                });
+
+                if (error) throw error;
+                showToast("¡Biometría/Passkey vinculada con éxito!");
+            } catch (err) {
+                console.error("Error Passkey register:", err);
+                alert("No se pudo vincular la Passkey: " + (err.message || "Cancelado o no compatible"));
+            }
+        }
+
+        async function loginWithPasskey() {
+            if (!supabaseClient) return;
+            showToast("Escaneando huella / Face ID...");
+
+            try {
+                const { data, error } = await supabaseClient.auth.passkey.signIn();
+                if (error) throw error;
+
+                showToast("¡Acceso biométrico correcto!");
+                closeLoginModal();
+            } catch (err) {
+                console.error("Error Passkey signIn:", err);
+                alert("No se pudo autenticar con biometría: " + (err.message || "Vínculo no encontrado en este dispositivo"));
+            }
+        }
+
+        // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
         async function openAdminModal() {
-            if (!isAdmin || !supabaseClient) return;
+            if (!currentUser || !supabaseClient) return;
             const modal = document.getElementById("adminModal");
             const listContainer = document.getElementById("adminVehiclesList");
             modal.classList.remove("hidden");
+            
+            if (!isAdmin) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-400">Eres usuario estándar. Puedes administrar tus Passkeys de acceso rápido en el botón superior.</p>`;
+                return;
+            }
+
             listContainer.innerHTML = `<p class="text-xs text-slate-400">Cargando usuarios y vehículos...</p>`;
 
             try {
@@ -943,8 +1018,6 @@
                 }
 
                 listContainer.innerHTML = vehs.map(v => {
-                    const currentOwner = profiles.find(p => p.id === v.user_id);
-
                     const optionsHTML = profiles.map(p => `
                         <option value="${p.id}" ${p.id === v.user_id ? 'selected' : ''}>${p.email}</option>
                     `).join('');
