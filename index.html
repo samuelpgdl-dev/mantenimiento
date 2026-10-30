@@ -947,7 +947,16 @@
             }
         }
 
-        // --- FUNCIONALIDAD PASSKEYS (WEBAUTHN / BIOMETRÍA NATIVA) ---
+        // --- FUNCIONALIDAD PASSKEYS CON AUTENTICACIÓN REAL EN SUPABASE ---
+
+        function bufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
@@ -962,14 +971,13 @@
             try {
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
-
                 const userID = new TextEncoder().encode(currentUser.id);
 
                 const publicKeyCredentialCreationOptions = {
                     challenge: challenge,
                     rp: {
-                        name: "Canana Automotive BD",
-                        id: "samuelpgdl-dev.github.io"
+                        name: "Canana Automotive",
+                        id: window.location.hostname
                     },
                     user: {
                         id: userID,
@@ -989,16 +997,34 @@
                 });
 
                 if (credential) {
-                    const rawId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-                    localStorage.setItem(`passkey_${currentUser.email}`, rawId);
+                    const rawId = bufferToBase64(credential.rawId);
 
-                    await supabaseClient.from('profiles').upsert({
+                    // 1. Obtener tokens de la sesión actual de Supabase
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+
+                    if (session) {
+                        // Guardar vinculación y tokens de sesión de forma segura localmente
+                        localStorage.setItem('canana_passkey_id', rawId);
+                        localStorage.setItem('canana_passkey_email', currentUser.email);
+                        localStorage.setItem(`canana_session_${rawId}`, JSON.stringify({
+                            access_token: session.access_token,
+                            refresh_token: session.refresh_token,
+                            email: currentUser.email
+                        }));
+                    }
+
+                    // 2. Guardar passkey_id en la tabla profiles de Supabase
+                    const { error: dbErr } = await supabaseClient.from('profiles').upsert({
                         id: currentUser.id,
                         email: currentUser.email,
                         passkey_id: rawId
                     });
 
-                    showToast("¡Biometría / Passkey vinculada con éxito!");
+                    if (dbErr) {
+                        console.warn("Advertencia al guardar en profiles:", dbErr);
+                    }
+
+                    showToast("¡Dispositivo y biometría vinculados con éxito!");
                 }
             } catch (err) {
                 console.error("Error Passkey register:", err);
@@ -1009,8 +1035,6 @@
         }
 
         async function loginWithPasskey() {
-            if (!supabaseClient) return;
-
             if (!window.PublicKeyCredential) {
                 alert("Tu navegador o dispositivo no soporta biometría.");
                 return;
@@ -1024,7 +1048,7 @@
 
                 const publicKeyCredentialRequestOptions = {
                     challenge: challenge,
-                    rpId: "samuelpgdl-dev.github.io",
+                    rpId: window.location.hostname,
                     userVerification: "required",
                     timeout: 60000
                 };
@@ -1034,22 +1058,51 @@
                 });
 
                 if (assertion) {
-                    const rawId = btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)));
-                    
-                    const { data, error } = await supabaseClient
-                        .from('profiles')
-                        .select('email')
-                        .eq('passkey_id', rawId)
-                        .single();
+                    const rawId = bufferToBase64(assertion.rawId);
 
-                    if (data && data.email) {
-                        showToast("¡Acceso biométrico correcto!");
-                        document.getElementById("authEmail").value = data.email;
-                        closeLoginModal();
-                        await reloadData();
-                    } else {
-                        alert("No se encontró ningún usuario vinculado a esta Passkey en este dispositivo.");
+                    // 1. Buscar la sesión local guardada para esta Passkey
+                    const storedSessionStr = localStorage.getItem(`canana_session_${rawId}`);
+                    let sessionRestored = false;
+
+                    if (storedSessionStr) {
+                        try {
+                            const sessionData = JSON.parse(storedSessionStr);
+                            // Establecer sesión activa en Supabase
+                            const { data, error } = await supabaseClient.auth.setSession({
+                                access_token: sessionData.access_token,
+                                refresh_token: sessionData.refresh_token
+                            });
+
+                            if (!error && data.session) {
+                                currentUser = data.session.user;
+                                sessionRestored = true;
+                            }
+                        } catch (e) {
+                            console.warn("Error restaurando sesión guardada:", e);
+                        }
                     }
+
+                    // 2. Si no había sesión local o caducó, consultar Supabase por el email
+                    if (!sessionRestored) {
+                        const { data } = await supabaseClient
+                            .from('profiles')
+                            .select('email')
+                            .eq('passkey_id', rawId)
+                            .maybeSingle();
+
+                        if (data && data.email) {
+                            document.getElementById("authEmail").value = data.email;
+                            showToast("Email identificado. Introduce tu contraseña para renovar acceso.");
+                            return;
+                        } else {
+                            alert("No se encontró ningún usuario vinculado a esta Passkey. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
+                            return;
+                        }
+                    }
+
+                    showToast("¡Acceso biométrico correcto!");
+                    closeLoginModal();
+                    await reloadData();
                 }
             } catch (err) {
                 console.error("Error Passkey signIn:", err);
