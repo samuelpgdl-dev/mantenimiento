@@ -68,12 +68,13 @@
     </div>
 
     <!-- MODAL INICIO DE SESIÓN / REGISTRO -->
-    <div id="loginModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+    <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center space-y-2">
                 <img src="apple-touch-icon.png" alt="Canana Logo" class="w-16 h-16 rounded-2xl mx-auto shadow-md border border-slate-200 dark:border-slate-700 object-cover">
                 <h2 class="text-xl font-black text-slate-900 dark:text-white">Canana Automotive</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Accede con tu cuenta para ver y gestionar tus vehículos</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Inicia sesión para gestionar o editar tus vehículos</p>
             </div>
 
             <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
@@ -122,8 +123,8 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
 
-                    <button onclick="handleLogout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Cerrar sesión">
-                        <i class="fa-solid fa-right-from-bracket"></i>
+                    <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Acceder / Sesión">
+                        <i id="authHeaderIcon" class="fa-solid fa-user"></i>
                     </button>
                 </div>
             </div>
@@ -763,24 +764,56 @@
             }
 
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                document.getElementById("loginModal").classList.add("hidden");
-                await reloadData();
+            currentUser = session ? session.user : null;
+            updateAuthHeaderButton();
+
+            document.getElementById("loginModal").classList.add("hidden");
+            await reloadData();
+
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                currentUser = session ? session.user : null;
+                updateAuthHeaderButton();
+                reloadData();
+            });
+        }
+
+        function updateAuthHeaderButton() {
+            const btn = document.getElementById("btnAuthAction");
+            const icon = document.getElementById("authHeaderIcon");
+            if (!btn || !icon) return;
+
+            if (currentUser) {
+                btn.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
+                btn.title = "Cerrar sesión";
+                icon.className = "fa-solid fa-right-from-bracket";
+            } else {
+                btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
+                btn.title = "Iniciar sesión";
+                icon.className = "fa-solid fa-user";
+            }
+        }
+
+        function handleAuthHeaderClick() {
+            if (currentUser) {
+                if (confirm("¿Cerrar sesión en Canana Automotive?")) {
+                    supabaseClient.auth.signOut();
+                }
             } else {
                 document.getElementById("loginModal").classList.remove("hidden");
             }
+        }
 
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                if (session) {
-                    currentUser = session.user;
-                    document.getElementById("loginModal").classList.add("hidden");
-                    reloadData();
-                } else {
-                    currentUser = null;
-                    document.getElementById("loginModal").classList.remove("hidden");
-                }
-            });
+        function closeLoginModal() {
+            document.getElementById("loginModal").classList.add("hidden");
+        }
+
+        function checkAuthOrLogin() {
+            if (!currentUser) {
+                document.getElementById("loginModal").classList.remove("hidden");
+                showToast("Debes iniciar sesión para realizar cambios.");
+                return false;
+            }
+            return true;
         }
 
         function toggleAuthMode() {
@@ -807,18 +840,17 @@
             if (isAuthSignUpMode) {
                 const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) alert("Error en el registro: " + error.message);
-                else showToast("Cuenta creada. Iniciando sesión...");
+                else {
+                    showToast("Cuenta creada. Iniciando sesión...");
+                    closeLoginModal();
+                }
             } else {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) alert("Error al iniciar sesión: " + error.message);
-                else showToast("¡Bienvenido!");
-            }
-        }
-
-        async function handleLogout() {
-            if (confirm("¿Cerrar sesión en Canana Automotive?")) {
-                await supabaseClient.auth.signOut();
-                location.reload();
+                else {
+                    showToast("¡Bienvenido!");
+                    closeLoginModal();
+                }
             }
         }
 
@@ -875,7 +907,7 @@
         }
 
         async function reloadData() {
-            if (!currentUser || !supabaseClient) return;
+            if (!supabaseClient) return;
             showToast("Sincronizando...");
 
             try {
@@ -1011,6 +1043,7 @@
         }
 
         function openModalForCurrentView() {
+            if (!checkAuthOrLogin()) return;
             if (activeMainTab === 'maintenance') openRecordModal();
             else if (activeMainTab === 'fuel') openFuelModal();
             else openPartModal();
@@ -1674,8 +1707,6 @@
             `).join('');
         }
 
-        // --- EXPORTACIÓN A EXCEL Y PDF RESTAURADA ---
-
         function exportToExcel() {
             const car = getActiveVehicle();
             if (!car) return showToast("Selecciona un vehículo primero.");
@@ -1791,9 +1822,10 @@
             showToast("Informe PDF generado.");
         }
 
-        // --- FUNCIONES MODALES CON USER_ID ---
+        // --- FUNCIONES MODALES RESTRINGIDAS ---
 
         function openRecordModal(id = null) {
+            if (!checkAuthOrLogin()) return;
             const modal = document.getElementById("recordModal");
             const car = getActiveVehicle();
             if (!car) return;
@@ -1827,8 +1859,9 @@
 
         async function handleSaveRecord(e) {
             e.preventDefault();
+            if (!checkAuthOrLogin()) return;
             const car = getActiveVehicle();
-            if (!car || !supabaseClient || !currentUser) return;
+            if (!car || !supabaseClient) return;
 
             const id = document.getElementById("recordRowIndex").value;
             const recordData = {
@@ -1851,12 +1884,14 @@
         }
 
         async function deleteRecord(id) {
+            if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar este registro?") || !supabaseClient) return;
             await supabaseClient.from('mantenimiento').delete().eq('id', id);
             await reloadData();
         }
 
         function openFuelModal(id = null) {
+            if (!checkAuthOrLogin()) return;
             const modal = document.getElementById("fuelModal");
             const car = getActiveVehicle();
 
@@ -1887,7 +1922,8 @@
 
         async function handleSaveFuel(e) {
             e.preventDefault();
-            if (!supabaseClient || !currentUser) return;
+            if (!checkAuthOrLogin()) return;
+            if (!supabaseClient) return;
 
             const id = document.getElementById("fuelRowIndex").value;
             const fuelData = {
@@ -1909,12 +1945,14 @@
         }
 
         async function deleteFuelRecord(id) {
+            if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar este repostaje?") || !supabaseClient) return;
             await supabaseClient.from('repostajes').delete().eq('id', id);
             await reloadData();
         }
 
         function openPartModal(id = null) {
+            if (!checkAuthOrLogin()) return;
             const modal = document.getElementById("partModal");
             const car = getActiveVehicle();
 
@@ -1943,8 +1981,9 @@
 
         async function handleSavePart(e) {
             e.preventDefault();
+            if (!checkAuthOrLogin()) return;
             const car = getActiveVehicle();
-            if (!car || !supabaseClient || !currentUser) return;
+            if (!car || !supabaseClient) return;
 
             const id = document.getElementById("partRowIndex").value;
             const partData = {
@@ -1965,12 +2004,14 @@
         }
 
         async function deletePart(id) {
+            if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar esta referencia?") || !supabaseClient) return;
             await supabaseClient.from('recambios').delete().eq('id', id);
             await reloadData();
         }
 
         function openAlertModal(id = null) {
+            if (!checkAuthOrLogin()) return;
             const modal = document.getElementById("alertModal");
             const car = getActiveVehicle();
 
@@ -1997,8 +2038,9 @@
 
         async function handleSaveAlert(e) {
             e.preventDefault();
+            if (!checkAuthOrLogin()) return;
             const car = getActiveVehicle();
-            if (!car || !supabaseClient || !currentUser) return;
+            if (!car || !supabaseClient) return;
 
             const id = document.getElementById("alertRowIndex").value;
             const alertData = {
@@ -2019,12 +2061,14 @@
         }
 
         async function deleteAlert(id) {
+            if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar esta alerta?") || !supabaseClient) return;
             await supabaseClient.from('alertas').delete().eq('id', id);
             await reloadData();
         }
 
         function openVehicleModal() {
+            if (!checkAuthOrLogin()) return;
             document.getElementById("vehName").value = "";
             document.getElementById("vehPlate").value = "";
             document.getElementById("vehVin").value = "";
@@ -2040,7 +2084,8 @@
 
         async function handleSaveVehicle(e) {
             e.preventDefault();
-            if (!supabaseClient || !currentUser) return;
+            if (!checkAuthOrLogin()) return;
+            if (!supabaseClient) return;
 
             const nameVal = document.getElementById("vehName").value.trim();
             const plateVal = document.getElementById("vehPlate").value.trim();
