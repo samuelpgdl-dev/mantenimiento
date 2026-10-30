@@ -1931,64 +1931,223 @@
             showToast("Archivo Excel generado.");
         }
 
-        function exportToPDF() {
+        async function getBase64ImageFromUrl(imageUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 64, 64);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(null);
+                img.src = imageUrl;
+            });
+        }
+
+        async function exportToPDF() {
             const car = getActiveVehicle();
-            if (!car) return showToast("Selecciona un vehículo.");
+            if (!car) return showToast("Selecciona un vehículo primero.");
 
             const includeMaint = document.getElementById("chkExportMaint").checked;
             const includeFuel = document.getElementById("chkExportFuel").checked;
             const includeParts = document.getElementById("chkExportParts").checked;
 
+            if (!includeMaint && !includeFuel && !includeParts) {
+                return showToast("Selecciona al menos una categoría para exportar.");
+            }
+
+            showToast("Generando informe profesional...");
+
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
             let y = 15;
+            const pageWidth = 210;
+            const margin = 15;
+            const contentWidth = pageWidth - (margin * 2);
+
+            // --- CABECERA ---
+            doc.setFillColor(15, 23, 42); // Slate-900
+            doc.rect(0, 0, pageWidth, 28, 'F');
+
+            doc.setTextColor(255, 255, 255);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
-            doc.text("CANANA AUTOMOTIVE - INFORME", 15, y);
+            doc.text("CANANA AUTOMOTIVE", margin, 12);
 
-            y += 8;
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
-            doc.text(`Vehículo: ${car.name} | Matrícula: ${car.plate || '--'}`, 15, y);
-            y += 5;
-            doc.text(`Kilometraje Actual: ${Number(car.kms || 0).toLocaleString('es-ES')} km`, 15, y);
-            y += 8;
+            doc.setTextColor(148, 163, 184); // Slate-400
+            doc.text("INFORME TÉCNICO Y DE MANTENIMIENTO", margin, 18);
 
-            doc.setLineWidth(0.5);
-            doc.line(15, y, 195, y);
-            y += 8;
-
-            if (includeMaint) {
-                doc.setFont("helvetica", "bold");
-                doc.text("Mantenimientos", 15, y);
-                y += 6;
-                doc.setFontSize(8);
-                (car.records || []).forEach(r => {
-                    if (y > 275) { doc.addPage(); y = 15; }
-                    doc.text(`${formatDateDisplay(r.fecha)} | ${r.kms || 0} km | ${r.detalle || ''} | ${r.coste || 0} €`, 15, y);
-                    y += 5;
-                });
-                y += 5;
+            // Intentar añadir el logo de la marca
+            const logoUrl = getBrandLogoUrl(car.name);
+            if (logoUrl) {
+                try {
+                    const base64Logo = await getBase64ImageFromUrl(logoUrl);
+                    if (base64Logo) {
+                        doc.addImage(base64Logo, 'PNG', pageWidth - margin - 20, 4, 20, 20);
+                    }
+                } catch (e) {
+                    console.warn("No se pudo adjuntar el logo en el PDF", e);
+                }
             }
 
+            y = 38;
+
+            // --- TARJETA DE DATOS DEL VEHÍCULO ---
+            doc.setFillColor(241, 245, 249); // Slate-100
+            doc.roundedRect(margin, y, contentWidth, 22, 2, 2, 'F');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(car.name, margin + 5, y + 7);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Matrícula / Bastidor: ${car.plate || '--'} / ${car.vin || '--'}`, margin + 5, y + 13);
+            doc.text(`Combustible: ${car.fuel}   |   Kilometraje Actual: ${Number(car.kms || 0).toLocaleString('es-ES')} km`, margin + 5, y + 18);
+
+            y += 30;
+
+            function checkPageBreak(neededSpace) {
+                if (y + neededSpace > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+
+            // --- SECCIÓN: MANTENIMIENTO ---
+            if (includeMaint && car.records && car.records.length > 0) {
+                checkPageBreak(15);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(16, 185, 129); // Esmeralda
+                doc.text("HISTORIAL DE MANTENIMIENTO", margin, y);
+                y += 6;
+
+                doc.setFillColor(15, 23, 42);
+                doc.rect(margin, y, contentWidth, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.text("Fecha", margin + 3, y + 5);
+                doc.text("Km", margin + 28, y + 5);
+                doc.text("Tipo / Trabajo", margin + 50, y + 5);
+                doc.text("Taller", margin + 115, y + 5);
+                doc.text("Coste", pageWidth - margin - 15, y + 5, { align: 'right' });
+                y += 7;
+
+                doc.setFont("helvetica", "normal");
+                car.records.forEach((r, idx) => {
+                    checkPageBreak(7);
+                    if (idx % 2 === 0) {
+                        doc.setFillColor(248, 250, 252);
+                        doc.rect(margin, y, contentWidth, 6, 'F');
+                    }
+                    doc.setTextColor(51, 65, 85);
+                    doc.text(formatDateDisplay(r.fecha), margin + 3, y + 4.5);
+                    doc.text(`${Number(r.kms || 0).toLocaleString('es-ES')} km`, margin + 28, y + 4.5);
+                    doc.text(String(r.detalle || r.tipo || '').substring(0, 35), margin + 50, y + 4.5);
+                    doc.text(String(r.taller || '--').substring(0, 22), margin + 115, y + 4.5);
+                    doc.text(`${Number(r.coste || 0).toFixed(2)} €`, pageWidth - margin - 3, y + 4.5, { align: 'right' });
+                    y += 6;
+                });
+                y += 8;
+            }
+
+            // --- SECCIÓN: REPOSTAJES ---
             if (includeFuel) {
-                if (y > 250) { doc.addPage(); y = 15; }
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(10);
-                doc.text("Repostajes", 15, y);
-                y += 6;
-                doc.setFontSize(8);
                 const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
-                carFuel.forEach(f => {
-                    if (y > 275) { doc.addPage(); y = 15; }
-                    doc.text(`${formatDateDisplay(f.fecha)} | ${f.kms || 0} km | ${f.importe || 0} € | ${f.litros || 0} L | ${f.notas || ''}`, 15, y);
-                    y += 5;
+                if (carFuel.length > 0) {
+                    checkPageBreak(15);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(11);
+                    doc.setTextColor(168, 85, 247); // Morado
+                    doc.text("HISTORIAL DE REPOSTAJES", margin, y);
+                    y += 6;
+
+                    doc.setFillColor(15, 23, 42);
+                    doc.rect(margin, y, contentWidth, 7, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(8);
+                    doc.text("Fecha", margin + 3, y + 5);
+                    doc.text("Km", margin + 28, y + 5);
+                    doc.text("Litros", margin + 55, y + 5);
+                    doc.text("Gasolinera / Notas", margin + 80, y + 5);
+                    doc.text("Importe", pageWidth - margin - 15, y + 5, { align: 'right' });
+                    y += 7;
+
+                    doc.setFont("helvetica", "normal");
+                    carFuel.forEach((f, idx) => {
+                        checkPageBreak(7);
+                        if (idx % 2 === 0) {
+                            doc.setFillColor(248, 250, 252);
+                            doc.rect(margin, y, contentWidth, 6, 'F');
+                        }
+                        doc.setTextColor(51, 65, 85);
+                        doc.text(formatDateDisplay(f.fecha), margin + 3, y + 4.5);
+                        doc.text(f.kms ? `${Number(f.kms).toLocaleString('es-ES')} km` : '--', margin + 28, y + 4.5);
+                        doc.text(f.litros ? `${Number(f.litros).toFixed(2)} L` : '--', margin + 55, y + 4.5);
+                        doc.text(String(f.notas || '--').substring(0, 30), margin + 80, y + 4.5);
+                        doc.text(`${Number(f.importe || 0).toFixed(2)} €`, pageWidth - margin - 3, y + 4.5, { align: 'right' });
+                        y += 6;
+                    });
+                    y += 8;
+                }
+            }
+
+            // --- SECCIÓN: RECAMBIOS ---
+            if (includeParts && car.parts && car.parts.length > 0) {
+                checkPageBreak(15);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(16, 185, 129);
+                doc.text("REFERENCIAS Y RECAMBIOS", margin, y);
+                y += 6;
+
+                doc.setFillColor(15, 23, 42);
+                doc.rect(margin, y, contentWidth, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.text("Pieza", margin + 3, y + 5);
+                doc.text("Marca", margin + 55, y + 5);
+                doc.text("Observaciones / Referencia", margin + 90, y + 5);
+                y += 7;
+
+                doc.setFont("helvetica", "normal");
+                car.parts.forEach((p, idx) => {
+                    checkPageBreak(7);
+                    if (idx % 2 === 0) {
+                        doc.setFillColor(248, 250, 252);
+                        doc.rect(margin, y, contentWidth, 6, 'F');
+                    }
+                    doc.setTextColor(51, 65, 85);
+                    doc.text(String(p.pieza || '').substring(0, 28), margin + 3, y + 4.5);
+                    doc.text(String(p.marca || '--').substring(0, 18), margin + 55, y + 4.5);
+                    doc.text(String(p.notas || '').substring(0, 45), margin + 90, y + 4.5);
+                    y += 6;
                 });
             }
 
-            doc.save(`Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
-            showToast("Informe PDF generado.");
+            // --- PIE DE PÁGINA ---
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Canana Automotive — Informe generado el ${new Date().toLocaleDateString('es-ES')}`, margin, 290);
+                doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, 290, { align: 'right' });
+            }
+
+            const fileName = `Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+            doc.save(fileName);
+            showToast("Informe PDF generado con éxito.");
         }
 
         // --- FUNCIONES MODALES RESTRINGIDAS ---
