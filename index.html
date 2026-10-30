@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser@9.0.1/dist/bundle/index.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -774,10 +775,7 @@
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
         
-        // Habilitar soporte experimental de Passkeys en el cliente de Supabase
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: { experimental: { passkey: true } }
-        }) : null;
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         const MAINTENANCE_CATEGORIES = [
             "Revisión anual", "Cambio distribución", "Cambio embrague", "Cambio neumáticos",
@@ -949,42 +947,115 @@
             }
         }
 
-        // --- FUNCIONALIDAD PASSKEYS (WEBAUTHN / BIOMETRÍA) ---
+        // --- FUNCIONALIDAD PASSKEYS (WEBAUTHN / BIOMETRÍA NATIVA) ---
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
+
+            if (!window.PublicKeyCredential) {
+                alert("Tu navegador o dispositivo no soporta autenticación biométrica (Passkeys).");
+                return;
+            }
+
             showToast("Verificando biometría del dispositivo...");
 
             try {
-                const deviceName = navigator.userAgent.includes("iPhone") ? "iPhone" : 
-                                   navigator.userAgent.includes("iPad") ? "iPad" : 
-                                   navigator.userAgent.includes("Android") ? "Móvil Android" : "Navegador Web";
-                
-                const { data, error } = await supabaseClient.auth.passkey.register({
-                    name: `Acceso desde ${deviceName}`
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const userID = new TextEncoder().encode(currentUser.id);
+
+                const publicKeyCredentialCreationOptions = {
+                    challenge: challenge,
+                    rp: {
+                        name: "Canana Automotive BD",
+                        id: "samuelpgdl-dev.github.io"
+                    },
+                    user: {
+                        id: userID,
+                        name: currentUser.email,
+                        displayName: currentUser.email
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    authenticatorSelection: {
+                        authenticatorAttachment: "platform",
+                        userVerification: "required"
+                    },
+                    timeout: 60000
+                };
+
+                const credential = await navigator.credentials.create({
+                    publicKey: publicKeyCredentialCreationOptions
                 });
 
-                if (error) throw error;
-                showToast("¡Biometría/Passkey vinculada con éxito!");
+                if (credential) {
+                    const rawId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+                    localStorage.setItem(`passkey_${currentUser.email}`, rawId);
+
+                    await supabaseClient.from('profiles').upsert({
+                        id: currentUser.id,
+                        email: currentUser.email,
+                        passkey_id: rawId
+                    });
+
+                    showToast("¡Biometría / Passkey vinculada con éxito!");
+                }
             } catch (err) {
                 console.error("Error Passkey register:", err);
-                alert("No se pudo vincular la Passkey: " + (err.message || "Cancelado o no compatible"));
+                if (err.name !== 'NotAllowedError') {
+                    alert("No se pudo vincular la Passkey: " + (err.message || "Error en el dispositivo"));
+                }
             }
         }
 
         async function loginWithPasskey() {
             if (!supabaseClient) return;
-            showToast("Escaneando huella / Face ID...");
+
+            if (!window.PublicKeyCredential) {
+                alert("Tu navegador o dispositivo no soporta biometría.");
+                return;
+            }
+
+            showToast("Escaneando Face ID / Huella...");
 
             try {
-                const { data, error } = await supabaseClient.auth.passkey.signIn();
-                if (error) throw error;
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
 
-                showToast("¡Acceso biométrico correcto!");
-                closeLoginModal();
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    rpId: "samuelpgdl-dev.github.io",
+                    userVerification: "required",
+                    timeout: 60000
+                };
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyCredentialRequestOptions
+                });
+
+                if (assertion) {
+                    const rawId = btoa(String.fromCharCode(...new Uint8Array(assertion.rawId)));
+                    
+                    const { data, error } = await supabaseClient
+                        .from('profiles')
+                        .select('email')
+                        .eq('passkey_id', rawId)
+                        .single();
+
+                    if (data && data.email) {
+                        showToast("¡Acceso biométrico correcto!");
+                        document.getElementById("authEmail").value = data.email;
+                        closeLoginModal();
+                        await reloadData();
+                    } else {
+                        alert("No se encontró ningún usuario vinculado a esta Passkey en este dispositivo.");
+                    }
+                }
             } catch (err) {
                 console.error("Error Passkey signIn:", err);
-                alert("No se pudo autenticar con biometría: " + (err.message || "Vínculo no encontrado en este dispositivo"));
+                if (err.name !== 'NotAllowedError') {
+                    alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
+                }
             }
         }
 
@@ -1654,11 +1725,7 @@
             return `
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-3">
                     <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
-                        
-                        <!-- PEGATINA V-19 DGT -->
                         <div class="w-28 sm:w-36 h-20 sm:h-24 ${colorBg} rounded-xl border-2 shadow-md flex flex-col justify-between p-1.5 sm:p-2 relative shrink-0 select-none font-sans">
-                            
-                            <!-- Cabecera Oficial V-19 con Escudo y DGT -->
                             <div class="flex items-center justify-between border-b border-black/20 pb-1 px-0.5 text-[8px] sm:text-[10px] font-black tracking-tight">
                                 <span class="flex items-center space-x-1">
                                     <i class="fa-solid fa-shield-halved text-[9px] sm:text-[11px] opacity-90"></i>
@@ -1667,12 +1734,10 @@
                                 <span class="font-extrabold opacity-90">DGT</span>
                             </div>
 
-                            <!-- Franja de Meses Romanos (I al XII) -->
                             <div class="flex items-center justify-between px-0.5 my-1">
                                 ${monthBarHTML}
                             </div>
 
-                            <!-- Pie de la pegatina con marca ITV y Año grande -->
                             <div class="flex items-end justify-between px-1 pt-0.5 border-t border-black/15">
                                 <span class="text-[9px] sm:text-[11px] font-black tracking-wider opacity-85 leading-none mb-1">ITV</span>
                                 <span class="text-2xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
