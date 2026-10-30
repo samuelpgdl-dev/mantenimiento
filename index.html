@@ -99,6 +99,26 @@
         </div>
     </div>
 
+    <!-- MODAL PANEL DE ADMINISTRACIÓN -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto relative">
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div class="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl text-xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Panel de Administración</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Reasigna la propiedad de los vehículos entre usuarios registrados</p>
+                </div>
+            </div>
+
+            <div id="adminVehiclesList" class="space-y-3 pt-2">
+                <p class="text-xs text-slate-400">Cargando lista de usuarios y vehículos...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Header Principal -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 space-y-2">
@@ -110,6 +130,10 @@
                 </div>
 
                 <div class="flex items-center space-x-1.5 shrink-0">
+                    <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-2 sm:p-2.5 rounded-lg border border-amber-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Panel Admin">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </button>
+
                     <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-600 text-xs font-semibold transition flex items-center active:scale-95" title="Añadir vehículo">
                         <i class="fa-solid fa-car text-xs sm:mr-1.5"></i>
                         <span class="hidden sm:inline">+ Vehículo</span>
@@ -727,8 +751,10 @@
         ];
 
         let currentUser = null;
+        let isAdmin = false;
         let isAuthSignUpMode = false;
         let vehicles = [];
+        let rawVehiclesData = [];
         let fuelRecords = [];
         let activeVehicleId = "c3";
         let activeMainTab = "maintenance";
@@ -765,16 +791,36 @@
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             currentUser = session ? session.user : null;
+            await checkAdminStatus();
             updateAuthHeaderButton();
 
             document.getElementById("loginModal").classList.add("hidden");
             await reloadData();
 
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 currentUser = session ? session.user : null;
+                await checkAdminStatus();
                 updateAuthHeaderButton();
                 reloadData();
             });
+        }
+
+        async function checkAdminStatus() {
+            if (!currentUser || !supabaseClient) {
+                isAdmin = false;
+            } else {
+                try {
+                    const { data } = await supabaseClient.from('profiles').select('is_admin').eq('id', currentUser.id).single();
+                    isAdmin = data ? !!data.is_admin : false;
+                } catch (e) {
+                    isAdmin = false;
+                }
+            }
+            const btnAdmin = document.getElementById("btnAdminPanel");
+            if (btnAdmin) {
+                if (isAdmin) btnAdmin.classList.remove("hidden");
+                else btnAdmin.classList.add("hidden");
+            }
         }
 
         function updateAuthHeaderButton() {
@@ -854,6 +900,90 @@
             }
         }
 
+        // --- PANEL DE ADMINISTRACIÓN ---
+
+        async function openAdminModal() {
+            if (!isAdmin || !supabaseClient) return;
+            const modal = document.getElementById("adminModal");
+            const listContainer = document.getElementById("adminVehiclesList");
+            modal.classList.remove("hidden");
+            listContainer.innerHTML = `<p class="text-xs text-slate-400">Cargando usuarios y vehículos...</p>`;
+
+            try {
+                const [profRes, vehRes] = await Promise.all([
+                    supabaseClient.from('profiles').select('id, email'),
+                    supabaseClient.from('vehiculos').select('*')
+                ]);
+
+                const profiles = profRes.data || [];
+                const vehs = vehRes.data || [];
+
+                if (vehs.length === 0) {
+                    listContainer.innerHTML = `<p class="text-xs text-slate-400">No hay vehículos registrados.</p>`;
+                    return;
+                }
+
+                listContainer.innerHTML = vehs.map(v => {
+                    const currentOwner = profiles.find(p => p.id === v.user_id);
+                    const ownerEmail = currentOwner ? currentOwner.email : "Sin asignar";
+
+                    const optionsHTML = profiles.map(p => `
+                        <option value="${p.id}" ${p.id === v.user_id ? 'selected' : ''}>${p.email}</option>
+                    `).join('');
+
+                    return `
+                        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div>
+                                <h4 class="font-bold text-slate-900 dark:text-white text-sm">${v.name}</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-[11px] font-mono">${v.plate || '--'}</p>
+                            </div>
+                            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                                <select id="selectAdminUser_${v.id}" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white focus:outline-none flex-grow sm:w-56 truncate">
+                                    <option value="">-- Sin propietario --</option>
+                                    ${optionsHTML}
+                                </select>
+                                <button onclick="reassignVehicleFromAdmin('${v.id}', '${v.db_name || v.name}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shrink-0 transition active:scale-95">
+                                    Guardar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Error al cargar panel de administración:", err);
+                listContainer.innerHTML = `<p class="text-xs text-rose-500">Error al obtener datos de administración.</p>`;
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById("adminModal").classList.add("hidden");
+        }
+
+        async function reassignVehicleFromAdmin(vehicleId, dbName) {
+            if (!isAdmin || !supabaseClient) return;
+            const selectElem = document.getElementById(`selectAdminUser_${vehicleId}`);
+            if (!selectElem) return;
+
+            const newUserId = selectElem.value || null;
+            showToast("Reasignando propietario...");
+
+            try {
+                await Promise.all([
+                    supabaseClient.from('vehiculos').update({ user_id: newUserId }).eq('id', vehicleId),
+                    supabaseClient.from('mantenimiento').update({ user_id: newUserId }).eq('vehiculo', dbName),
+                    supabaseClient.from('repostajes').update({ user_id: newUserId }).eq('vehiculo', dbName),
+                    supabaseClient.from('recambios').update({ user_id: newUserId }).eq('vehiculo', dbName),
+                    supabaseClient.from('alertas').update({ user_id: newUserId }).eq('vehiculo', dbName)
+                ]);
+
+                showToast("Propietario actualizado con éxito.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al reasignar vehículo:", err);
+                showToast("Error al reasignar el vehículo.");
+            }
+        }
+
         function getBrandLogoUrl(vehicleName) {
             const name = String(vehicleName || '').toLowerCase();
             if (name.includes('citroen') || name.includes('citroën')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg';
@@ -923,9 +1053,9 @@
                 fuelRecords = fuelRes.data || [];
                 const partsData = partsRes.data || [];
                 const alertsData = alertsRes.data || [];
-                let vehData = vehRes.data || [];
+                rawVehiclesData = vehRes.data || [];
 
-                vehicles = vehData.map(v => ({
+                vehicles = rawVehiclesData.map(v => ({
                     id: v.id_alias || String(v.id),
                     name: v.name,
                     dbName: v.db_name || v.name,
@@ -1242,6 +1372,45 @@
             if (!cardMonth || !car) return;
             cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
 
+            // 1. Calcular el ritmo medio mensual (km/mes)
+            let allEntries = [];
+            if (Array.isArray(car.records)) {
+                car.records.forEach(r => {
+                    let d = parseDate(r.fecha);
+                    let k = Number(r.kms || 0);
+                    if (d && k > 0) allEntries.push({ date: d, km: k });
+                });
+            }
+            if (Array.isArray(fuelRecords)) {
+                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
+                carFuel.forEach(f => {
+                    let d = parseDate(f.fecha);
+                    let k = Number(f.kms || 0);
+                    if (d && k > 0) allEntries.push({ date: d, km: k });
+                });
+            }
+
+            allEntries.sort((a, b) => a.date - b.date);
+
+            let avgKmPerMonth = 0;
+            if (allEntries.length >= 2) {
+                const first = allEntries[0];
+                const last = allEntries[allEntries.length - 1];
+                const diffDays = (last.date - first.date) / (1000 * 60 * 60 * 24);
+                const diffKm = last.km - first.km;
+
+                if (diffDays >= 15 && diffKm > 0) {
+                    avgKmPerMonth = Math.round((diffKm / diffDays) * 30.4375);
+                }
+            }
+
+            if (avgKmPerMonth <= 0) {
+                avgKmPerMonth = Math.round((car.intervalKm || 15000) / (car.intervalMonths || 12));
+            }
+
+            const paceText = `Ritmo estimado: ~${avgKmPerMonth.toLocaleString('es-ES')} km/mes`;
+
+            // 2. Datos de próxima revisión
             const revisions = (car.records || []).filter(r => {
                 const t = String(r.tipo || '').toLowerCase();
                 const d = String(r.detalle || '').toLowerCase();
@@ -1251,7 +1420,7 @@
             if (revisions.length === 0) {
                 cardMonth.innerText = "Sin registro de revisión previa";
                 cardMonth.className = "text-base sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
-                cardDetail.innerText = `Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses.`;
+                cardDetail.innerText = `${paceText} • Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses.`;
                 cardKm.innerText = "-- km";
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-slate-400";
                 return;
@@ -1277,15 +1446,15 @@
                 cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
                 cardMonth.innerText = `¡Revisión Vencida! (${monthStr})`;
                 cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
-                cardDetail.innerText = `Límite de ${targetKm.toLocaleString('es-ES')} km o tiempo superado.`;
-                cardKm.innerText = `${remainingKm <= 0 ? Math.abs(remainingKm).toLocaleString('es-ES') + ' km exedidos' : '0 km'}`;
+                cardDetail.innerText = `${paceText} • Límite de ${targetKm.toLocaleString('es-ES')} km o tiempo superado.`;
+                cardKm.innerText = `${remainingKm <= 0 ? Math.abs(remainingKm).toLocaleString('es-ES') + ' km excedidos' : '0 km'}`;
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
             } else {
                 cardMonth.innerText = monthStr;
                 cardMonth.className = "text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
                 cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400";
-                cardDetail.innerText = `Límite por tiempo (${intervalMonths} meses) o km (${targetKm.toLocaleString('es-ES')} km)`;
+                cardDetail.innerText = `${paceText} • Límite por tiempo (${intervalMonths} meses) o km (${targetKm.toLocaleString('es-ES')} km)`;
             }
         }
 
