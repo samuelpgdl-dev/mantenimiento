@@ -1,4 +1,4 @@
-const CACHE_NAME = 'canauto-v3';
+const CACHE_NAME = 'canauto-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
