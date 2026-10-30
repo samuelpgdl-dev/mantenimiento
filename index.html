@@ -1172,10 +1172,15 @@
         }
 
         function openModalForCurrentView() {
-            if (!checkAuthOrLogin()) return;
-            if (activeMainTab === 'maintenance') openRecordModal();
-            else if (activeMainTab === 'fuel') openFuelModal();
-            else openPartModal();
+            if (activeMainTab === 'fuel') {
+                openFuelModal(); // Alta de repostaje libre sin inicio de sesión obligatorio
+            } else if (activeMainTab === 'maintenance') {
+                if (!checkAuthOrLogin()) return;
+                openRecordModal();
+            } else {
+                if (!checkAuthOrLogin()) return;
+                openPartModal();
+            }
         }
 
         function populateCategories() {
@@ -2171,7 +2176,7 @@
             showToast("Informe PDF generado con éxito.");
         }
 
-        // --- FUNCIONES MODALES RESTRINGIDAS ---
+        // --- FUNCIONES MODALES ---
 
         function openRecordModal(id = null) {
             if (!checkAuthOrLogin()) return;
@@ -2240,7 +2245,9 @@
         }
 
         function openFuelModal(id = null) {
-            if (!checkAuthOrLogin()) return;
+            // Edición requiere login
+            if (id && !checkAuthOrLogin()) return;
+
             const modal = document.getElementById("fuelModal");
             const car = getActiveVehicle();
 
@@ -2271,12 +2278,12 @@
 
         async function handleSaveFuel(e) {
             e.preventDefault();
-            if (!checkAuthOrLogin()) return;
+            const id = document.getElementById("fuelRowIndex").value;
+            if (id && !checkAuthOrLogin()) return; // Modificar un registro existente exige inicio de sesión
             if (!supabaseClient) return;
 
-            const id = document.getElementById("fuelRowIndex").value;
             const fuelData = {
-                user_id: currentUser.id,
+                user_id: currentUser ? currentUser.id : null,
                 vehiculo: document.getElementById("fuelFormVehicle").value,
                 fecha: document.getElementById("fuelFormFecha").value,
                 kms: parseInt(document.getElementById("fuelFormKms").value) || null,
