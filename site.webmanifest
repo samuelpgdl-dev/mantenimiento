@@ -3,19 +3,36 @@
   "short_name": "Canauto",
   "icons": [
     {
-      "src": "web-app-manifest-192x192.png",
+      "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
-      "src": "web-app-manifest-512x512.png",
+      "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ],
-  "theme_color": "#0f172a",
+  "start_url": "./index.html",
+  "display": "standalone",
   "background_color": "#0f172a",
-  "display": "standalone"
+  "theme_color": "#0f172a",
+  "shortcuts": [
+    {
+      "name": "Anotar Repostaje",
+      "short_name": "Repostaje",
+      "description": "Registrar un nuevo repostaje de combustible",
+      "url": "./index.html?action=fuel",
+      "icons": [{ "src": "/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nuevo Mantenimiento",
+      "short_name": "Mantenimiento",
+      "description": "Registrar una revisión o reparación",
+      "url": "./index.html?action=maintenance",
+      "icons": [{ "src": "/favicon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
 }
