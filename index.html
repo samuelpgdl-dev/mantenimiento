@@ -1553,20 +1553,22 @@
             let yearNum = parseInt(yearVal);
             let monthNum = targetDate ? (targetDate.getMonth() + 1) : 10;
 
-            let colorBg = "bg-amber-400 text-slate-950 border-amber-500/40";
+            let colorBg = "bg-amber-400 text-slate-950 border-amber-500/50";
             let holeBg = "bg-slate-900 text-amber-400";
             if (yearNum % 3 === 0) {
-                colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/40";
+                colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/50";
                 holeBg = "bg-slate-900 text-emerald-400";
             } else if (yearNum % 3 === 2) {
-                colorBg = "bg-rose-500 text-white border-rose-600/40";
+                colorBg = "bg-rose-500 text-white border-rose-600/50";
                 holeBg = "bg-slate-900 text-rose-400";
             }
 
             const romanMonths = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
             let monthBarHTML = romanMonths.map((m, idx) => {
-                if ((idx + 1) === monthNum) return `<span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[8px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/20">${m}</span>`;
-                return `<span class="opacity-60 text-[7px] sm:text-[9px] font-bold">${m}</span>`;
+                if ((idx + 1) === monthNum) {
+                    return `<span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[9px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/30 shrink-0">${m}</span>`;
+                }
+                return `<span class="opacity-70 text-[7px] sm:text-[9px] font-extrabold flex-1 text-center">${m}</span>`;
             }).join('');
 
             const actionBtnsHTML = (isManual && id) ? `
@@ -1579,13 +1581,31 @@
             return `
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-3">
                     <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
-                        <div class="w-24 sm:w-32 h-18 sm:h-24 ${colorBg} rounded-lg border-2 shadow-md flex flex-col justify-between p-1 sm:p-1.5 relative shrink-0 select-none font-sans">
-                            <div class="flex items-center justify-between border-b border-black/20 pb-0.5 px-0.5">${monthBarHTML}</div>
-                            <div class="flex items-center justify-between px-1 my-auto">
-                                <span class="text-[8px] sm:text-[10px] font-black opacity-80 leading-none">ITV</span>
-                                <span class="text-xl sm:text-3xl font-black font-mono leading-none">${shortYear}</span>
+                        
+                        <!-- PEGATINA V-19 DGT -->
+                        <div class="w-28 sm:w-36 h-20 sm:h-24 ${colorBg} rounded-xl border-2 shadow-md flex flex-col justify-between p-1.5 sm:p-2 relative shrink-0 select-none font-sans">
+                            
+                            <!-- Cabecera Oficial V-19 con Escudo y DGT -->
+                            <div class="flex items-center justify-between border-b border-black/20 pb-1 px-0.5 text-[8px] sm:text-[10px] font-black tracking-tight">
+                                <span class="flex items-center space-x-1">
+                                    <i class="fa-solid fa-shield-halved text-[9px] sm:text-[11px] opacity-90"></i>
+                                    <span class="opacity-80">V-19</span>
+                                </span>
+                                <span class="font-extrabold opacity-90">DGT</span>
+                            </div>
+
+                            <!-- Franja de Meses Romanos (I al XII) -->
+                            <div class="flex items-center justify-between px-0.5 my-1">
+                                ${monthBarHTML}
+                            </div>
+
+                            <!-- Pie de la pegatina con marca ITV y Año grande -->
+                            <div class="flex items-end justify-between px-1 pt-0.5 border-t border-black/15">
+                                <span class="text-[9px] sm:text-[11px] font-black tracking-wider opacity-85 leading-none mb-1">ITV</span>
+                                <span class="text-2xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
                             </div>
                         </div>
+
                         <div class="min-w-0">
                             <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] uppercase font-bold px-2 py-0.5 rounded">Inspección Técnica</span>
                             <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5 truncate">${title}</h4>
