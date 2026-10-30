@@ -953,7 +953,7 @@
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
 
             if (!window.PublicKeyCredential) {
-                alert("Tu navegador o dispositivo no soporta autenticación biométrica (Passkeys).");
+                alert("Tu dispositivo o navegador no soporta autenticación biométrica (Passkeys).");
                 return;
             }
 
@@ -990,7 +990,7 @@
                 if (credential) {
                     const passkeyId = credential.id;
 
-                    // 1. Guardar tokens de la sesión actual de Supabase
+                    // 1. Guardar tokens de la sesión local
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
                         localStorage.setItem('canana_passkey_id', passkeyId);
@@ -1002,24 +1002,28 @@
                         }));
                     }
 
-                    // 2. Guardar en la base de datos Supabase
-                    const { error: dbErr } = await supabaseClient
+                    // 2. Guardar en Supabase y verificar respuesta
+                    const { data, error: dbErr } = await supabaseClient
                         .from('profiles')
-                        .update({ passkey_id: passkeyId })
-                        .eq('id', currentUser.id);
+                        .upsert({ 
+                            id: currentUser.id, 
+                            email: currentUser.email, 
+                            passkey_id: passkeyId 
+                        }, { onConflict: 'id' });
 
                     if (dbErr) {
                         console.error("Error BD Supabase:", dbErr);
-                        alert("Error al guardar Passkey en la base de datos: " + dbErr.message);
+                        alert("Error al guardar Passkey en la BD de Supabase:\n" + JSON.stringify(dbErr));
                         return;
                     }
 
+                    alert("¡Passkey vinculada con éxito en tu usuario!\nID: " + passkeyId.substring(0, 10) + "...");
                     showToast("¡Dispositivo y biometría vinculados con éxito!");
                 }
             } catch (err) {
                 console.error("Error Passkey register:", err);
                 if (err.name !== 'NotAllowedError') {
-                    alert("No se pudo vincular la Passkey: " + (err.message || "Error en el dispositivo"));
+                    alert("Error de registro Passkey:\n" + (err.message || err.name));
                 }
             }
         }
@@ -1089,7 +1093,7 @@
                             showToast("Usuario identificado. Introduce contraseña para acceder.");
                             return;
                         } else {
-                            alert("No se encontró ningún usuario vinculado a esta Passkey. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
+                            alert("No se encontró ningún usuario vinculado a esta Passkey (" + passkeyId.substring(0, 8) + "...). Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
                             return;
                         }
                     }
