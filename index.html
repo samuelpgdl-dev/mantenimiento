@@ -31,16 +31,12 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Cliente oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Librerías para Exportar a Excel y PDF -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Tesseract.js para OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
-        /* 1. Normalizar el input de fecha en iOS Safari */
         input[type="date"] {
             -webkit-appearance: none;
             appearance: none;
@@ -50,15 +46,11 @@
             text-align: left;
             min-height: 1.2em;
         }
-
-        /* 2. Evitar auto-zoom molesto en iOS Safari */
         @media (max-width: 639px) {
             input, select, textarea {
                 font-size: 16px !important;
             }
         }
-
-        /* 3. Respetar el margen inferior de la barra del iPhone (Safe Area) */
         .modal-bottom-safe {
             padding-bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
         }
@@ -70,16 +62,46 @@
     <div id="toastNotification" class="fixed top-4 right-4 sm:top-20 sm:right-5 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none max-w-[90vw]">
         <i class="fa-solid fa-circle-check text-xl shrink-0"></i>
         <div class="min-w-0">
-            <h5 class="font-bold text-xs sm:text-sm">Sincronización</h5>
-            <p class="text-xs text-emerald-100 truncate" id="toastMsg">Base de datos cargada desde Supabase.</p>
+            <h5 class="font-bold text-xs sm:text-sm">Estado</h5>
+            <p class="text-xs text-emerald-100 truncate" id="toastMsg">Sincronizando datos...</p>
         </div>
     </div>
 
-    <!-- Header Optimizado para Móvil y Desktop -->
+    <!-- MODAL INICIO DE SESIÓN / REGISTRO -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+            <div class="text-center space-y-2">
+                <img src="apple-touch-icon.png" alt="Canana Logo" class="w-16 h-16 rounded-2xl mx-auto shadow-md border border-slate-200 dark:border-slate-700 object-cover">
+                <h2 class="text-xl font-black text-slate-900 dark:text-white">Canana Automotive</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Accede con tu cuenta para ver y gestionar tus vehículos</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Correo electrónico</label>
+                    <input type="email" id="authEmail" required placeholder="tu@email.com" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <button type="submit" id="btnAuthSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-md">
+                        Iniciar Sesión
+                    </button>
+                    <button type="button" onclick="toggleAuthMode()" id="btnToggleAuth" class="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:underline">
+                        ¿No tienes cuenta? Regístrate aquí
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Header Principal -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 space-y-2">
             
-            <!-- Fila Superior: Marca + Acciones de Control -->
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center space-x-2 shrink-0">
                     <img src="apple-touch-icon.png" alt="Canana Logo" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-700">
@@ -99,20 +121,19 @@
                     <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Recargar">
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
+
+                    <button onclick="handleLogout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Fila Inferior: Selector de Vehículo con Logo de Marca + Navegación entre Pestañas -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
-                
                 <div class="flex items-center space-x-2 w-full sm:w-72 shrink-0">
-                    <!-- Icono dinámico de la marca -->
                     <div id="brandLogoContainer" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center p-1.5 shrink-0 transition">
                         <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
                         <i id="brandLogoFallback" class="fa-solid fa-car text-slate-400 text-xs"></i>
                     </div>
-
-                    <!-- Desplegable de Vehículos -->
                     <div class="relative w-full">
                         <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2 pr-8 appearance-none font-bold truncate cursor-pointer">
                         </select>
@@ -133,16 +154,13 @@
                         <i class="fa-solid fa-boxes-packing mr-1"></i> <span>Recambios</span>
                     </button>
                 </div>
-
             </div>
-
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-36 space-y-4 sm:space-y-6">
 
-        <!-- Tarjeta del Vehículo -->
         <section id="vehicleCard" class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md relative overflow-hidden transition-colors duration-200">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="space-y-1">
@@ -194,7 +212,6 @@
                 </div>
             </section>
 
-            <!-- Tarjeta Próxima Revisión Estimada -->
             <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
                 <div class="flex items-center space-x-3 sm:space-x-4">
                     <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-xl sm:text-2xl shrink-0">
@@ -225,7 +242,6 @@
                 </div>
             </section>
 
-            <!-- Historial -->
             <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3 sm:space-y-4">
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
@@ -285,7 +301,7 @@
             </section>
         </div>
 
-        <!-- VISTA 2: REPOSTAJES (GASOIL) -->
+        <!-- VISTA 2: REPOSTAJES -->
         <div id="viewFuel" class="space-y-4 sm:space-y-6 hidden">
             <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
@@ -306,7 +322,6 @@
                 </div>
             </section>
 
-            <!-- Tarjeta de Análisis de Precio Medio -->
             <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-3">
                     <div class="flex items-center space-x-2">
@@ -347,7 +362,6 @@
                 </p>
             </section>
 
-            <!-- Estadísticas de Gasoil -->
             <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
@@ -430,7 +444,7 @@
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
 
-        <!-- SECCIÓN INFERIOR: EXPORTACIÓN -->
+        <!-- EXPORTACIÓN -->
         <section class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
             <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
                 <div class="p-2 sm:p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg sm:text-xl shrink-0">
@@ -438,7 +452,7 @@
                 </div>
                 <div>
                     <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Centro de Exportación e Informes</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados del vehículo activo.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados.</p>
                 </div>
             </div>
 
@@ -471,20 +485,18 @@
 
     </main>
 
-    <!-- Botón Flotante (FAB) Acción Rápida Móvil -->
+    <!-- FAB Action Button -->
     <button onclick="openModalForCurrentView()" class="sm:hidden fixed bottom-6 right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-transform active:scale-90" title="Añadir nuevo registro">
         <i class="fa-solid fa-plus text-2xl"></i>
     </button>
 
-    <!-- Modal Form: Mantenimiento -->
+    <!-- Modal: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             <h3 id="recordModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3">Añadir Mantenimiento</h3>
-            
             <form id="recordForm" onsubmit="handleSaveRecord(event)" class="space-y-2.5">
                 <input type="hidden" id="recordRowIndex">
-                
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
@@ -495,12 +507,10 @@
                         <input type="number" id="formKms" inputmode="numeric" pattern="[0-9]*" required min="0" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none h-[38px]">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento *</label>
                     <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                 </div>
-
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Coste (€) *</label>
@@ -511,12 +521,10 @@
                         <input type="text" id="formTaller" placeholder="Caldereros Villarejo..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo</label>
                     <textarea id="formDetalle" rows="2" placeholder="Cambio bombillas W5W..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
-
                 <div class="flex justify-end space-x-2.5 pt-2">
                     <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
                     <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar</button>
@@ -525,13 +533,12 @@
         </div>
     </div>
 
-    <!-- Modal Form: Repostaje con OCR de Ticket -->
+    <!-- Modal: Repostaje con OCR -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             <h3 id="fuelModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Gasoil</h3>
             
-            <!-- Botón OCR para escanear foto de ticket -->
             <div class="mb-3 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60 text-center">
                 <label for="ocrInput" class="cursor-pointer inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95">
                     <i class="fa-solid fa-camera"></i>
@@ -580,7 +587,7 @@
         </div>
     </div>
 
-    <!-- Modal Form: Recambios -->
+    <!-- Modal: Recambios -->
     <div id="partModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -611,7 +618,7 @@
         </div>
     </div>
 
-    <!-- Modal Form: Alertas -->
+    <!-- Modal: Alertas -->
     <div id="alertModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeAlertModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -648,7 +655,7 @@
         </div>
     </div>
 
-    <!-- Modal Form: Nuevo Vehículo -->
+    <!-- Modal: Nuevo Vehículo -->
     <div id="vehicleModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeVehicleModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -706,7 +713,7 @@
         </div>
     </div>
 
-    <!-- Script Logic -->
+    <!-- Logic Script -->
     <script>
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
@@ -718,6 +725,8 @@
             "ITV", "Luces", "Pago del seguro", "Reparación", "Otros"
         ];
 
+        let currentUser = null;
+        let isAuthSignUpMode = false;
         let vehicles = [];
         let fuelRecords = [];
         let activeVehicleId = "c3";
@@ -729,7 +738,6 @@
         document.addEventListener("DOMContentLoaded", () => {
             initTheme();
             initApp();
-            reloadData();
         });
 
         function initTheme() {
@@ -746,15 +754,76 @@
             if (activeMainTab === 'fuel') renderFuelAnalytics();
         }
 
-        function initApp() {
+        async function initApp() {
             populateCategories();
-            populateVehicleSelector();
-            renderDashboard();
+            
+            if (!supabaseClient) {
+                showToast("Error de inicialización de Supabase.");
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                document.getElementById("loginModal").classList.add("hidden");
+                await reloadData();
+            } else {
+                document.getElementById("loginModal").classList.remove("hidden");
+            }
+
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (session) {
+                    currentUser = session.user;
+                    document.getElementById("loginModal").classList.add("hidden");
+                    reloadData();
+                } else {
+                    currentUser = null;
+                    document.getElementById("loginModal").classList.remove("hidden");
+                }
+            });
+        }
+
+        function toggleAuthMode() {
+            isAuthSignUpMode = !isAuthSignUpMode;
+            const btnSubmit = document.getElementById("btnAuthSubmit");
+            const btnToggle = document.getElementById("btnToggleAuth");
+            
+            if (isAuthSignUpMode) {
+                btnSubmit.innerText = "Crear Cuenta Nueva";
+                btnToggle.innerText = "¿Ya tienes cuenta? Inicia sesión aquí";
+            } else {
+                btnSubmit.innerText = "Iniciar Sesión";
+                btnToggle.innerText = "¿No tienes cuenta? Regístrate aquí";
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById("authEmail").value.trim();
+            const password = document.getElementById("authPassword").value;
+
+            showToast("Procesando...");
+
+            if (isAuthSignUpMode) {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) alert("Error en el registro: " + error.message);
+                else showToast("Cuenta creada. Iniciando sesión...");
+            } else {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) alert("Error al iniciar sesión: " + error.message);
+                else showToast("¡Bienvenido!");
+            }
+        }
+
+        async function handleLogout() {
+            if (confirm("¿Cerrar sesión en Canana Automotive?")) {
+                await supabaseClient.auth.signOut();
+                location.reload();
+            }
         }
 
         function getBrandLogoUrl(vehicleName) {
             const name = String(vehicleName || '').toLowerCase();
-            
             if (name.includes('citroen') || name.includes('citroën')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/citroen.svg';
             if (name.includes('peugeot')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/peugeot.svg';
             if (name.includes('seat')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/seat.svg';
@@ -769,7 +838,6 @@
             if (name.includes('fiat')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/fiat.svg';
             if (name.includes('hyundai')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/hyundai.svg';
             if (name.includes('kia')) return 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/kia.svg';
-            
             return null;
         }
 
@@ -777,13 +845,9 @@
             if (val === null || val === undefined) return 0;
             if (typeof val === 'number') return val;
             let str = String(val).replace(/€/g, '').trim();
-            if (str.includes('.') && str.includes(',')) {
-                str = str.replace(/\./g, '').replace(',', '.');
-            } else if (str.includes(',')) {
-                str = str.replace(',', '.');
-            } else if (str.split('.').length > 2) {
-                str = str.replace(/\./g, '');
-            }
+            if (str.includes('.') && str.includes(',')) str = str.replace(/\./g, '').replace(',', '.');
+            else if (str.includes(',')) str = str.replace(',', '.');
+            else if (str.split('.').length > 2) str = str.replace(/\./g, '');
             let num = parseFloat(str);
             return isNaN(num) ? 0 : num;
         }
@@ -811,11 +875,8 @@
         }
 
         async function reloadData() {
-            showToast("Sincronizando con Supabase...");
-            if (!supabaseClient) {
-                showToast("Configura SUPABASE_URL y SUPABASE_ANON_KEY.");
-                return;
-            }
+            if (!currentUser || !supabaseClient) return;
+            showToast("Sincronizando...");
 
             try {
                 const [maintRes, fuelRes, partsRes, alertsRes, vehRes] = await Promise.all([
@@ -831,14 +892,6 @@
                 const partsData = partsRes.data || [];
                 const alertsData = alertsRes.data || [];
                 let vehData = vehRes.data || [];
-
-                if (vehData.length === 0) {
-                    vehData = [
-                        { id: 1, id_alias: 'c3', name: 'Citroën C3 - 2805JRB', db_name: 'Citroën C3 - 2805JRB', plate: '2805JRB', vin: 'VF7SCBHY6GW586838', year: 2016, kms: 165992, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
-                        { id: 2, id_alias: 'p308', name: 'Peugeot 308 - 1184JMB', db_name: 'Peugeot 308 - 1184JMB', plate: '1184JMB', vin: 'VF3LBBHZ3FS336588', year: 2017, kms: 71000, fuel: 'Diésel', interval_km: 15000, interval_months: 12 },
-                        { id: 3, id_alias: 'p207', name: 'Peugeot 207 - 3323FMY', db_name: 'Peugeot 207 - 3323FMY', plate: '3323FMY', vin: 'VF3WC9HXC33655626', year: 2010, kms: 281500, fuel: 'Diésel', interval_km: 10000, interval_months: 12 }
-                    ];
-                }
 
                 vehicles = vehData.map(v => ({
                     id: v.id_alias || String(v.id),
@@ -914,10 +967,10 @@
                 renderDashboard();
                 if (activeMainTab === 'fuel') renderFuelDashboard();
                 if (activeMainTab === 'parts') renderParts();
-                showToast("Datos sincronizados con éxito.");
+                showToast("Datos sincronizados.");
             } catch (err) {
-                console.error("Error al consultar Supabase:", err);
-                showToast("Error al conectar con Supabase.");
+                console.error("Error en Supabase:", err);
+                showToast("Error de sincronización.");
             }
         }
 
@@ -978,6 +1031,8 @@
             if (vehicles.length > 0) {
                 if (!vehicles.some(v => v.id === activeVehicleId)) activeVehicleId = vehicles[0].id;
                 selector.value = activeVehicleId;
+            } else {
+                selector.innerHTML = `<option value="">Sin vehículos</option>`;
             }
 
             fuelFormVehicle.innerHTML = vehicles.map(v => `<option value="${v.dbName}">${v.name}</option>`).join('');
@@ -994,14 +1049,11 @@
         function parseDate(rawDate) {
             if (!rawDate) return null;
             if (rawDate instanceof Date) return rawDate;
-
             let str = String(rawDate).trim();
-
             if (str.includes('/')) {
                 let parts = str.split('/');
                 if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
             }
-
             if (str.includes('-')) {
                 if (str.includes('T')) str = str.split('T')[0];
                 let parts = str.split('-');
@@ -1010,7 +1062,6 @@
                     return new Date(parts[2], parts[1] - 1, parts[0]);
                 }
             }
-
             let d = new Date(str);
             return isNaN(d.getTime()) ? null : d;
         }
@@ -1034,18 +1085,14 @@
         }
 
         function clearDateFilter() {
-            const dateFromElem = document.getElementById("dateFrom");
-            const dateToElem = document.getElementById("dateTo");
-            if (dateFromElem) dateFromElem.value = "";
-            if (dateToElem) dateToElem.value = "";
+            document.getElementById("dateFrom").value = "";
+            document.getElementById("dateTo").value = "";
             renderTable();
         }
 
         function clearFuelDateFilter() {
-            const dateFromElem = document.getElementById("fuelDateFrom");
-            const dateToElem = document.getElementById("fuelDateTo");
-            if (dateFromElem) dateFromElem.value = "";
-            if (dateToElem) dateToElem.value = "";
+            document.getElementById("fuelDateFrom").value = "";
+            document.getElementById("fuelDateTo").value = "";
             renderFuelDashboard();
         }
 
@@ -1056,13 +1103,12 @@
             setTimeout(() => { toast.classList.add("translate-y-[-100px]", "opacity-0", "pointer-events-none"); }, 3500);
         }
 
-        // Lógica de lectura OCR mejorada con Tesseract.js (Lectura de Litros + Precios + Fechas)
         async function processTicketOCR(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const statusElem = document.getElementById("ocrStatus");
-            statusElem.innerText = "Escaneando ticket... por favor espera";
+            statusElem.innerText = "Escaneando ticket con OCR...";
             statusElem.classList.remove("hidden");
 
             try {
@@ -1071,25 +1117,20 @@
                 await worker.terminate();
 
                 const text = ret.data.text;
-                console.log("Texto extraído por OCR:", text);
-
-                // 1. Buscar Importe / Total
                 const totalMatch = text.match(/(?:TOTAL|IMPORTE|EUR|€)\s*:?\s*(\d+[\.,]\d{2})/i) || text.match(/(\d+[\.,]\d{2})\s*€/i);
                 if (totalMatch) {
                     const priceVal = parseFloat(totalMatch[1].replace(',', '.'));
                     if (!isNaN(priceVal)) document.getElementById("fuelFormImporte").value = priceVal.toFixed(2);
                 }
 
-                // 2. Buscar Litros (busca patrones con 'L', 'litros', 'Lt' o decimales de volumen)
                 const litersMatch = text.match(/(\d+[\.,]\d{2,3})\s*(?:L|LT|LITROS)/i) || text.match(/(?:LITROS|VOLUMEN)\s*:?\s*(\d+[\.,]\d{2,3})/i);
                 if (litersMatch) {
                     const litersVal = parseFloat(litersMatch[1].replace(',', '.'));
-                    if (!isNaN(litersVal) && litersVal > 2 && litersVal < 150) { // Filtro de volumen lógico para depósito
+                    if (!isNaN(litersVal) && litersVal > 2 && litersVal < 150) {
                         document.getElementById("fuelFormLitros").value = litersVal.toFixed(2);
                     }
                 }
 
-                // 3. Buscar Fecha (Formatos DD/MM/YYYY o DD-MM-YYYY)
                 const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](20\d\d)/);
                 if (dateMatch) {
                     const day = dateMatch[1].padStart(2, '0');
@@ -1098,7 +1139,6 @@
                     document.getElementById("fuelFormFecha").value = `${year}-${month}-${day}`;
                 }
 
-                // 4. Buscar Gasolinera conocida
                 const textLower = text.toLowerCase();
                 const knownStations = ["Repsol", "Plenoil", "Ballenoil", "Cepsa", "BP", "Shell", "Petroprix", "Galp"];
                 for (const station of knownStations) {
@@ -1108,11 +1148,11 @@
                     }
                 }
 
-                statusElem.innerText = "¡Datos del ticket extraídos correctamente!";
+                statusElem.innerText = "¡Datos del ticket extraídos!";
                 setTimeout(() => statusElem.classList.add("hidden"), 3000);
             } catch (err) {
                 console.error("Error al procesar OCR:", err);
-                statusElem.innerText = "Error al leer la imagen del ticket";
+                statusElem.innerText = "Error al leer ticket";
             }
         }
 
@@ -1128,10 +1168,8 @@
             }
 
             updateCarKms(car);
-
             document.getElementById("carTitle").innerText = car.name;
 
-            // Actualizar el logo dinámico de la marca junto al selector
             const logoImg = document.getElementById("brandLogoImg");
             const logoFallback = document.getElementById("brandLogoFallback");
             const logoUrl = getBrandLogoUrl(car.name);
@@ -1145,12 +1183,7 @@
                 logoFallback.classList.remove("hidden");
             }
 
-            let identifierText = "";
-            if (car.plate && car.vin) identifierText = `${car.plate} • ${car.vin}`;
-            else if (car.plate) identifierText = car.plate;
-            else if (car.vin) identifierText = car.vin;
-            else identifierText = "--";
-
+            let identifierText = car.plate && car.vin ? `${car.plate} • ${car.vin}` : (car.plate || car.vin || "--");
             document.getElementById("carPlate").innerText = identifierText;
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
             document.getElementById("carKm").innerText = `${Number(car.kms || 0).toLocaleString('es-ES')} km`;
@@ -1174,7 +1207,6 @@
             const cardElem = document.getElementById("nextServiceCard");
 
             if (!cardMonth || !car) return;
-
             cardElem.className = "bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
 
             const revisions = (car.records || []).filter(r => {
@@ -1183,59 +1215,18 @@
                 return t.includes("revisión") || d.includes("revisión");
             }).sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
 
-            const hasRevision = revisions.length > 0;
-            const lastRevision = hasRevision ? revisions[0] : null;
-
-            if (!hasRevision) {
+            if (revisions.length === 0) {
                 cardMonth.innerText = "Sin registro de revisión previa";
                 cardMonth.className = "text-base sm:text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5";
-                cardDetail.innerText = `Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses. Introduce una revisión para calcular.`;
+                cardDetail.innerText = `Configuración: cada ${car.intervalKm || 15000} km o ${car.intervalMonths || 12} meses.`;
                 cardKm.innerText = "-- km";
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-slate-400";
                 return;
             }
 
+            const lastRevision = revisions[0];
             const lastDate = parseDate(lastRevision.fecha) || new Date();
             const lastKm = Number(lastRevision.kms || 0);
-
-            const pts = [];
-            (car.records || []).forEach(r => {
-                const d = parseDate(r.fecha);
-                const km = Number(r.kms || 0);
-                if (d && km > 0) pts.push({ date: d, km: km });
-            });
-
-            const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
-            carFuel.forEach(f => {
-                const d = parseDate(f.fecha);
-                const km = Number(f.kms || 0);
-                if (d && km > 0) pts.push({ date: d, km: km });
-            });
-
-            pts.sort((a, b) => a.date - b.date);
-
-            let currentKm = car.kms || lastKm;
-            if (pts.length > 0 && pts[pts.length - 1].km > currentKm) {
-                currentKm = pts[pts.length - 1].km;
-            }
-
-            let monthlyKmRate = 1000;
-            if (pts.length >= 2) {
-                const latest = pts[pts.length - 1];
-                let earliest = pts[0];
-                for (let i = pts.length - 2; i >= 0; i--) {
-                    const daysDiff = (latest.date - pts[i].date) / (1000 * 60 * 60 * 24);
-                    if (daysDiff >= 30 && (latest.km - pts[i].km) > 0) {
-                        earliest = pts[i];
-                        if (daysDiff >= 90) break;
-                    }
-                }
-                const daysDiff = (latest.date - earliest.date) / (1000 * 60 * 60 * 24);
-                const kmDiff = latest.km - earliest.km;
-                if (daysDiff >= 15 && kmDiff > 0) {
-                    monthlyKmRate = kmDiff / (daysDiff / 30.44);
-                }
-            }
 
             const intervalKm = car.intervalKm || 15000;
             const intervalMonths = car.intervalMonths || 12;
@@ -1244,78 +1235,36 @@
             targetDateByTime.setMonth(targetDateByTime.getMonth() + intervalMonths);
 
             const targetKm = lastKm + intervalKm;
-            const remainingKm = targetKm - currentKm;
-
-            const monthsToKmTarget = monthlyKmRate > 0 ? (remainingKm / monthlyKmRate) : intervalMonths;
-            const targetDateByKm = new Date();
-            targetDateByKm.setMonth(targetDateByKm.getMonth() + Math.round(monthsToKmTarget));
-
-            const finalTargetDate = targetDateByTime < targetDateByKm ? targetDateByTime : targetDateByKm;
-            const isLimitedByTime = targetDateByTime < targetDateByKm;
-
-            const today = new Date();
-            const isOverdueTime = targetDateByTime < today;
-            const isOverdueKm = remainingKm <= 0;
+            const remainingKm = targetKm - (car.kms || lastKm);
 
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            const monthStr = `${monthNames[finalTargetDate.getMonth()]} de ${finalTargetDate.getFullYear()}`;
+            const monthStr = `${monthNames[targetDateByTime.getMonth()]} de ${targetDateByTime.getFullYear()}`;
 
-            if (isOverdueTime || isOverdueKm) {
+            if (remainingKm <= 0 || targetDateByTime < new Date()) {
                 cardElem.className = "bg-rose-500/10 dark:bg-rose-950/40 p-4 sm:p-5 rounded-xl border border-rose-500/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors";
-                
-                if (isOverdueTime) {
-                    cardMonth.innerText = `¡Revisión Vencida! (${monthStr})`;
-                    cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
-                    cardDetail.innerText = `Superó los ${intervalMonths} meses de plazo (última: ${formatDateDisplay(lastDate)}).`;
-                } else {
-                    cardMonth.innerText = `¡Kilometraje superado!`;
-                    cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
-                    cardDetail.innerText = `Límite recomendado de ${targetKm.toLocaleString('es-ES')} km alcanzado.`;
-                }
-                
-                cardKm.innerText = remainingKm <= 0 ? `Excedido en ${Math.abs(remainingKm).toLocaleString('es-ES')} km` : `0 km`;
+                cardMonth.innerText = `¡Revisión Vencida! (${monthStr})`;
+                cardMonth.className = "text-base sm:text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5";
+                cardDetail.innerText = `Límite de ${targetKm.toLocaleString('es-ES')} km o tiempo superado.`;
+                cardKm.innerText = `${remainingKm <= 0 ? Math.abs(remainingKm).toLocaleString('es-ES') + ' km exedidos' : '0 km'}`;
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-rose-600 dark:text-rose-400";
             } else {
                 cardMonth.innerText = monthStr;
                 cardMonth.className = "text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5";
                 cardKm.innerText = `${remainingKm.toLocaleString('es-ES')} km`;
                 cardKm.className = "text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400";
-
-                const reasonText = isLimitedByTime 
-                    ? `Límite por tiempo (${intervalMonths} meses desde ${formatDateDisplay(lastDate)})` 
-                    : `Límite por km (${targetKm.toLocaleString('es-ES')} km aprox.)`;
-
-                cardDetail.innerText = `${reasonText} • Ritmo: ~${Math.round(monthlyKmRate).toLocaleString('es-ES')} km/mes`;
+                cardDetail.innerText = `Límite por tiempo (${intervalMonths} meses) o km (${targetKm.toLocaleString('es-ES')} km)`;
             }
         }
 
         function createITVStickerHTML(title, desc, id = null, isManual = false, rawFecha = null) {
             let targetDate = parseDate(rawFecha);
-            
-            if (!targetDate) {
-                let match = desc.match(/(\d{1,2})[/.-](\d{1,2})[/.-](20\d\d)/);
-                if (match) targetDate = new Date(match[3], match[2] - 1, match[1]);
-            }
-
             let yearVal = targetDate ? String(targetDate.getFullYear()) : "2027";
             let shortYear = yearVal.slice(-2);
             let yearNum = parseInt(yearVal);
             let monthNum = targetDate ? (targetDate.getMonth() + 1) : 10;
 
-            if (!targetDate) {
-                const monthsMap = {
-                    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
-                    "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
-                };
-                let descLower = desc.toLowerCase();
-                for (let [mName, mNum] of Object.entries(monthsMap)) {
-                    if (descLower.includes(mName)) { monthNum = mNum; break; }
-                }
-            }
-
             let colorBg = "bg-amber-400 text-slate-950 border-amber-500/40";
             let holeBg = "bg-slate-900 text-amber-400";
-            
             if (yearNum % 3 === 0) {
                 colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/40";
                 holeBg = "bg-slate-900 text-emerald-400";
@@ -1325,55 +1274,32 @@
             }
 
             const romanMonths = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-
             let monthBarHTML = romanMonths.map((m, idx) => {
-                let isPunched = (idx + 1) === monthNum;
-                if (isPunched) {
-                    return `<span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[8px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/20">${m}</span>`;
-                }
+                if ((idx + 1) === monthNum) return `<span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[8px] sm:text-[10px] flex items-center justify-center shadow-inner scale-110 border border-black/20">${m}</span>`;
                 return `<span class="opacity-60 text-[7px] sm:text-[9px] font-bold">${m}</span>`;
             }).join('');
 
             const actionBtnsHTML = (isManual && id) ? `
                 <div class="flex items-center space-x-1 shrink-0">
-                    <button onclick="openAlertModal('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar Alerta">
-                        <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
-                    </button>
-                    <button onclick="deleteAlert('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar Alerta">
-                        <i class="fa-solid fa-trash-can text-xs sm:text-sm"></i>
-                    </button>
+                    <button onclick="openAlertModal('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
+                    <button onclick="deleteAlert('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
                 </div>
             ` : '';
-
-            let detailText = desc;
-            if (targetDate) {
-                detailText = `Vence el día ${formatDateDisplay(targetDate)} • ${desc}`;
-            }
 
             return `
                 <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-3">
                     <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
-                        <div class="w-24 sm:w-32 h-18 sm:h-24 ${colorBg} rounded-lg border-2 shadow-md flex flex-col justify-between p-1 sm:p-1.5 relative shrink-0 select-none overflow-hidden font-sans">
-                            <div class="flex items-center justify-between border-b border-black/20 pb-0.5 sm:pb-1 px-0.5">
-                                ${monthBarHTML}
-                            </div>
+                        <div class="w-24 sm:w-32 h-18 sm:h-24 ${colorBg} rounded-lg border-2 shadow-md flex flex-col justify-between p-1 sm:p-1.5 relative shrink-0 select-none font-sans">
+                            <div class="flex items-center justify-between border-b border-black/20 pb-0.5 px-0.5">${monthBarHTML}</div>
                             <div class="flex items-center justify-between px-1 my-auto">
-                                <div class="flex flex-col">
-                                    <span class="text-[8px] sm:text-[10px] font-black tracking-tighter opacity-80 leading-none">ITV</span>
-                                    <span class="text-[6px] sm:text-[7px] font-bold opacity-60 uppercase mt-0.5">V-19</span>
-                                </div>
-                                <span class="text-xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
-                            </div>
-                            <div class="flex items-center justify-between text-[6px] sm:text-[7px] font-bold opacity-50 border-t border-black/10 pt-0.5 px-0.5 uppercase">
-                                <span>España</span>
-                                <i class="fa-solid fa-shield-halved text-[7px] sm:text-[8px]"></i>
+                                <span class="text-[8px] sm:text-[10px] font-black opacity-80 leading-none">ITV</span>
+                                <span class="text-xl sm:text-3xl font-black font-mono leading-none">${shortYear}</span>
                             </div>
                         </div>
-
                         <div class="min-w-0">
-                            <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] sm:text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-amber-500/20">Inspección Técnica</span>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5 truncate">${title}</h4>
-                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5 line-clamp-2">${detailText}</p>
+                            <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] uppercase font-bold px-2 py-0.5 rounded">Inspección Técnica</span>
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5 truncate">${title}</h4>
+                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${desc}</p>
                         </div>
                     </div>
                     ${actionBtnsHTML}
@@ -1389,35 +1315,20 @@
             document.getElementById("kpiAlertCount").innerText = alerts.length;
             alerts.forEach(a => {
                 const titleLower = String(a.title || '').toLowerCase();
-                const descLower = String(a.desc || '').toLowerCase();
-                const typeLower = String(a.type || '').toLowerCase();
-
-                if (titleLower.includes("itv") || descLower.includes("itv") || typeLower.includes("itv")) {
-                    container.innerHTML += createITVStickerHTML(a.title || "Próxima ITV", a.desc || "", a.id, a.isManual, a.fecha);
+                if (titleLower.includes("itv") || String(a.type || '').toLowerCase().includes("itv")) {
+                    container.innerHTML += createITVStickerHTML(a.title, a.desc, a.id, a.isManual, a.fecha);
                 } else {
-                    const isWarning = typeLower === 'warning';
-                    const bgClass = isWarning ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500/30' : 'bg-blue-500/10 dark:bg-blue-950/40 border-blue-500/30';
                     const actionBtnsHTML = (a.isManual && a.id) ? `
                         <div class="flex items-center space-x-1 shrink-0 ml-auto">
-                            <button onclick="openAlertModal('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar Alerta">
-                                <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
-                            </button>
-                            <button onclick="deleteAlert('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar Alerta">
-                                <i class="fa-solid fa-trash-can text-xs sm:text-sm"></i>
-                            </button>
+                            <button onclick="openAlertModal('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteAlert('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
                     ` : '';
-
-                    let detailText = a.desc || "";
-                    if (a.fecha) {
-                        detailText = `Vencimiento: ${formatDateDisplay(a.fecha)} • ${detailText}`;
-                    }
-
                     container.innerHTML += `
-                        <div class="${bgClass} border p-3 sm:p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
+                        <div class="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
                             <div class="flex items-start space-x-3 min-w-0">
-                                <i class="fa-solid fa-triangle-exclamation ${isWarning ? 'text-amber-500' : 'text-blue-500'} text-base sm:text-lg mt-0.5 shrink-0"></i>
-                                <div class="min-w-0"><h4 class="font-bold truncate">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5 line-clamp-2">${detailText}</p></div>
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base mt-0.5 shrink-0"></i>
+                                <div class="min-w-0"><h4 class="font-bold truncate">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
                             </div>
                             ${actionBtnsHTML}
                         </div>`;
@@ -1437,14 +1348,11 @@
             });
 
             const sortedCategories = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-            let chartLabels = sortedCategories.map(item => item[0]);
-            let chartData = sortedCategories.map(item => item[1]);
-
             if (categoryChartInstance) categoryChartInstance.destroy();
             const ctx1 = document.getElementById('categoryChart').getContext('2d');
             categoryChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
-                data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] }] },
+                data: { labels: sortedCategories.map(i => i[0]), datasets: [{ data: sortedCategories.map(i => i[1]), backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#64748b'] }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 10, font: { size: 10 } } } } }
             });
 
@@ -1488,12 +1396,7 @@
                 const recordISO = formatDateISO(r.fecha);
 
                 const matchesSearch = !search || tipoStr.includes(search) || tallerStr.includes(search) || detalleStr.includes(search);
-                
-                let matchesCat = true;
-                if (catFilter !== 'ALL') {
-                    const filterLower = catFilter.toLowerCase();
-                    matchesCat = detalleStr.includes(filterLower) || tipoStr.includes(filterLower);
-                }
+                let matchesCat = catFilter === 'ALL' || detalleStr.includes(catFilter.toLowerCase()) || tipoStr.includes(catFilter.toLowerCase());
 
                 let matchesDate = true;
                 if (dateFromVal && recordISO && recordISO < dateFromVal) matchesDate = false;
@@ -1505,7 +1408,6 @@
             filtered.sort((a, b) => {
                 let dA = parseDate(a.fecha) || new Date(0);
                 let dB = parseDate(b.fecha) || new Date(0);
-
                 if (sortOrder === 'date-desc') return dB - dA;
                 if (sortOrder === 'date-asc') return dA - dB;
                 if (sortOrder === 'km-desc') return Number(b.kms || 0) - Number(a.kms || 0);
@@ -1525,14 +1427,14 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
-                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] sm:text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">${r.detalle || "Otros"}</span></td>
-                    <td class="px-3 sm:px-4 py-3 min-w-[140px]">${r.tipo || ""}</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">${r.detalle || "Otros"}</span></td>
+                    <td class="px-3 sm:px-4 py-3">${r.tipo || ""}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500 hidden sm:table-cell">${r.taller || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-1.5">
-                            <button onclick="openRecordModal('${r.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
-                            <button onclick="deleteRecord('${r.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
+                        <div class="flex items-center justify-center space-x-1">
+                            <button onclick="openRecordModal('${r.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteRecord('${r.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1547,9 +1449,7 @@
         function renderFuelAnalytics() {
             const car = getActiveVehicle();
             let rawList = fuelRecords;
-            if (car) {
-                rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
-            }
+            if (car) rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
 
             const dateFromVal = document.getElementById("fuelDateFrom") ? document.getElementById("fuelDateFrom").value : "";
             const dateToVal = document.getElementById("fuelDateTo") ? document.getElementById("fuelDateTo").value : "";
@@ -1625,47 +1525,25 @@
                 maxPriceElem.innerText = `${maxP.toFixed(3)} €/L`;
                 diffPriceElem.innerText = `${diffP.toFixed(3)} €/L`;
 
-                let badgeClass = "";
-                let badgeText = "";
-                let commentText = "";
+                let badgeClass = varPercent < 4 ? "bg-emerald-100 text-emerald-800" : (varPercent <= 8 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800");
+                let badgeText = varPercent < 4 ? `Baja (±${varPercent.toFixed(1)}%)` : (varPercent <= 8 ? `Moderada (±${varPercent.toFixed(1)}%)` : `Alta (±${varPercent.toFixed(1)}%)`);
 
-                if (varPercent < 4) {
-                    badgeClass = "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60";
-                    badgeText = `Baja (±${varPercent.toFixed(1)}%)`;
-                    commentText = `Precios muy estables en el periodo seleccionado. La diferencia máxima entre el repostaje más barato y el más caro es de solo ${centsDiff} céntimos por litro.`;
-                } else if (varPercent <= 8) {
-                    badgeClass = "bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60";
-                    badgeText = `Moderada (±${varPercent.toFixed(1)}%)`;
-                    commentText = `Variabilidad moderada en el periodo seleccionado. El precio osciló en ${centsDiff} céntimos por litro entre el mínimo (${minP.toFixed(3)} €/L) y el máximo (${maxP.toFixed(3)} €/L).`;
-                } else {
-                    badgeClass = "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800/60";
-                    badgeText = `Alta (±${varPercent.toFixed(1)}%)`;
-                    commentText = `Alta volatilidad detectada en el periodo. Se registró una brecha de ${centsDiff} céntimos por litro entre el repostaje más económico y el más costoso.`;
-                }
-
-                badgeElem.className = `px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold ${badgeClass}`;
+                badgeElem.className = `px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass}`;
                 badgeElem.innerText = badgeText;
-                commentElem.innerText = commentText;
+                commentElem.innerText = `Diferencia máxima de ${centsDiff} céntimos/L entre el repostaje más barato (${minP.toFixed(3)} €/L) y el más caro (${maxP.toFixed(3)} €/L).`;
             } else if (avgPriceElem) {
                 avgPriceElem.innerText = "-- €/L";
                 minPriceElem.innerText = "-- €/L";
                 maxPriceElem.innerText = "-- €/L";
                 diffPriceElem.innerText = "-- €/L";
-                badgeElem.className = "px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-500";
                 badgeElem.innerText = "Sin datos";
-                commentElem.innerText = "No se encontraron registros de repostaje con litros e importe en el rango de fechas seleccionado.";
+                commentElem.innerText = "Ajusta las fechas para analizar los precios.";
             }
 
             const validRecords = filteredList
                 .filter(r => r.fecha && Number(r.litros) > 0 && Number(r.importe) > 0)
-                .map(r => ({
-                    fecha: r.fecha,
-                    precio: Number((Number(r.importe) / Number(r.litros)).toFixed(3))
-                }))
+                .map(r => ({ fecha: r.fecha, precio: Number((Number(r.importe) / Number(r.litros)).toFixed(3)) }))
                 .sort((a, b) => (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0));
-
-            const labels = validRecords.map(r => formatDateDisplay(r.fecha));
-            const dataPrices = validRecords.map(r => r.precio);
 
             const isDark = document.documentElement.classList.contains("dark");
             const textColor = isDark ? '#94a3b8' : '#475569';
@@ -1674,38 +1552,17 @@
             const ctx = document.getElementById('chartFuelPrice');
             if (ctx) {
                 if (fuelPriceChartInstance) fuelPriceChartInstance.destroy();
-
                 fuelPriceChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Precio (€/L)',
-                            data: dataPrices,
-                            borderColor: '#a855f7',
-                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            pointBackgroundColor: '#a855f7',
-                            pointRadius: 4
-                        }]
+                        labels: validRecords.map(r => formatDateDisplay(r.fecha)),
+                        datasets: [{ label: 'Precio (€/L)', data: validRecords.map(r => r.precio), borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)', borderWidth: 2, fill: true, tension: 0.3 }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(ctx) { return `Precio: ${ctx.parsed.y.toFixed(3)} €/L`; }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: textColor, font: { size: 10 }, callback: function(val) { return val.toFixed(2) + ' €'; } }, grid: { color: gridColor } }
-                        }
+                        plugins: { legend: { display: false } },
+                        scales: { x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } } }
                     }
                 });
             }
@@ -1717,34 +1574,22 @@
 
             const car = getActiveVehicle();
             let rawList = fuelRecords;
+            if (car) rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
 
-            if (car) {
-                rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
-            }
-
-            let sortedAsc = [...rawList].sort((a, b) => {
-                let kmA = Number(a.kms || 0);
-                let kmB = Number(b.kms || 0);
-                if (kmA !== kmB) return kmA - kmB;
-                return (parseDate(a.fecha) || new Date(0)) - (parseDate(b.fecha) || new Date(0));
-            });
+            let sortedAsc = [...rawList].sort((a, b) => (Number(a.kms || 0) - Number(b.kms || 0)));
 
             let processedList = sortedAsc.map((f, idx) => {
                 let imp = Number(f.importe || 0);
                 let lit = Number(f.litros || 0);
                 let kms = Number(f.kms || 0);
-
                 let pricePerLiter = (imp > 0 && lit > 0) ? (imp / lit) : null;
                 let consumption = null;
 
                 if (idx > 0 && kms > 0 && lit > 0) {
                     let prevKms = Number(sortedAsc[idx - 1].kms || 0);
                     let deltaKms = kms - prevKms;
-                    if (deltaKms > 0) {
-                        consumption = (lit / deltaKms) * 100;
-                    }
+                    if (deltaKms > 0) consumption = (lit / deltaKms) * 100;
                 }
-
                 return { ...f, pricePerLiter, consumption };
             });
 
@@ -1760,17 +1605,13 @@
 
             const totalImport = filtered.reduce((sum, f) => sum + Number(f.importe || 0), 0);
             const totalLitros = filtered.reduce((sum, f) => sum + Number(f.litros || 0), 0);
-            const count = filtered.length;
-
             const avgPrice = totalLitros > 0 ? (totalImport / totalLitros) : 0;
 
             let validConsumptions = filtered.filter(f => f.consumption !== null).map(f => f.consumption);
-            let avgConsumption = validConsumptions.length > 0 
-                ? (validConsumptions.reduce((a, b) => a + b, 0) / validConsumptions.length)
-                : null;
+            let avgConsumption = validConsumptions.length > 0 ? (validConsumptions.reduce((a, b) => a + b, 0) / validConsumptions.length) : null;
 
-            document.getElementById("kpiFuelTotal").innerText = `${totalImport.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
-            document.getElementById("kpiFuelCount").innerText = count;
+            document.getElementById("kpiFuelTotal").innerText = `${totalImport.toFixed(2)} €`;
+            document.getElementById("kpiFuelCount").innerText = filtered.length;
             document.getElementById("kpiFuelAvgPriceLiter").innerText = avgPrice > 0 ? `${avgPrice.toFixed(3)} €/L` : "0,000 €/L";
             document.getElementById("kpiFuelAvgConsumption").innerText = avgConsumption ? `${avgConsumption.toFixed(2)} L/100km` : "-- L/100km";
 
@@ -1778,24 +1619,24 @@
             if (!tbody) return;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay repostajes registrados para este vehículo.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400">Sin repostajes registrados.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(f => `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400 hidden sm:table-cell">${f.vehiculo}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${formatDateDisplay(f.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(f.importe || 0).toFixed(2)} €</td>
-                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right whitespace-nowrap hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
+                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-semibold">${Number(f.importe || 0).toFixed(2)} €</td>
+                    <td class="px-3 sm:px-4 py-3 text-right">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
                     <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-1.5">
-                            <button onclick="openFuelModal('${f.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
-                            <button onclick="deleteFuelRecord('${f.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
+                    <td class="px-3 sm:px-4 py-3 text-center">
+                        <div class="flex items-center justify-center space-x-1">
+                            <button onclick="openFuelModal('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteFuelRecord('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
                     </td>
                 </tr>
@@ -1805,84 +1646,46 @@
         function renderParts() {
             const car = getActiveVehicle();
             if (!car) return;
-
-            const searchInput = document.getElementById("partSearchInput");
-            const search = searchInput ? String(searchInput.value || '').toLowerCase() : '';
-
             const container = document.getElementById("partsContainer");
             if (!container) return;
 
-            let filtered = (car.parts || []).filter(p => {
-                return !search || String(p.pieza || '').toLowerCase().includes(search) || String(p.marca || '').toLowerCase().includes(search) || String(p.notas || '').toLowerCase().includes(search);
-            });
-
-            if (filtered.length === 0) {
+            if (car.parts.length === 0) {
                 container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold border border-slate-200 dark:border-slate-700/60">No se encontraron recambios guardados.</div>`;
                 return;
             }
 
-            container.innerHTML = filtered.map(p => {
-                let links = [];
-                if (p.link && String(p.link).trim().startsWith('http')) {
-                    links.push(String(p.link).trim());
-                }
-                
-                const urlMatches = String(p.notas || '').match(/https?:\/\/[^\s,]+/g);
-                if (urlMatches) {
-                    urlMatches.forEach(u => {
-                        if (!links.includes(u)) links.push(u);
-                    });
-                }
-
-                let cleanNotas = String(p.notas || '').replace(/https?:\/\/[^\s,]+/g, '').trim();
-
-                let linksHTML = "";
-                if (links.length > 0) {
-                    linksHTML = `<div class="pt-2 border-t border-slate-100 dark:border-slate-700/50 flex flex-wrap gap-2">` +
-                        links.map((linkUrl, idx) => `
-                            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border border-emerald-200 dark:border-emerald-800/60 transition">
-                                <i class="fa-solid fa-cart-shopping text-xs"></i>
-                                <span>Ver en Tienda ${links.length > 1 ? (idx + 1) : ''}</span>
-                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
-                            </a>
-                        `).join('') + `</div>`;
-                }
-
-                return `
-                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
-                        <div>
-                            <div class="flex items-center justify-between">
-                                <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${p.pieza}</h3>
-                                ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">${p.marca}</span>` : ''}
-                            </div>
-                            ${cleanNotas ? `<p class="text-xs text-slate-600 dark:text-slate-300 mt-2 font-mono bg-slate-50 dark:bg-slate-700/40 p-2 rounded border border-slate-100 dark:border-slate-700/50">${cleanNotas}</p>` : ''}
+            container.innerHTML = car.parts.map(p => `
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${p.pieza}</h3>
+                            ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded">${p.marca}</span>` : ''}
                         </div>
-                        <div class="flex items-center justify-between pt-1">
-                            ${linksHTML}
-                            <div class="flex items-center space-x-1 ml-auto">
-                                <button onclick="openPartModal('${p.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                                <button onclick="deletePart('${p.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                            </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 font-mono bg-slate-50 dark:bg-slate-700/40 p-2 rounded">${p.notas || ""}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        ${p.link ? `<a href="${p.link}" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:underline"><i class="fa-solid fa-cart-shopping mr-1"></i>Ver en Tienda</a>` : '<div></div>'}
+                        <div class="flex items-center space-x-1 ml-auto">
+                            <button onclick="openPartModal('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deletePart('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `).join('');
         }
+
+        // --- EXPORTACIÓN A EXCEL Y PDF RESTAURADA ---
 
         function exportToExcel() {
             const car = getActiveVehicle();
-            if (!car) {
-                showToast("Selecciona un vehículo primero.");
-                return;
-            }
+            if (!car) return showToast("Selecciona un vehículo primero.");
 
             const includeMaint = document.getElementById("chkExportMaint").checked;
             const includeFuel = document.getElementById("chkExportFuel").checked;
             const includeParts = document.getElementById("chkExportParts").checked;
 
             if (!includeMaint && !includeFuel && !includeParts) {
-                showToast("Selecciona al menos una categoría para exportar.");
-                return;
+                return showToast("Selecciona al menos una categoría para exportar.");
             }
 
             const wb = XLSX.utils.book_new();
@@ -1892,7 +1695,7 @@
                     Fecha: formatDateDisplay(r.fecha),
                     Kilometros: Number(r.kms || 0),
                     Categoria: r.detalle || "",
-                    Detalle_Trabajo: r.tipo || "",
+                    Trabajo: r.tipo || "",
                     Taller: r.taller || "",
                     Coste_Euros: Number(r.coste || 0)
                 }));
@@ -1902,7 +1705,6 @@
 
             if (includeFuel) {
                 const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name).map(f => ({
-                    Vehiculo: f.vehiculo,
                     Fecha: formatDateDisplay(f.fecha),
                     Kilometros: Number(f.kms || 0),
                     Importe_Euros: Number(f.importe || 0),
@@ -1926,182 +1728,111 @@
 
             const fileName = `Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
             XLSX.writeFile(wb, fileName);
-            showToast("Archivo Excel descargado correctamente.");
+            showToast("Archivo Excel generado.");
         }
 
         function exportToPDF() {
             const car = getActiveVehicle();
-            if (!car) {
-                showToast("Selecciona un vehículo primero.");
-                return;
-            }
+            if (!car) return showToast("Selecciona un vehículo.");
 
             const includeMaint = document.getElementById("chkExportMaint").checked;
             const includeFuel = document.getElementById("chkExportFuel").checked;
             const includeParts = document.getElementById("chkExportParts").checked;
-
-            if (!includeMaint && !includeFuel && !includeParts) {
-                showToast("Selecciona al menos una categoría para el informe.");
-                return;
-            }
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
             let y = 15;
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(16);
-            doc.text("CANANA AUTOMOTIVE - INFORME TÉCNICO", 15, y);
+            doc.setFontSize(14);
+            doc.text("CANANA AUTOMOTIVE - INFORME", 15, y);
 
             y += 8;
-            doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
-            doc.text(`Vehículo: ${car.name}`, 15, y);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Vehículo: ${car.name} | Matrícula: ${car.plate || '--'}`, 15, y);
             y += 5;
-            doc.text(`Matrícula / Bastidor: ${car.plate || '--'} / ${car.vin || '--'}`, 15, y);
-            y += 5;
-            doc.text(`Kilometraje Actual: ${Number(car.kms || 0).toLocaleString('es-ES')} km | Combustible: ${car.fuel}`, 15, y);
+            doc.text(`Kilometraje Actual: ${Number(car.kms || 0).toLocaleString('es-ES')} km`, 15, y);
             y += 8;
 
             doc.setLineWidth(0.5);
             doc.line(15, y, 195, y);
-            y += 10;
+            y += 8;
 
             if (includeMaint) {
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(12);
-                doc.text("Historial de Mantenimiento", 15, y);
+                doc.text("Mantenimientos", 15, y);
                 y += 6;
-
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(9);
-                doc.text("Fecha", 15, y);
-                doc.text("Km", 45, y);
-                doc.text("Trabajo", 75, y);
-                doc.text("Coste", 175, y, { align: "right" });
-                y += 5;
-
-                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
                 (car.records || []).forEach(r => {
                     if (y > 275) { doc.addPage(); y = 15; }
-                    doc.text(formatDateDisplay(r.fecha), 15, y);
-                    doc.text(Number(r.kms || 0).toLocaleString('es-ES') + " km", 45, y);
-                    doc.text(String(r.detalle || r.tipo || "").substring(0, 45), 75, y);
-                    doc.text(Number(r.coste || 0).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2}) + " €", 195, y, { align: "right" });
+                    doc.text(`${formatDateDisplay(r.fecha)} | ${r.kms || 0} km | ${r.detalle || ''} | ${r.coste || 0} €`, 15, y);
                     y += 5;
                 });
-                y += 8;
+                y += 5;
             }
 
             if (includeFuel) {
                 if (y > 250) { doc.addPage(); y = 15; }
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(12);
-                doc.text("Historial de Repostajes", 15, y);
+                doc.setFontSize(10);
+                doc.text("Repostajes", 15, y);
                 y += 6;
-
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(9);
-                doc.text("Fecha", 15, y);
-                doc.text("Km", 45, y);
-                doc.text("Litros", 85, y);
-                doc.text("Gasolinera / Notas", 120, y);
-                doc.text("Importe", 195, y, { align: "right" });
-                y += 5;
-
-                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
                 const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
                 carFuel.forEach(f => {
                     if (y > 275) { doc.addPage(); y = 15; }
-                    doc.text(formatDateDisplay(f.fecha), 15, y);
-                    doc.text(f.kms ? Number(f.kms).toLocaleString('es-ES') + " km" : "--", 45, y);
-                    doc.text(f.litros ? Number(f.litros).toFixed(2) + " L" : "--", 85, y);
-                    doc.text(String(f.notas || "--").substring(0, 35), 120, y);
-                    doc.text(Number(f.importe || 0).toFixed(2) + " €", 195, y, { align: "right" });
-                    y += 5;
-                });
-                y += 8;
-            }
-
-            if (includeParts) {
-                if (y > 250) { doc.addPage(); y = 15; }
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(12);
-                doc.text("Referencias y Recambios Guardados", 15, y);
-                y += 6;
-
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(9);
-                doc.text("Pieza", 15, y);
-                doc.text("Marca", 75, y);
-                doc.text("Observaciones / Referencia", 120, y);
-                y += 5;
-
-                doc.setFont("helvetica", "normal");
-                (car.parts || []).forEach(p => {
-                    if (y > 275) { doc.addPage(); y = 15; }
-                    doc.text(String(p.pieza || "").substring(0, 30), 15, y);
-                    doc.text(String(p.marca || "--").substring(0, 20), 75, y);
-                    doc.text(String(p.notas || "").substring(0, 45), 120, y);
+                    doc.text(`${formatDateDisplay(f.fecha)} | ${f.kms || 0} km | ${f.importe || 0} € | ${f.litros || 0} L | ${f.notas || ''}`, 15, y);
                     y += 5;
                 });
             }
 
             doc.save(`Informe_${car.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
-            showToast("Informe PDF generado correctamente.");
+            showToast("Informe PDF generado.");
         }
+
+        // --- FUNCIONES MODALES CON USER_ID ---
 
         function openRecordModal(id = null) {
             const modal = document.getElementById("recordModal");
-            const title = document.getElementById("recordModalTitle");
-            const recordRowIndex = document.getElementById("recordRowIndex");
-            const formFecha = document.getElementById("formFecha");
-            const formKms = document.getElementById("formKms");
-            const formTipo = document.getElementById("formTipo");
-            const formCoste = document.getElementById("formCoste");
-            const formTaller = document.getElementById("formTaller");
-            const formDetalle = document.getElementById("formDetalle");
-
             const car = getActiveVehicle();
             if (!car) return;
 
             if (id) {
                 const record = car.records.find(r => String(r.id) === String(id));
                 if (record) {
-                    title.innerText = "Editar Mantenimiento";
-                    recordRowIndex.value = record.id;
-                    formFecha.value = formatDateISO(record.fecha);
-                    formKms.value = record.kms || "";
-                    formTipo.value = record.detalle || MAINTENANCE_CATEGORIES[0];
-                    formCoste.value = record.coste || "";
-                    formTaller.value = record.taller || "";
-                    formDetalle.value = record.tipo || "";
+                    document.getElementById("recordModalTitle").innerText = "Editar Mantenimiento";
+                    document.getElementById("recordRowIndex").value = record.id;
+                    document.getElementById("formFecha").value = formatDateISO(record.fecha);
+                    document.getElementById("formKms").value = record.kms || "";
+                    document.getElementById("formTipo").value = record.detalle || MAINTENANCE_CATEGORIES[0];
+                    document.getElementById("formCoste").value = record.coste || "";
+                    document.getElementById("formTaller").value = record.taller || "";
+                    document.getElementById("formDetalle").value = record.tipo || "";
                 }
             } else {
-                title.innerText = "Añadir Mantenimiento";
-                recordRowIndex.value = "";
-                formFecha.value = formatDateISO(new Date());
-                formKms.value = car.kms || "";
-                formTipo.value = MAINTENANCE_CATEGORIES[0];
-                formCoste.value = "";
-                formTaller.value = "";
-                formDetalle.value = "";
+                document.getElementById("recordModalTitle").innerText = "Añadir Mantenimiento";
+                document.getElementById("recordRowIndex").value = "";
+                document.getElementById("formFecha").value = formatDateISO(new Date());
+                document.getElementById("formKms").value = car.kms || "";
+                document.getElementById("formTipo").value = MAINTENANCE_CATEGORIES[0];
+                document.getElementById("formCoste").value = "";
+                document.getElementById("formTaller").value = "";
+                document.getElementById("formDetalle").value = "";
             }
-
             modal.classList.remove("hidden");
         }
 
-        function closeRecordModal() {
-            document.getElementById("recordModal").classList.add("hidden");
-        }
+        function closeRecordModal() { document.getElementById("recordModal").classList.add("hidden"); }
 
         async function handleSaveRecord(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            if (!car || !supabaseClient) return;
+            if (!car || !supabaseClient || !currentUser) return;
 
             const id = document.getElementById("recordRowIndex").value;
             const recordData = {
+                user_id: currentUser.id,
                 vehiculo: car.dbName,
                 fecha: document.getElementById("formFecha").value,
                 kms: parseInt(document.getElementById("formKms").value) || 0,
@@ -2112,82 +1843,55 @@
             };
 
             try {
-                if (id) {
-                    await supabaseClient.from('mantenimiento').update(recordData).eq('id', id);
-                    showToast("Mantenimiento actualizado en Supabase.");
-                } else {
-                    await supabaseClient.from('mantenimiento').insert([recordData]);
-                    showToast("Mantenimiento añadido a Supabase.");
-                }
+                if (id) await supabaseClient.from('mantenimiento').update(recordData).eq('id', id);
+                else await supabaseClient.from('mantenimiento').insert([recordData]);
                 closeRecordModal();
                 await reloadData();
-            } catch (err) {
-                console.error("Error al guardar mantenimiento:", err);
-                showToast("Error al guardar datos.");
-            }
+            } catch (err) { console.error("Error al guardar:", err); }
         }
 
         async function deleteRecord(id) {
-            if (!confirm("¿Seguro que deseas eliminar este registro de mantenimiento?") || !supabaseClient) return;
-            try {
-                await supabaseClient.from('mantenimiento').delete().eq('id', id);
-                showToast("Registro eliminado.");
-                await reloadData();
-            } catch (err) {
-                console.error("Error al eliminar registro:", err);
-                showToast("Error al eliminar registro.");
-            }
+            if (!confirm("¿Eliminar este registro?") || !supabaseClient) return;
+            await supabaseClient.from('mantenimiento').delete().eq('id', id);
+            await reloadData();
         }
 
         function openFuelModal(id = null) {
             const modal = document.getElementById("fuelModal");
-            const title = document.getElementById("fuelModalTitle");
-            const fuelRowIndex = document.getElementById("fuelRowIndex");
-            const fuelFormVehicle = document.getElementById("fuelFormVehicle");
-            const fuelFormFecha = document.getElementById("fuelFormFecha");
-            const fuelFormKms = document.getElementById("fuelFormKms");
-            const fuelFormImporte = document.getElementById("fuelFormImporte");
-            const fuelFormLitros = document.getElementById("fuelFormLitros");
-            const fuelFormNotas = document.getElementById("fuelFormNotas");
-
             const car = getActiveVehicle();
 
             if (id) {
                 const record = fuelRecords.find(r => String(r.id) === String(id));
                 if (record) {
-                    title.innerHTML = `<i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Editar Repostaje`;
-                    fuelRowIndex.value = record.id;
-                    fuelFormVehicle.value = record.vehiculo || (car ? car.dbName : vehicles[0].dbName);
-                    fuelFormFecha.value = formatDateISO(record.fecha);
-                    fuelFormKms.value = record.kms || "";
-                    fuelFormImporte.value = record.importe || "";
-                    fuelFormLitros.value = record.litros || "";
-                    fuelFormNotas.value = record.notas || "";
+                    document.getElementById("fuelRowIndex").value = record.id;
+                    document.getElementById("fuelFormVehicle").value = record.vehiculo || (car ? car.dbName : vehicles[0].dbName);
+                    document.getElementById("fuelFormFecha").value = formatDateISO(record.fecha);
+                    document.getElementById("fuelFormKms").value = record.kms || "";
+                    document.getElementById("fuelFormImporte").value = record.importe || "";
+                    document.getElementById("fuelFormLitros").value = record.litros || "";
+                    document.getElementById("fuelFormNotas").value = record.notas || "";
                 }
             } else {
-                title.innerHTML = `<i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Nuevo Repostaje`;
-                fuelRowIndex.value = "";
-                fuelFormVehicle.value = car ? car.dbName : vehicles[0].dbName;
-                fuelFormFecha.value = formatDateISO(new Date());
-                fuelFormKms.value = car ? car.kms : "";
-                fuelFormImporte.value = "";
-                fuelFormLitros.value = "";
-                fuelFormNotas.value = "";
+                document.getElementById("fuelRowIndex").value = "";
+                document.getElementById("fuelFormVehicle").value = car ? car.dbName : vehicles[0].dbName;
+                document.getElementById("fuelFormFecha").value = formatDateISO(new Date());
+                document.getElementById("fuelFormKms").value = car ? car.kms : "";
+                document.getElementById("fuelFormImporte").value = "";
+                document.getElementById("fuelFormLitros").value = "";
+                document.getElementById("fuelFormNotas").value = "";
             }
-
             modal.classList.remove("hidden");
         }
 
-        function closeFuelModal() {
-            document.getElementById("fuelModal").classList.add("hidden");
-        }
+        function closeFuelModal() { document.getElementById("fuelModal").classList.add("hidden"); }
 
         async function handleSaveFuel(e) {
             e.preventDefault();
-            if (!supabaseClient) return;
+            if (!supabaseClient || !currentUser) return;
 
             const id = document.getElementById("fuelRowIndex").value;
             const fuelData = {
+                user_id: currentUser.id,
                 vehiculo: document.getElementById("fuelFormVehicle").value,
                 fecha: document.getElementById("fuelFormFecha").value,
                 kms: parseInt(document.getElementById("fuelFormKms").value) || null,
@@ -2197,72 +1901,54 @@
             };
 
             try {
-                if (id) {
-                    await supabaseClient.from('repostajes').update(fuelData).eq('id', id);
-                    showToast("Repostaje actualizado en Supabase.");
-                } else {
-                    await supabaseClient.from('repostajes').insert([fuelData]);
-                    showToast("Repostaje guardado en Supabase.");
-                }
+                if (id) await supabaseClient.from('repostajes').update(fuelData).eq('id', id);
+                else await supabaseClient.from('repostajes').insert([fuelData]);
                 closeFuelModal();
                 await reloadData();
-            } catch (err) {
-                console.error("Error al guardar repostaje:", err);
-                showToast("Error al guardar el repostaje.");
-            }
+            } catch (err) { console.error("Error al guardar repostaje:", err); }
         }
 
         async function deleteFuelRecord(id) {
-            if (!confirm("¿Seguro que deseas eliminar este repostaje?") || !supabaseClient) return;
-            try {
-                await supabaseClient.from('repostajes').delete().eq('id', id);
-                showToast("Repostaje eliminado.");
-                await reloadData();
-            } catch (err) {
-                console.error("Error al eliminar repostaje:", err);
-                showToast("Error al eliminar el repostaje.");
-            }
+            if (!confirm("¿Eliminar este repostaje?") || !supabaseClient) return;
+            await supabaseClient.from('repostajes').delete().eq('id', id);
+            await reloadData();
         }
 
         function openPartModal(id = null) {
             const modal = document.getElementById("partModal");
-            const title = document.getElementById("partModalTitle");
-            const partRowIndex = document.getElementById("partRowIndex");
             const car = getActiveVehicle();
 
             if (id && car) {
                 const part = car.parts.find(p => String(p.id) === String(id));
                 if (part) {
-                    title.innerText = "Editar Referencia";
-                    partRowIndex.value = part.id;
+                    document.getElementById("partModalTitle").innerText = "Editar Referencia";
+                    document.getElementById("partRowIndex").value = part.id;
                     document.getElementById("partPieza").value = part.pieza || "";
                     document.getElementById("partMarca").value = part.marca || "";
                     document.getElementById("partNotas").value = part.notas || "";
                     document.getElementById("partLink").value = part.link || "";
                 }
             } else {
-                title.innerText = "Añadir Nueva Referencia";
-                partRowIndex.value = "";
+                document.getElementById("partModalTitle").innerText = "Añadir Nueva Referencia";
+                document.getElementById("partRowIndex").value = "";
                 document.getElementById("partPieza").value = "";
                 document.getElementById("partMarca").value = "";
                 document.getElementById("partNotas").value = "";
                 document.getElementById("partLink").value = "";
             }
-
             modal.classList.remove("hidden");
         }
 
-        function closePartModal() {
-            document.getElementById("partModal").classList.add("hidden");
-        }
+        function closePartModal() { document.getElementById("partModal").classList.add("hidden"); }
 
         async function handleSavePart(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            if (!car || !supabaseClient) return;
+            if (!car || !supabaseClient || !currentUser) return;
 
             const id = document.getElementById("partRowIndex").value;
             const partData = {
+                user_id: currentUser.id,
                 vehiculo: car.dbName,
                 pieza: document.getElementById("partPieza").value,
                 marca: document.getElementById("partMarca").value,
@@ -2271,77 +1957,52 @@
             };
 
             try {
-                if (id) {
-                    await supabaseClient.from('recambios').update(partData).eq('id', id);
-                    showToast("Referencia actualizada en Supabase.");
-                } else {
-                    await supabaseClient.from('recambios').insert([partData]);
-                    showToast("Referencia guardada en Supabase.");
-                }
+                if (id) await supabaseClient.from('recambios').update(partData).eq('id', id);
+                else await supabaseClient.from('recambios').insert([partData]);
                 closePartModal();
                 await reloadData();
-            } catch (err) {
-                console.error("Error al guardar recambio:", err);
-                showToast("Error al guardar recambio.");
-            }
+            } catch (err) { console.error("Error al guardar recambio:", err); }
         }
 
         async function deletePart(id) {
-            if (!confirm("¿Seguro que deseas eliminar este recambio?") || !supabaseClient) return;
-            try {
-                await supabaseClient.from('recambios').delete().eq('id', id);
-                showToast("Referencia eliminada.");
-                await reloadData();
-            } catch (err) {
-                console.error("Error al eliminar referencia:", err);
-                showToast("Error al eliminar referencia.");
-            }
+            if (!confirm("¿Eliminar esta referencia?") || !supabaseClient) return;
+            await supabaseClient.from('recambios').delete().eq('id', id);
+            await reloadData();
         }
 
         function openAlertModal(id = null) {
             const modal = document.getElementById("alertModal");
-            const title = document.getElementById("alertModalTitle");
-            const alertRowIndex = document.getElementById("alertRowIndex");
-            const alertTitulo = document.getElementById("alertTitulo");
-            const alertTipo = document.getElementById("alertTipo");
-            const alertFecha = document.getElementById("alertFecha");
-            const alertDescripcion = document.getElementById("alertDescripcion");
-
             const car = getActiveVehicle();
 
             if (id && car) {
                 const alert = car.alerts.find(a => String(a.id) === String(id));
                 if (alert) {
-                    title.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Editar Alerta`;
-                    alertRowIndex.value = alert.id;
-                    alertTitulo.value = alert.title || "";
-                    alertTipo.value = alert.type || "warning";
-                    alertFecha.value = alert.fecha ? formatDateISO(alert.fecha) : "";
-                    alertDescripcion.value = alert.desc || "";
+                    document.getElementById("alertRowIndex").value = alert.id;
+                    document.getElementById("alertTitulo").value = alert.title || "";
+                    document.getElementById("alertTipo").value = alert.type || "warning";
+                    document.getElementById("alertFecha").value = alert.fecha ? formatDateISO(alert.fecha) : "";
+                    document.getElementById("alertDescripcion").value = alert.desc || "";
                 }
             } else {
-                title.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Nueva Alerta`;
-                alertRowIndex.value = "";
-                alertTitulo.value = "";
-                alertTipo.value = "itv";
-                alertFecha.value = "";
-                alertDescripcion.value = "";
+                document.getElementById("alertRowIndex").value = "";
+                document.getElementById("alertTitulo").value = "";
+                document.getElementById("alertTipo").value = "itv";
+                document.getElementById("alertFecha").value = "";
+                document.getElementById("alertDescripcion").value = "";
             }
-
             modal.classList.remove("hidden");
         }
 
-        function closeAlertModal() {
-            document.getElementById("alertModal").classList.add("hidden");
-        }
+        function closeAlertModal() { document.getElementById("alertModal").classList.add("hidden"); }
 
         async function handleSaveAlert(e) {
             e.preventDefault();
             const car = getActiveVehicle();
-            if (!car || !supabaseClient) return;
+            if (!car || !supabaseClient || !currentUser) return;
 
             const id = document.getElementById("alertRowIndex").value;
             const alertData = {
+                user_id: currentUser.id,
                 vehiculo: car.dbName,
                 titulo: document.getElementById("alertTitulo").value,
                 tipo: document.getElementById("alertTipo").value,
@@ -2350,31 +2011,17 @@
             };
 
             try {
-                if (id) {
-                    await supabaseClient.from('alertas').update(alertData).eq('id', id);
-                    showToast("Alerta actualizada en Supabase.");
-                } else {
-                    await supabaseClient.from('alertas').insert([alertData]);
-                    showToast("Alerta guardada en Supabase.");
-                }
+                if (id) await supabaseClient.from('alertas').update(alertData).eq('id', id);
+                else await supabaseClient.from('alertas').insert([alertData]);
                 closeAlertModal();
                 await reloadData();
-            } catch (err) {
-                console.error("Error al guardar alerta:", err);
-                showToast("Error al guardar la alerta.");
-            }
+            } catch (err) { console.error("Error al guardar alerta:", err); }
         }
 
         async function deleteAlert(id) {
-            if (!confirm("¿Seguro que deseas eliminar esta alerta?") || !supabaseClient) return;
-            try {
-                await supabaseClient.from('alertas').delete().eq('id', id);
-                showToast("Alerta eliminada.");
-                await reloadData();
-            } catch (err) {
-                console.error("Error al eliminar alerta:", err);
-                showToast("Error al eliminar la alerta.");
-            }
+            if (!confirm("¿Eliminar esta alerta?") || !supabaseClient) return;
+            await supabaseClient.from('alertas').delete().eq('id', id);
+            await reloadData();
         }
 
         function openVehicleModal() {
@@ -2389,19 +2036,18 @@
             document.getElementById("vehicleModal").classList.remove("hidden");
         }
 
-        function closeVehicleModal() {
-            document.getElementById("vehicleModal").classList.add("hidden");
-        }
+        function closeVehicleModal() { document.getElementById("vehicleModal").classList.add("hidden"); }
 
         async function handleSaveVehicle(e) {
             e.preventDefault();
-            if (!supabaseClient) return;
+            if (!supabaseClient || !currentUser) return;
 
             const nameVal = document.getElementById("vehName").value.trim();
             const plateVal = document.getElementById("vehPlate").value.trim();
             const idAlias = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
             const vehicleData = {
+                user_id: currentUser.id,
                 id_alias: idAlias,
                 name: nameVal,
                 db_name: nameVal,
@@ -2416,21 +2062,14 @@
 
             try {
                 await supabaseClient.from('vehiculos').insert([vehicleData]);
-                showToast("Vehículo guardado en Supabase.");
                 closeVehicleModal();
                 await reloadData();
-            } catch (err) {
-                console.error("Error al guardar vehículo:", err);
-                showToast("Error al guardar el vehículo.");
-            }
+            } catch (err) { console.error("Error al guardar vehículo:", err); }
         }
 
-        // Registro de Service Worker para PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registrado correctamente', reg))
-                    .catch(err => console.error('Error al registrar Service Worker', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
             });
         }
     </script>
