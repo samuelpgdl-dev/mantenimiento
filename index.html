@@ -826,28 +826,41 @@
         }
 
         async function initApp() {
-            populateCategories();
-            
-            if (!supabaseClient) {
-                showToast("Error de inicialización de Supabase.");
-                return;
+    populateCategories();
+    
+    if (!supabaseClient) {
+        showToast("Error de inicialización de Supabase.");
+        return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentUser = session ? session.user : null;
+    await checkAdminStatus();
+    updateAuthHeaderButton();
+
+    document.getElementById("loginModal").classList.add("hidden");
+    await reloadData();
+
+    // Sincronización continua de tokens cuando Supabase los rota en segundo plano
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        currentUser = session ? session.user : null;
+        await checkAdminStatus();
+        updateAuthHeaderButton();
+
+        if (session && currentUser && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) {
+            try {
+                await supabaseClient
+                    .from('profiles')
+                    .update({ refresh_token: session.refresh_token })
+                    .eq('id', currentUser.id);
+            } catch (err) {
+                console.warn("No se pudo sincronizar el refresh_token rotado:", err);
             }
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            currentUser = session ? session.user : null;
-            await checkAdminStatus();
-            updateAuthHeaderButton();
-
-            document.getElementById("loginModal").classList.add("hidden");
-            await reloadData();
-
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                currentUser = session ? session.user : null;
-                await checkAdminStatus();
-                updateAuthHeaderButton();
-                reloadData();
-            });
         }
+
+        reloadData();
+    });
+}
 
         async function checkAdminStatus() {
             if (!currentUser || !supabaseClient) {
