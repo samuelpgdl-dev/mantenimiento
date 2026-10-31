@@ -1022,78 +1022,69 @@
             }
         }
 
-        async function loginWithPasskey() {
-            if (!window.PublicKeyCredential) {
-                alert("Tu navegador o dispositivo no soporta biometría.");
+       async function loginWithPasskey() {
+    if (!window.PublicKeyCredential) {
+        alert("Tu navegador o dispositivo no soporta biometría.");
+        return;
+    }
+
+    showToast("Escaneando Touch ID / Face ID...");
+
+    try {
+        // 1. Generar desafío único para obligar al sensor del sistema a activarse
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialRequestOptions = {
+            challenge: challenge,
+            rpId: "samuelpgdl-dev.github.io",
+            userVerification: "required", // Fuerza la lectura biométrica
+            timeout: 60000
+        };
+
+        // Solicitar lectura de hardware al sistema operativo
+        const assertion = await navigator.credentials.get({
+            publicKey: publicKeyCredentialRequestOptions
+        });
+
+        if (assertion) {
+            const passkeyId = assertion.id;
+
+            // 2. Buscar usuario asociado en la base de datos
+            const { data: profile, error: profileErr } = await supabaseClient
+                .from('profiles')
+                .select('email, id')
+                .eq('passkey_id', passkeyId)
+                .maybeSingle();
+
+            if (profileErr || !profile || !profile.email) {
+                alert("Passkey no reconocida en el servidor. Inicia sesión con contraseña para vincularla.");
                 return;
             }
 
-            showToast("Escaneando Face ID / Touch ID...");
+            // 3. Verificar si existe sesión de Supabase
+            let { data: { session } } = await supabaseClient.auth.getSession();
 
-            try {
-                // 1. Si ya existe una sesión activa persistente en Supabase, reanudar de inmediato
-                const { data: { session: existingSession } } = await supabaseClient.auth.getSession();
-
-                if (existingSession) {
-                    currentUser = existingSession.user;
-                    showToast("¡Acceso biométrico concedido!");
-                    closeLoginModal();
-                    await reloadData();
-                    return;
-                }
-
-                // 2. Si no hay sesión local activa, solicitar desafío biométrico de hardware
-                const challenge = new Uint8Array(32);
-                window.crypto.getRandomValues(challenge);
-
-                const publicKeyCredentialRequestOptions = {
-                    challenge: challenge,
-                    rpId: "samuelpgdl-dev.github.io",
-                    userVerification: "required",
-                    timeout: 60000
-                };
-
-                const assertion = await navigator.credentials.get({
-                    publicKey: publicKeyCredentialRequestOptions
-                });
-
-                if (assertion) {
-                    const passkeyId = assertion.id;
-
-                    // 3. Consultar el perfil registrado con esa Passkey en Supabase
-                    const { data: profileData, error: profileErr } = await supabaseClient
-                        .from('profiles')
-                        .select('email, id')
-                        .eq('passkey_id', passkeyId)
-                        .maybeSingle();
-
-                    if (profileErr || !profileData || !profileData.email) {
-                        alert("Passkey no vinculada a ningún usuario activo. Inicia sesión con contraseña para vincularla.");
-                        return;
-                    }
-
-                    // 4. Auto-rellenar email e indicar autenticación
-                    document.getElementById("authEmail").value = profileData.email;
-                    showToast("Passkey verificada para " + profileData.email);
-
-                    // Reintentar restauración de sesión persistente o solicitar validación de credencial
-                    const { data: refreshSession } = await supabaseClient.auth.getSession();
-                    if (refreshSession && refreshSession.session) {
-                        currentUser = refreshSession.session.user;
-                        closeLoginModal();
-                        await reloadData();
-                        return;
-                    }
-
-                    alert(`Biometría validada para ${profileData.email}.\nIntroduce la contraseña para confirmar el inicio de sesión único.`);
-                }
-            } catch (err) {
-                console.error("Error en login biométrico:", err);
-                if (err.name !== 'NotAllowedError') {
-                    alert("No se pudo completar el acceso con Passkey: " + (err.message || "Operación cancelada"));
-                }
+            if (session) {
+                currentUser = session.user;
+                showToast("¡Acceso biométrico concedido!");
+                closeLoginModal();
+                await reloadData();
+                return;
             }
+
+            // 4. Si no hay sesión (ej. Chrome o ventana limpia), autocompletar email
+            document.getElementById("authEmail").value = profile.email;
+            showToast("Biometría confirmada para " + profile.email);
+            alert(`Biometría correcta para ${profile.email}. Introduce tu contraseña para iniciar sesión en este navegador.`);
         }
+    } catch (err) {
+        console.error("Error en login biométrico:", err);
+        if (err.name !== 'NotAllowedError') {
+            alert("No se pudo validar con Passkey: " + (err.message || "Operación cancelada"));
+        }
+    }
+}
 
         // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
