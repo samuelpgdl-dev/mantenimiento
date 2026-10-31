@@ -1041,86 +1041,82 @@
             }
         }
 
-        async function loginWithPasskey() {
-            if (!window.PublicKeyCredential) {
-                alert("Tu navegador o dispositivo no soporta biometría.");
+      async function loginWithPasskey() {
+    if (!window.PublicKeyCredential) {
+        alert("Tu navegador o dispositivo no soporta biometría.");
+        return;
+    }
+
+    showToast("Escaneando Face ID / Huella...");
+
+    try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialRequestOptions = {
+            challenge: challenge,
+            rpId: window.location.hostname,
+            userVerification: "required",
+            timeout: 60000
+        };
+
+        const assertion = await navigator.credentials.get({
+            publicKey: publicKeyCredentialRequestOptions
+        });
+
+        if (assertion) {
+            const passkeyId = assertion.id;
+
+            // 1. Verificar sesión activa actual
+            let { data: { session } } = await supabaseClient.auth.getSession();
+
+            // 2. Intentar refrescar la sesión si ha caducado
+            if (!session) {
+                const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
+                if (localDataStr) {
+                    try {
+                        const localData = JSON.parse(localDataStr);
+                        const res = await supabaseClient.auth.setSession({
+                            access_token: localData.access_token,
+                            refresh_token: localData.refresh_token
+                        });
+                        session = res.data?.session;
+                    } catch (e) {
+                        console.warn("Error reanudando sesión guardada:", e);
+                    }
+                }
+            }
+
+            // 3. Acceso directo si la sesión es válida o se ha refrescado
+            if (session) {
+                currentUser = session.user;
+                showToast("¡Acceso biométrico correcto!");
+                closeLoginModal();
+                await reloadData();
                 return;
             }
 
-            showToast("Escaneando Face ID / Huella...");
+            // 4. Si la sesión fue purgada del servidor, auto-completar e informar suavemente
+            const { data } = await supabaseClient
+                .from('profiles')
+                .select('email')
+                .eq('passkey_id', passkeyId)
+                .maybeSingle();
 
-            try {
-                const challenge = new Uint8Array(32);
-                window.crypto.getRandomValues(challenge);
-
-                const publicKeyCredentialRequestOptions = {
-                    challenge: challenge,
-                    rpId: window.location.hostname,
-                    userVerification: "required",
-                    timeout: 60000
-                };
-
-                const assertion = await navigator.credentials.get({
-                    publicKey: publicKeyCredentialRequestOptions
-                });
-
-                if (assertion) {
-                    const passkeyId = assertion.id;
-
-                    // 1. Verificar si la sesión de Supabase sigue activa en el navegador
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-
-                    if (session) {
-                        currentUser = session.user;
-                        showToast("¡Acceso biométrico correcto!");
-                        closeLoginModal();
-                        await reloadData();
-                        return;
-                    }
-
-                    // 2. Si la sesión caducó en el navegador, intentar restaurarla desde localStorage
-                    const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
-                    if (localDataStr) {
-                        try {
-                            const localData = JSON.parse(localDataStr);
-                            const { data, error } = await supabaseClient.auth.setSession({
-                                access_token: localData.access_token,
-                                refresh_token: localData.refresh_token
-                            });
-
-                            if (!error && data.session) {
-                                currentUser = data.session.user;
-                                showToast("¡Acceso biométrico correcto!");
-                                closeLoginModal();
-                                await reloadData();
-                                return;
-                            }
-                        } catch (e) {
-                            console.warn("No se pudo restaurar la sesión:", e);
-                        }
-                    }
-
-                    // 3. Si el token en el servidor expiró por completo, pedir contraseña solo una vez
-                    const { data } = await supabaseClient
-                        .from('profiles')
-                        .select('email')
-                        .eq('passkey_id', passkeyId)
-                        .maybeSingle();
-
-                    if (data && data.email) {
-                        document.getElementById("authEmail").value = data.email;
-                        alert(`Passkey reconocida para ${data.email}. Tu sesión ha expirado en el servidor; introduce la contraseña para renovarla.`);
-                    } else {
-                        alert("Passkey no encontrada en la base de datos.");
-                    }
-                }
-            } catch (err) {
-                console.error("Error Passkey signIn:", err);
-                if (err.name !== 'NotAllowedError') {
-                    alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
-                }
+            if (data && data.email) {
+                document.getElementById("authEmail").value = data.email;
+                showToast("Biometría confirmada. Inicia sesión para vincular el nuevo token.");
+            } else {
+                alert("Passkey no registrada en este sistema.");
             }
         }
+    } catch (err) {
+        console.error("Error Passkey signIn:", err);
+        if (err.name !== 'NotAllowedError') {
+            alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
+        }
+    }
+}
 
         // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
