@@ -172,7 +172,7 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
 
-                    <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Acceder / Sesión">
+                    <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Acceder / Bloquear">
                         <i id="authHeaderIcon" class="fa-solid fa-user"></i>
                     </button>
                 </div>
@@ -846,7 +846,6 @@
                 await checkAdminStatus();
                 updateAuthHeaderButton();
 
-                // Auto-actualizar tokens en localStorage si la sesión se refresca en segundo plano
                 if (session && currentUser && session.refresh_token) {
                     const activePasskeyId = localStorage.getItem('canana_active_passkey_id');
                     if (activePasskeyId) {
@@ -888,8 +887,8 @@
 
             if (currentUser) {
                 btn.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
-                btn.title = "Cerrar sesión";
-                icon.className = "fa-solid fa-right-from-bracket";
+                btn.title = "Bloquear aplicación";
+                icon.className = "fa-solid fa-lock";
             } else {
                 btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
                 btn.title = "Iniciar sesión";
@@ -899,13 +898,11 @@
 
         function handleAuthHeaderClick() {
             if (currentUser) {
-                if (confirm("¿Cerrar sesión en Canana Automotive?")) {
-                    // Cierre de sesión estrictamente local
-                    supabaseClient.auth.signOut({ scope: 'local' });
+                if (confirm("¿Bloquear aplicación y requerir biometría para acceder?")) {
                     currentUser = null;
                     updateAuthHeaderButton();
                     document.getElementById("loginModal").classList.remove("hidden");
-                    showToast("Sesión cerrada en este dispositivo.");
+                    showToast("Aplicación bloqueada.");
                 }
             } else {
                 document.getElementById("loginModal").classList.remove("hidden");
@@ -966,7 +963,7 @@
             }
         }
 
-        // --- FUNCIONALIDAD PASSKEYS BIOMÉTRICA CON ALMACENAMIENTO LOCAL DE SESIÓN ---
+        // --- FUNCIONALIDAD PASSKEYS BIOMÉTRICA CON PERSISTENCIA DE SESIÓN ---
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
@@ -1009,7 +1006,7 @@
                 if (credential) {
                     const passkeyId = credential.id;
 
-                    // 1. Guardar passkey_id en la tabla profiles de Supabase
+                    // 1. Vincular passkey_id en Supabase
                     const { error: dbErr } = await supabaseClient
                         .from('profiles')
                         .update({ passkey_id: passkeyId })
@@ -1020,7 +1017,7 @@
                         return;
                     }
 
-                    // 2. Almacenar la sesión actual asociada a esta Passkey en el navegador del dispositivo
+                    // 2. Guardar backup de sesión local
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
                         localStorage.setItem('canana_active_passkey_id', passkeyId);
@@ -1032,7 +1029,7 @@
                         }));
                     }
 
-                    alert("¡Passkey vinculada con éxito!\nAhora podrás iniciar sesión con Face ID / Huella en este dispositivo.");
+                    alert("¡Passkey vinculada con éxito!\nAhora podrás desbloquear la app con Face ID / Huella.");
                     showToast("¡Dispositivo y biometría vinculados!");
                     closeAdminModal();
                 }
@@ -1070,9 +1067,19 @@
                 if (assertion) {
                     const passkeyId = assertion.id;
 
-                    // 1. Intentar recuperar la sesión guardada en este dispositivo para la Passkey
-                    const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
+                    // 1. Verificar si la sesión de Supabase sigue activa en el navegador
+                    const { data: { session } } = await supabaseClient.auth.getSession();
 
+                    if (session) {
+                        currentUser = session.user;
+                        showToast("¡Acceso biométrico correcto!");
+                        closeLoginModal();
+                        await reloadData();
+                        return;
+                    }
+
+                    // 2. Si la sesión caducó en el navegador, intentar restaurarla desde localStorage
+                    const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
                     if (localDataStr) {
                         try {
                             const localData = JSON.parse(localDataStr);
@@ -1083,26 +1090,17 @@
 
                             if (!error && data.session) {
                                 currentUser = data.session.user;
-
-                                localStorage.setItem('canana_active_passkey_id', passkeyId);
-                                localStorage.setItem(`canana_passkey_${passkeyId}`, JSON.stringify({
-                                    access_token: data.session.access_token,
-                                    refresh_token: data.session.refresh_token,
-                                    email: currentUser.email,
-                                    userId: currentUser.id
-                                }));
-
                                 showToast("¡Acceso biométrico correcto!");
                                 closeLoginModal();
                                 await reloadData();
                                 return;
                             }
                         } catch (e) {
-                            console.warn("No se pudo restaurar la sesión local almacenada:", e);
+                            console.warn("No se pudo restaurar la sesión:", e);
                         }
                     }
 
-                    // 2. Si no hay sesión local (dispositivo nuevo o caché borrada), buscar el email asociado
+                    // 3. Si el token en el servidor expiró por completo, pedir contraseña solo una vez
                     const { data } = await supabaseClient
                         .from('profiles')
                         .select('email')
@@ -1111,9 +1109,9 @@
 
                     if (data && data.email) {
                         document.getElementById("authEmail").value = data.email;
-                        alert(`Passkey reconocida para ${data.email}. Inicia sesión con contraseña una vez para vincular este dispositivo.`);
+                        alert(`Passkey reconocida para ${data.email}. Tu sesión ha expirado en el servidor; introduce la contraseña para renovarla.`);
                     } else {
-                        alert("Passkey no encontrada. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
+                        alert("Passkey no encontrada en la base de datos.");
                     }
                 }
             } catch (err) {
