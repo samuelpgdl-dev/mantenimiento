@@ -825,42 +825,43 @@
             if (activeMainTab === 'fuel') renderFuelAnalytics();
         }
 
-async function initApp() {
-    populateCategories();
-    
-    if (!supabaseClient) {
-        showToast("Error de inicialización de Supabase.");
-        return;
-    }
-
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    currentUser = session ? session.user : null;
-    await checkAdminStatus();
-    updateAuthHeaderButton();
-
-    document.getElementById("loginModal").classList.add("hidden");
-    await reloadData();
-
-    // Listener para actualizar el token en BD cada vez que cambie o se renueve la sesión
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        currentUser = session ? session.user : null;
-        await checkAdminStatus();
-        updateAuthHeaderButton();
-
-        if (session && currentUser && session.refresh_token) {
-            try {
-                await supabaseClient
-                    .from('profiles')
-                    .update({ refresh_token: session.refresh_token })
-                    .eq('id', currentUser.id);
-            } catch (err) {
-                console.warn("No se pudo auto-sincronizar el refresh_token:", err);
+        async function initApp() {
+            populateCategories();
+            
+            if (!supabaseClient) {
+                showToast("Error de inicialización de Supabase.");
+                return;
             }
-        }
 
-        reloadData();
-    });
-}
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            currentUser = session ? session.user : null;
+            await checkAdminStatus();
+            updateAuthHeaderButton();
+
+            document.getElementById("loginModal").classList.add("hidden");
+            await reloadData();
+
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                currentUser = session ? session.user : null;
+                await checkAdminStatus();
+                updateAuthHeaderButton();
+
+                // Auto-actualizar tokens en localStorage si la sesión se refresca en segundo plano
+                if (session && currentUser && session.refresh_token) {
+                    const activePasskeyId = localStorage.getItem('canana_active_passkey_id');
+                    if (activePasskeyId) {
+                        localStorage.setItem(`canana_passkey_${activePasskeyId}`, JSON.stringify({
+                            access_token: session.access_token,
+                            refresh_token: session.refresh_token,
+                            email: currentUser.email,
+                            userId: currentUser.id
+                        }));
+                    }
+                }
+
+                reloadData();
+            });
+        }
 
         async function checkAdminStatus() {
             if (!currentUser || !supabaseClient) {
@@ -899,8 +900,12 @@ async function initApp() {
         function handleAuthHeaderClick() {
             if (currentUser) {
                 if (confirm("¿Cerrar sesión en Canana Automotive?")) {
-                    // Usamos scope: 'local' para NO invalidar el refresh_token en el servidor de Supabase
+                    // Cierre de sesión estrictamente local
                     supabaseClient.auth.signOut({ scope: 'local' });
+                    currentUser = null;
+                    updateAuthHeaderButton();
+                    document.getElementById("loginModal").classList.remove("hidden");
+                    showToast("Sesión cerrada en este dispositivo.");
                 }
             } else {
                 document.getElementById("loginModal").classList.remove("hidden");
@@ -961,161 +966,163 @@ async function initApp() {
             }
         }
 
-        // --- FUNCIONALIDAD PASSKEYS NATIVA Y ROBUSTA ---
+        // --- FUNCIONALIDAD PASSKEYS BIOMÉTRICA CON ALMACENAMIENTO LOCAL DE SESIÓN ---
 
-async function registerNewPasskey() {
-    if (!currentUser || !supabaseClient) return checkAuthOrLogin();
+        async function registerNewPasskey() {
+            if (!currentUser || !supabaseClient) return checkAuthOrLogin();
 
-    if (!window.PublicKeyCredential) {
-        alert("Tu dispositivo o navegador no soporta autenticación biométrica (Passkeys).");
-        return;
-    }
-
-    showToast("Verificando biometría del dispositivo...");
-
-    try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-        const userID = new TextEncoder().encode(currentUser.id);
-
-        const publicKeyCredentialCreationOptions = {
-            challenge: challenge,
-            rp: {
-                name: "Canana Automotive",
-                id: window.location.hostname
-            },
-            user: {
-                id: userID,
-                name: currentUser.email,
-                displayName: currentUser.email
-            },
-            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-            authenticatorSelection: {
-                authenticatorAttachment: "platform",
-                userVerification: "required"
-            },
-            timeout: 60000
-        };
-
-        const credential = await navigator.credentials.create({
-            publicKey: publicKeyCredentialCreationOptions
-        });
-
-        if (credential) {
-            const passkeyId = credential.id;
-
-            // 1. Forzar refresco para obtener un refresh_token 100% nuevo y sin usar
-            const { data: refreshData } = await supabaseClient.auth.refreshSession();
-            const session = refreshData?.session || (await supabaseClient.auth.getSession()).data.session;
-            const refreshToken = session ? session.refresh_token : null;
-
-            if (!refreshToken) {
-                alert("No se pudo obtener el token de sesión. Vuelve a iniciar sesión.");
+            if (!window.PublicKeyCredential) {
+                alert("Tu dispositivo o navegador no soporta autenticación biométrica (Passkeys).");
                 return;
             }
 
-            // 2. Guardar passkey_id y el nuevo refresh_token en Supabase
-            const { error: dbErr } = await supabaseClient
-                .from('profiles')
-                .update({ 
-                    passkey_id: passkeyId,
-                    refresh_token: refreshToken 
-                })
-                .eq('id', currentUser.id);
+            showToast("Verificando biometría del dispositivo...");
 
-            if (dbErr) {
-                console.error("Error BD Supabase:", dbErr);
-                alert("Error al guardar Passkey en la BD:\n" + dbErr.message);
-                return;
-            }
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+                const userID = new TextEncoder().encode(currentUser.id);
 
-            alert("¡Passkey vinculada con éxito!\nAhora podrás iniciar sesión directamente con tu biometría.");
-            showToast("¡Dispositivo y biometría vinculados con éxito!");
-            closeAdminModal();
-        }
-    } catch (err) {
-        console.error("Error Passkey register:", err);
-        if (err.name !== 'NotAllowedError') {
-            alert("Error de registro Passkey:\n" + (err.message || err.name));
-        }
-    }
-}
+                const publicKeyCredentialCreationOptions = {
+                    challenge: challenge,
+                    rp: {
+                        name: "Canana Automotive",
+                        id: window.location.hostname
+                    },
+                    user: {
+                        id: userID,
+                        name: currentUser.email,
+                        displayName: currentUser.email
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    authenticatorSelection: {
+                        authenticatorAttachment: "platform",
+                        userVerification: "required"
+                    },
+                    timeout: 60000
+                };
 
-async function loginWithPasskey() {
-    if (!window.PublicKeyCredential) {
-        alert("Tu navegador o dispositivo no soporta biometría.");
-        return;
-    }
+                const credential = await navigator.credentials.create({
+                    publicKey: publicKeyCredentialCreationOptions
+                });
 
-    showToast("Escaneando Face ID / Huella...");
+                if (credential) {
+                    const passkeyId = credential.id;
 
-    try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: challenge,
-            rpId: window.location.hostname,
-            userVerification: "required",
-            timeout: 60000
-        };
-
-        const assertion = await navigator.credentials.get({
-            publicKey: publicKeyCredentialRequestOptions
-        });
-
-        if (assertion) {
-            const passkeyId = assertion.id;
-
-            // Consultar la tabla profiles por el passkey_id
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('email, refresh_token, id')
-                .eq('passkey_id', passkeyId)
-                .maybeSingle();
-
-            if (error || !data) {
-                alert("No se encontró ninguna Passkey vinculada a este dispositivo.");
-                return;
-            }
-
-            if (!data.refresh_token) {
-                alert("Passkey identificada pero requiere re-vinculación. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
-                if (data.email) document.getElementById("authEmail").value = data.email;
-                return;
-            }
-
-            // Restaurar la sesión con el token guardado
-            const { data: sessData, error: sessErr } = await supabaseClient.auth.setSession({
-                refresh_token: data.refresh_token
-            });
-
-            if (!sessErr && sessData.session) {
-                currentUser = sessData.session.user;
-
-                // Supabase ha rotado el token (el antiguo ya no vale). Guardamos inmediatamente el nuevo token rotado:
-                if (sessData.session.refresh_token) {
-                    await supabaseClient
+                    // 1. Guardar passkey_id en la tabla profiles de Supabase
+                    const { error: dbErr } = await supabaseClient
                         .from('profiles')
-                        .update({ refresh_token: sessData.session.refresh_token })
+                        .update({ passkey_id: passkeyId })
                         .eq('id', currentUser.id);
-                }
 
-                showToast("¡Acceso biométrico correcto!");
-                closeLoginModal();
-                await reloadData();
-            } else {
-                alert("El token de sesión ha expirado. Por favor, inicia sesión con contraseña una vez y pulsa 'Vincular este dispositivo'.");
-                if (data.email) document.getElementById("authEmail").value = data.email;
+                    if (dbErr) {
+                        alert("Error al vincular Passkey en la BD: " + dbErr.message);
+                        return;
+                    }
+
+                    // 2. Almacenar la sesión actual asociada a esta Passkey en el navegador del dispositivo
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        localStorage.setItem('canana_active_passkey_id', passkeyId);
+                        localStorage.setItem(`canana_passkey_${passkeyId}`, JSON.stringify({
+                            access_token: session.access_token,
+                            refresh_token: session.refresh_token,
+                            email: currentUser.email,
+                            userId: currentUser.id
+                        }));
+                    }
+
+                    alert("¡Passkey vinculada con éxito!\nAhora podrás iniciar sesión con Face ID / Huella en este dispositivo.");
+                    showToast("¡Dispositivo y biometría vinculados!");
+                    closeAdminModal();
+                }
+            } catch (err) {
+                console.error("Error Passkey register:", err);
+                if (err.name !== 'NotAllowedError') {
+                    alert("Error al registrar Passkey: " + (err.message || err.name));
+                }
             }
         }
-    } catch (err) {
-        console.error("Error Passkey signIn:", err);
-        if (err.name !== 'NotAllowedError') {
-            alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
+
+        async function loginWithPasskey() {
+            if (!window.PublicKeyCredential) {
+                alert("Tu navegador o dispositivo no soporta biometría.");
+                return;
+            }
+
+            showToast("Escaneando Face ID / Huella...");
+
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    rpId: window.location.hostname,
+                    userVerification: "required",
+                    timeout: 60000
+                };
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyCredentialRequestOptions
+                });
+
+                if (assertion) {
+                    const passkeyId = assertion.id;
+
+                    // 1. Intentar recuperar la sesión guardada en este dispositivo para la Passkey
+                    const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
+
+                    if (localDataStr) {
+                        try {
+                            const localData = JSON.parse(localDataStr);
+                            const { data, error } = await supabaseClient.auth.setSession({
+                                access_token: localData.access_token,
+                                refresh_token: localData.refresh_token
+                            });
+
+                            if (!error && data.session) {
+                                currentUser = data.session.user;
+
+                                localStorage.setItem('canana_active_passkey_id', passkeyId);
+                                localStorage.setItem(`canana_passkey_${passkeyId}`, JSON.stringify({
+                                    access_token: data.session.access_token,
+                                    refresh_token: data.session.refresh_token,
+                                    email: currentUser.email,
+                                    userId: currentUser.id
+                                }));
+
+                                showToast("¡Acceso biométrico correcto!");
+                                closeLoginModal();
+                                await reloadData();
+                                return;
+                            }
+                        } catch (e) {
+                            console.warn("No se pudo restaurar la sesión local almacenada:", e);
+                        }
+                    }
+
+                    // 2. Si no hay sesión local (dispositivo nuevo o caché borrada), buscar el email asociado
+                    const { data } = await supabaseClient
+                        .from('profiles')
+                        .select('email')
+                        .eq('passkey_id', passkeyId)
+                        .maybeSingle();
+
+                    if (data && data.email) {
+                        document.getElementById("authEmail").value = data.email;
+                        alert(`Passkey reconocida para ${data.email}. Inicia sesión con contraseña una vez para vincular este dispositivo.`);
+                    } else {
+                        alert("Passkey no encontrada. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
+                    }
+                }
+            } catch (err) {
+                console.error("Error Passkey signIn:", err);
+                if (err.name !== 'NotAllowedError') {
+                    alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
+                }
+            }
         }
-    }
-}
 
         // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
