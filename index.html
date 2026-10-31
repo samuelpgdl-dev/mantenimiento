@@ -825,7 +825,7 @@
             if (activeMainTab === 'fuel') renderFuelAnalytics();
         }
 
-        async function initApp() {
+async function initApp() {
     populateCategories();
     
     if (!supabaseClient) {
@@ -841,20 +841,20 @@
     document.getElementById("loginModal").classList.add("hidden");
     await reloadData();
 
-    // Sincronización continua de tokens cuando Supabase los rota en segundo plano
+    // Listener para actualizar el token en BD cada vez que cambie o se renueve la sesión
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
         currentUser = session ? session.user : null;
         await checkAdminStatus();
         updateAuthHeaderButton();
 
-        if (session && currentUser && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) {
+        if (session && currentUser && session.refresh_token) {
             try {
                 await supabaseClient
                     .from('profiles')
                     .update({ refresh_token: session.refresh_token })
                     .eq('id', currentUser.id);
             } catch (err) {
-                console.warn("No se pudo sincronizar el refresh_token rotado:", err);
+                console.warn("No se pudo auto-sincronizar el refresh_token:", err);
             }
         }
 
