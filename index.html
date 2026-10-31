@@ -957,7 +957,7 @@
             }
         }
 
-        // --- SISTEMA DE PASSKEYS (WEBAUTHN NATIVO SUPABASE) ---
+        // --- SISTEMA DE PASSKEYS (EDGE FUNCTION EN SERVIDOR) ---
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
@@ -978,7 +978,7 @@
                     challenge: challenge,
                     rp: {
                         name: "Canana Automotive BD",
-                        id: "samuelpgdl-dev.github.io"
+                        id: window.location.hostname
                     },
                     user: {
                         id: userID,
@@ -1022,69 +1022,67 @@
             }
         }
 
-       async function loginWithPasskey() {
-    if (!window.PublicKeyCredential) {
-        alert("Tu navegador o dispositivo no soporta biometría.");
-        return;
-    }
-
-    showToast("Escaneando Touch ID / Face ID...");
-
-    try {
-        // 1. Generar desafío único para obligar al sensor del sistema a activarse
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: challenge,
-            rpId: "samuelpgdl-dev.github.io",
-            userVerification: "required", // Fuerza la lectura biométrica
-            timeout: 60000
-        };
-
-        // Solicitar lectura de hardware al sistema operativo
-        const assertion = await navigator.credentials.get({
-            publicKey: publicKeyCredentialRequestOptions
-        });
-
-        if (assertion) {
-            const passkeyId = assertion.id;
-
-            // 2. Buscar usuario asociado en la base de datos
-            const { data: profile, error: profileErr } = await supabaseClient
-                .from('profiles')
-                .select('email, id')
-                .eq('passkey_id', passkeyId)
-                .maybeSingle();
-
-            if (profileErr || !profile || !profile.email) {
-                alert("Passkey no reconocida en el servidor. Inicia sesión con contraseña para vincularla.");
+        async function loginWithPasskey() {
+            if (!window.PublicKeyCredential) {
+                alert("Tu navegador o dispositivo no soporta biometría.");
                 return;
             }
 
-            // 3. Verificar si existe sesión de Supabase
-            let { data: { session } } = await supabaseClient.auth.getSession();
+            showToast("Escaneando Face ID / Touch ID...");
 
-            if (session) {
-                currentUser = session.user;
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    rpId: window.location.hostname,
+                    userVerification: "required",
+                    timeout: 60000
+                };
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyCredentialRequestOptions
+                });
+
+                if (!assertion) return;
+
+                const passkeyId = assertion.id;
+                showToast("Verificando credencial en el servidor...");
+
+                // Llamada a la Edge Function recién desplegada
+                const { data: resData, error: fnError } = await supabaseClient.functions.invoke('verify-passkey', {
+                    body: { passkeyId }
+                });
+
+                if (fnError || !resData || !resData.success) {
+                    alert("Error al validar la Passkey: " + (fnError?.message || resData?.error || "Desconocido"));
+                    return;
+                }
+
+                // Intercambiar el token generado por una sesión activa en Supabase Auth
+                const { data: sessionData, error: verifyErr } = await supabaseClient.auth.verifyOtp({
+                    token_hash: resData.hashed_token,
+                    type: 'email'
+                });
+
+                if (verifyErr || !sessionData.session) {
+                    alert("No se pudo iniciar sesión: " + (verifyErr?.message || "Token inválido"));
+                    return;
+                }
+
+                currentUser = sessionData.session.user;
                 showToast("¡Acceso biométrico concedido!");
                 closeLoginModal();
                 await reloadData();
-                return;
-            }
 
-            // 4. Si no hay sesión (ej. Chrome o ventana limpia), autocompletar email
-            document.getElementById("authEmail").value = profile.email;
-            showToast("Biometría confirmada para " + profile.email);
-            alert(`Biometría correcta para ${profile.email}. Introduce tu contraseña para iniciar sesión en este navegador.`);
+            } catch (err) {
+                console.error("Error en login con Passkey:", err);
+                if (err.name !== 'NotAllowedError') {
+                    alert("Operación cancelada o error biométrico.");
+                }
+            }
         }
-    } catch (err) {
-        console.error("Error en login biométrico:", err);
-        if (err.name !== 'NotAllowedError') {
-            alert("No se pudo validar con Passkey: " + (err.message || "Operación cancelada"));
-        }
-    }
-}
 
         // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
