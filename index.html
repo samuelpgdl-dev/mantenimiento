@@ -1002,14 +1002,11 @@
                         }));
                     }
 
-                    // 2. Guardar en Supabase y verificar respuesta
+                    // 2. Guardar en Supabase mediante UPDATE para evitar conflictos RLS
                     const { data, error: dbErr } = await supabaseClient
                         .from('profiles')
-                        .upsert({ 
-                            id: currentUser.id, 
-                            email: currentUser.email, 
-                            passkey_id: passkeyId 
-                        }, { onConflict: 'id' });
+                        .update({ passkey_id: passkeyId })
+                        .eq('id', currentUser.id);
 
                     if (dbErr) {
                         console.error("Error BD Supabase:", dbErr);
