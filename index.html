@@ -990,8 +990,10 @@
                 if (credential) {
                     const passkeyId = credential.id;
 
-                    // 1. Guardar tokens de la sesión local
+                    // 1. Obtener sesión actual y refresh_token
                     const { data: { session } } = await supabaseClient.auth.getSession();
+                    const refreshToken = session ? session.refresh_token : null;
+
                     if (session) {
                         localStorage.setItem('canana_passkey_id', passkeyId);
                         localStorage.setItem('canana_passkey_email', currentUser.email);
@@ -1002,10 +1004,13 @@
                         }));
                     }
 
-                    // 2. Guardar en Supabase mediante UPDATE para evitar conflictos RLS
+                    // 2. Guardar passkey_id y refresh_token en Supabase mediante UPDATE
                     const { data, error: dbErr } = await supabaseClient
                         .from('profiles')
-                        .update({ passkey_id: passkeyId })
+                        .update({ 
+                            passkey_id: passkeyId,
+                            refresh_token: refreshToken 
+                        })
                         .eq('id', currentUser.id);
 
                     if (dbErr) {
@@ -1014,8 +1019,9 @@
                         return;
                     }
 
-                    alert("¡Passkey vinculada con éxito en tu usuario!\nID: " + passkeyId.substring(0, 10) + "...");
+                    alert("¡Passkey vinculada con éxito!\nAhora podrás iniciar sesión directamente con tu biometría.");
                     showToast("¡Dispositivo y biometría vinculados con éxito!");
+                    closeAdminModal();
                 }
             } catch (err) {
                 console.error("Error Passkey register:", err);
@@ -1050,11 +1056,10 @@
 
                 if (assertion) {
                     const passkeyId = assertion.id;
+                    let sessionRestored = false;
 
                     // 1. Intentar restaurar sesión local si existe en este navegador/PWA
                     const storedSessionStr = localStorage.getItem(`canana_session_${passkeyId}`);
-                    let sessionRestored = false;
-
                     if (storedSessionStr) {
                         try {
                             const sessionData = JSON.parse(storedSessionStr);
@@ -1068,15 +1073,15 @@
                                 sessionRestored = true;
                             }
                         } catch (e) {
-                            console.warn("Error reanudando sesión local:", e);
+                            console.warn("Error con sesión en localStorage:", e);
                         }
                     }
 
-                    // 2. Si no hay sesión local (o es otro dispositivo/PWA), consultar en Supabase
+                    // 2. Si falló la sesión local o es una PWA limpia, obtener refresh_token desde Supabase
                     if (!sessionRestored) {
                         const { data, error } = await supabaseClient
                             .from('profiles')
-                            .select('email')
+                            .select('email, refresh_token, id')
                             .eq('passkey_id', passkeyId)
                             .maybeSingle();
 
@@ -1085,19 +1090,48 @@
                             return;
                         }
 
-                        if (data && data.email) {
+                        if (data && data.refresh_token) {
+                            const { data: sessData, error: sessErr } = await supabaseClient.auth.setSession({
+                                refresh_token: data.refresh_token
+                            });
+
+                            if (!sessErr && sessData.session) {
+                                currentUser = sessData.session.user;
+                                sessionRestored = true;
+
+                                // Actualizar el nuevo refresh_token rotado en Supabase
+                                if (sessData.session.refresh_token) {
+                                    await supabaseClient
+                                        .from('profiles')
+                                        .update({ refresh_token: sessData.session.refresh_token })
+                                        .eq('id', currentUser.id);
+
+                                    localStorage.setItem(`canana_session_${passkeyId}`, JSON.stringify({
+                                        access_token: sessData.session.access_token,
+                                        refresh_token: sessData.session.refresh_token,
+                                        email: currentUser.email
+                                    }));
+                                }
+                            } else {
+                                alert("El token de sesión ha expirado. Por favor, inicia sesión con contraseña una vez y pulsa 'Vincular este dispositivo'.");
+                                if (data.email) document.getElementById("authEmail").value = data.email;
+                                return;
+                            }
+                        } else if (data && data.email) {
+                            alert("Passkey identificada pero requiere re-vinculación. Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
                             document.getElementById("authEmail").value = data.email;
-                            showToast("Usuario identificado. Introduce contraseña para acceder.");
                             return;
                         } else {
-                            alert("No se encontró ningún usuario vinculado a esta Passkey (" + passkeyId.substring(0, 8) + "...). Inicia sesión con contraseña y pulsa 'Vincular este dispositivo'.");
+                            alert("No se encontró ningún usuario vinculado a esta Passkey.");
                             return;
                         }
                     }
 
-                    showToast("¡Acceso biométrico correcto!");
-                    closeLoginModal();
-                    await reloadData();
+                    if (sessionRestored) {
+                        showToast("¡Acceso biométrico correcto!");
+                        closeLoginModal();
+                        await reloadData();
+                    }
                 }
             } catch (err) {
                 console.error("Error Passkey signIn:", err);
