@@ -82,7 +82,7 @@
             <div id="passkeyLoginContainer" class="space-y-2 pb-2 border-b border-slate-100 dark:border-slate-700">
                 <button type="button" onclick="loginWithPasskey()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-fingerprint text-base"></i>
-                    <span>Iniciar Sesión con Face ID / Huella</span>
+                    <span>Iniciar Sesión con Face ID / Touch ID</span>
                 </button>
                 <div class="text-center text-[10px] text-slate-400 font-medium">O introduce tus credenciales:</div>
             </div>
@@ -129,7 +129,7 @@
                     <i class="fa-solid fa-fingerprint text-purple-600 dark:text-purple-400 text-2xl"></i>
                     <div>
                         <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Acceso con Biometría (Passkey)</h4>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular tu Face ID, Touch ID o huella para no escribir contraseña</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular Face ID / Touch ID en iCloud Keychain</p>
                     </div>
                 </div>
                 <button onclick="registerNewPasskey()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs transition shrink-0 active:scale-95 flex items-center justify-center space-x-1.5">
@@ -775,7 +775,14 @@
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
         
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        // Inicializar cliente de Supabase con persistencia global habilitada
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }) : null;
 
         const MAINTENANCE_CATEGORIES = [
             "Revisión anual", "Cambio distribución", "Cambio embrague", "Cambio neumáticos",
@@ -845,19 +852,6 @@
                 currentUser = session ? session.user : null;
                 await checkAdminStatus();
                 updateAuthHeaderButton();
-
-                if (session && currentUser && session.refresh_token) {
-                    const activePasskeyId = localStorage.getItem('canana_active_passkey_id');
-                    if (activePasskeyId) {
-                        localStorage.setItem(`canana_passkey_${activePasskeyId}`, JSON.stringify({
-                            access_token: session.access_token,
-                            refresh_token: session.refresh_token,
-                            email: currentUser.email,
-                            userId: currentUser.id
-                        }));
-                    }
-                }
-
                 reloadData();
             });
         }
@@ -887,7 +881,7 @@
 
             if (currentUser) {
                 btn.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
-                btn.title = "Bloquear aplicación";
+                btn.title = "Bloquear / Cerrar aplicación";
                 icon.className = "fa-solid fa-lock";
             } else {
                 btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
@@ -898,7 +892,7 @@
 
         function handleAuthHeaderClick() {
             if (currentUser) {
-                if (confirm("¿Bloquear aplicación y requerir biometría para acceder?")) {
+                if (confirm("¿Deseas bloquear la aplicación? Para acceder de nuevo podrás usar Face ID / Touch ID o contraseña.")) {
                     currentUser = null;
                     updateAuthHeaderButton();
                     document.getElementById("loginModal").classList.remove("hidden");
@@ -963,7 +957,7 @@
             }
         }
 
-        // --- FUNCIONALIDAD PASSKEYS BIOMÉTRICA CON PERSISTENCIA DE SESIÓN ---
+        // --- SISTEMA DE PASSKEYS (WEBAUTHN NATIVO SUPABASE) ---
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
@@ -973,7 +967,7 @@
                 return;
             }
 
-            showToast("Verificando biometría del dispositivo...");
+            showToast("Verificando soporte para Passkeys...");
 
             try {
                 const challenge = new Uint8Array(32);
@@ -983,8 +977,8 @@
                 const publicKeyCredentialCreationOptions = {
                     challenge: challenge,
                     rp: {
-                        name: "Canana Automotive",
-                        id: window.location.hostname
+                        name: "Canana Automotive BD",
+                        id: "samuelpgdl-dev.github.io"
                     },
                     user: {
                         id: userID,
@@ -1006,117 +1000,100 @@
                 if (credential) {
                     const passkeyId = credential.id;
 
-                    // 1. Vincular passkey_id en Supabase
                     const { error: dbErr } = await supabaseClient
                         .from('profiles')
                         .update({ passkey_id: passkeyId })
                         .eq('id', currentUser.id);
 
                     if (dbErr) {
-                        alert("Error al vincular Passkey en la BD: " + dbErr.message);
+                        alert("Error al guardar Passkey en el servidor: " + dbErr.message);
                         return;
                     }
 
-                    // 2. Guardar backup de sesión local
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session) {
-                        localStorage.setItem('canana_active_passkey_id', passkeyId);
-                        localStorage.setItem(`canana_passkey_${passkeyId}`, JSON.stringify({
-                            access_token: session.access_token,
-                            refresh_token: session.refresh_token,
-                            email: currentUser.email,
-                            userId: currentUser.id
-                        }));
-                    }
-
-                    alert("¡Passkey vinculada con éxito!\nAhora podrás desbloquear la app con Face ID / Huella.");
-                    showToast("¡Dispositivo y biometría vinculados!");
+                    alert("¡Passkey registrada y vinculada a tu cuenta!\nAhora puedes usar Face ID / Touch ID para acceder directamente.");
+                    showToast("¡Passkey vinculada con éxito!");
                     closeAdminModal();
                 }
             } catch (err) {
-                console.error("Error Passkey register:", err);
+                console.error("Error al registrar Passkey:", err);
                 if (err.name !== 'NotAllowedError') {
-                    alert("Error al registrar Passkey: " + (err.message || err.name));
+                    alert("Error en la creación de Passkey: " + (err.message || err.name));
                 }
             }
         }
 
-      async function loginWithPasskey() {
-    if (!window.PublicKeyCredential) {
-        alert("Tu navegador o dispositivo no soporta biometría.");
-        return;
-    }
-
-    showToast("Escaneando Face ID / Huella...");
-
-    try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: challenge,
-            rpId: window.location.hostname,
-            userVerification: "required",
-            timeout: 60000
-        };
-
-        const assertion = await navigator.credentials.get({
-            publicKey: publicKeyCredentialRequestOptions
-        });
-
-        if (assertion) {
-            const passkeyId = assertion.id;
-
-            // 1. Verificar sesión activa actual
-            let { data: { session } } = await supabaseClient.auth.getSession();
-
-            // 2. Intentar refrescar la sesión si ha caducado
-            if (!session) {
-                const localDataStr = localStorage.getItem(`canana_passkey_${passkeyId}`);
-                if (localDataStr) {
-                    try {
-                        const localData = JSON.parse(localDataStr);
-                        const res = await supabaseClient.auth.setSession({
-                            access_token: localData.access_token,
-                            refresh_token: localData.refresh_token
-                        });
-                        session = res.data?.session;
-                    } catch (e) {
-                        console.warn("Error reanudando sesión guardada:", e);
-                    }
-                }
-            }
-
-            // 3. Acceso directo si la sesión es válida o se ha refrescado
-            if (session) {
-                currentUser = session.user;
-                showToast("¡Acceso biométrico correcto!");
-                closeLoginModal();
-                await reloadData();
+        async function loginWithPasskey() {
+            if (!window.PublicKeyCredential) {
+                alert("Tu navegador o dispositivo no soporta biometría.");
                 return;
             }
 
-            // 4. Si la sesión fue purgada del servidor, auto-completar e informar suavemente
-            const { data } = await supabaseClient
-                .from('profiles')
-                .select('email')
-                .eq('passkey_id', passkeyId)
-                .maybeSingle();
+            showToast("Escaneando Face ID / Touch ID...");
 
-            if (data && data.email) {
-                document.getElementById("authEmail").value = data.email;
-                showToast("Biometría confirmada. Inicia sesión para vincular el nuevo token.");
-            } else {
-                alert("Passkey no registrada en este sistema.");
+            try {
+                // 1. Si ya existe una sesión activa persistente en Supabase, reanudar de inmediato
+                const { data: { session: existingSession } } = await supabaseClient.auth.getSession();
+
+                if (existingSession) {
+                    currentUser = existingSession.user;
+                    showToast("¡Acceso biométrico concedido!");
+                    closeLoginModal();
+                    await reloadData();
+                    return;
+                }
+
+                // 2. Si no hay sesión local activa, solicitar desafío biométrico de hardware
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    rpId: "samuelpgdl-dev.github.io",
+                    userVerification: "required",
+                    timeout: 60000
+                };
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: publicKeyCredentialRequestOptions
+                });
+
+                if (assertion) {
+                    const passkeyId = assertion.id;
+
+                    // 3. Consultar el perfil registrado con esa Passkey en Supabase
+                    const { data: profileData, error: profileErr } = await supabaseClient
+                        .from('profiles')
+                        .select('email, id')
+                        .eq('passkey_id', passkeyId)
+                        .maybeSingle();
+
+                    if (profileErr || !profileData || !profileData.email) {
+                        alert("Passkey no vinculada a ningún usuario activo. Inicia sesión con contraseña para vincularla.");
+                        return;
+                    }
+
+                    // 4. Auto-rellenar email e indicar autenticación
+                    document.getElementById("authEmail").value = profileData.email;
+                    showToast("Passkey verificada para " + profileData.email);
+
+                    // Reintentar restauración de sesión persistente o solicitar validación de credencial
+                    const { data: refreshSession } = await supabaseClient.auth.getSession();
+                    if (refreshSession && refreshSession.session) {
+                        currentUser = refreshSession.session.user;
+                        closeLoginModal();
+                        await reloadData();
+                        return;
+                    }
+
+                    alert(`Biometría validada para ${profileData.email}.\nIntroduce la contraseña para confirmar el inicio de sesión único.`);
+                }
+            } catch (err) {
+                console.error("Error en login biométrico:", err);
+                if (err.name !== 'NotAllowedError') {
+                    alert("No se pudo completar el acceso con Passkey: " + (err.message || "Operación cancelada"));
+                }
             }
         }
-    } catch (err) {
-        console.error("Error Passkey signIn:", err);
-        if (err.name !== 'NotAllowedError') {
-            alert("No se pudo autenticar con biometría: " + (err.message || "Cancelado"));
-        }
-    }
-}
 
         // --- PANEL DE ADMINISTRACIÓN Y PROPIEDADES ---
 
@@ -1127,7 +1104,7 @@
             modal.classList.remove("hidden");
             
             if (!isAdmin) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-400">Eres usuario estándar. Puedes administrar tus Passkeys de acceso rápido en el botón superior.</p>`;
+                listContainer.innerHTML = `<p class="text-xs text-slate-400">Eres usuario estándar. Puedes gestionar tus Passkeys biométricas con el botón superior.</p>`;
                 return;
             }
 
