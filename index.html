@@ -82,7 +82,7 @@
             <div id="passkeyLoginContainer" class="space-y-2 pb-2 border-b border-slate-100 dark:border-slate-700">
                 <button type="button" onclick="loginWithPasskey()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-fingerprint text-base"></i>
-                    <span>Iniciar Sesión con Face ID / Touch ID</span>
+                    <span>Iniciar Sesión con Huella / Face ID</span>
                 </button>
                 <div class="text-center text-[10px] text-slate-400 font-medium">O introduce tus credenciales:</div>
             </div>
@@ -119,7 +119,7 @@
                 </div>
                 <div>
                     <h2 class="text-lg font-black text-slate-900 dark:text-white">Panel de Control de Usuario</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Administra tus accesos biométricos y permisos de vehículos</p>
+                    <p id="adminUserEmail" class="text-xs text-slate-500 dark:text-slate-400">Administra tus accesos biométricos y permisos de vehículos</p>
                 </div>
             </div>
 
@@ -129,7 +129,7 @@
                     <i class="fa-solid fa-fingerprint text-purple-600 dark:text-purple-400 text-2xl"></i>
                     <div>
                         <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Acceso con Biometría (Passkey)</h4>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular Face ID / Touch ID en iCloud Keychain</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular huella digital / Face ID / PIN en este dispositivo</p>
                     </div>
                 </div>
                 <button onclick="registerNewPasskey()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs transition shrink-0 active:scale-95 flex items-center justify-center space-x-1.5">
@@ -356,7 +356,7 @@
             <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
                     <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Total Gasoil</div><div id="kpiFuelTotal" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Total Combustible</div><div id="kpiFuelTotal" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
                 </div>
                 <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
                     <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-calculator"></i></div>
@@ -408,7 +408,7 @@
                 </div>
 
                 <p id="periodAnalysisComment" class="text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-700/50 leading-relaxed italic">
-                    Selecciona un rango de fechas en la tabla para calcular la estabilidad o fluctuación del precio del gasoil.
+                    Selecciona un rango de fechas en la tabla para calcular la estabilidad o fluctuación del precio del combustible.
                 </p>
             </section>
 
@@ -426,7 +426,7 @@
                 <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
                         <i class="fa-solid fa-chart-line text-emerald-500"></i>
-                        <span>Evolución del Precio del Gasoil (€/L)</span>
+                        <span>Evolución del Precio del Combustible (€/L)</span>
                     </h3>
                     <div class="h-56 relative">
                         <canvas id="chartFuelPrice"></canvas>
@@ -489,7 +489,7 @@
                     <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-500 mr-2"></i> Guía de Piezas y Recambios</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas e información técnica para la compra de piezas compatibles.</p>
                 </div>
-                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
+                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o ref..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
             </div>
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
@@ -587,7 +587,7 @@
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 id="fuelModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Gasoil</h3>
+            <h3 id="fuelModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Combustible</h3>
             
             <div class="mb-3 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60 text-center">
                 <label for="ocrInput" class="cursor-pointer inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95">
@@ -775,7 +775,6 @@
         const SUPABASE_URL = "https://uinbkbohqvmhudawrcxm.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbmJrYm9ocXZtaHVkYXdyY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTUzMzQsImV4cCI6MjEwODM5MTMzNH0.jXvvu4Uqv95k3y2_X2HB4VUblKhMjaTOkP70ZwIaHmc";
         
-        // Inicializar cliente de Supabase con persistencia global habilitada
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
@@ -796,7 +795,7 @@
         let vehicles = [];
         let rawVehiclesData = [];
         let fuelRecords = [];
-        let activeVehicleId = "c3";
+        let activeVehicleId = localStorage.getItem("activeVehicleId") || "c3";
         let activeMainTab = "maintenance";
         let categoryChartInstance = null;
         let timeChartInstance = null;
@@ -818,15 +817,24 @@
             }
         });
 
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById("themeIcon");
+            if (!icon) return;
+            icon.className = isDark ? "fa-solid fa-sun text-amber-400" : "fa-solid fa-moon text-slate-700";
+        }
+
         function initTheme() {
             const savedTheme = localStorage.getItem("theme");
-            if (savedTheme === "light") document.documentElement.classList.remove("dark");
+            const isLight = savedTheme === "light";
+            if (isLight) document.documentElement.classList.remove("dark");
             else document.documentElement.classList.add("dark");
+            updateThemeIcon(!isLight);
         }
 
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle("dark");
             localStorage.setItem("theme", isDark ? "dark" : "light");
+            updateThemeIcon(isDark);
             const car = getActiveVehicle();
             if (car) renderCharts(car);
             if (activeMainTab === 'fuel') renderFuelAnalytics();
@@ -852,7 +860,9 @@
                 currentUser = session ? session.user : null;
                 await checkAdminStatus();
                 updateAuthHeaderButton();
-                reloadData();
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                    await reloadData();
+                }
             });
         }
 
@@ -861,16 +871,20 @@
                 isAdmin = false;
             } else {
                 try {
-                    const { data } = await supabaseClient.from('profiles').select('is_admin').eq('id', currentUser.id).single();
+                    const { data } = await supabaseClient.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
                     isAdmin = data ? !!data.is_admin : false;
                 } catch (e) {
                     isAdmin = false;
                 }
             }
             const btnAdmin = document.getElementById("btnAdminPanel");
+            const adminUserEmail = document.getElementById("adminUserEmail");
             if (btnAdmin) {
                 if (currentUser) btnAdmin.classList.remove("hidden");
                 else btnAdmin.classList.add("hidden");
+            }
+            if (adminUserEmail && currentUser) {
+                adminUserEmail.innerText = `${currentUser.email} ${isAdmin ? '(Administrador)' : ''}`;
             }
         }
 
@@ -881,7 +895,7 @@
 
             if (currentUser) {
                 btn.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
-                btn.title = "Bloquear / Cerrar aplicación";
+                btn.title = `Cerrar sesión (${currentUser.email})`;
                 icon.className = "fa-solid fa-lock";
             } else {
                 btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
@@ -890,13 +904,16 @@
             }
         }
 
-        function handleAuthHeaderClick() {
+        async function handleAuthHeaderClick() {
             if (currentUser) {
-                if (confirm("¿Deseas bloquear la aplicación? Para acceder de nuevo podrás usar Face ID / Touch ID o contraseña.")) {
+                if (confirm(`¿Cerrar sesión de ${currentUser.email}? Para entrar de nuevo podrás usar huella / Face ID o contraseña.`)) {
+                    await supabaseClient.auth.signOut();
                     currentUser = null;
+                    isAdmin = false;
+                    await checkAdminStatus();
                     updateAuthHeaderButton();
                     document.getElementById("loginModal").classList.remove("hidden");
-                    showToast("Aplicación bloqueada.");
+                    showToast("Sesión cerrada.");
                 }
             } else {
                 document.getElementById("loginModal").classList.remove("hidden");
@@ -914,6 +931,11 @@
                 return false;
             }
             return true;
+        }
+
+        function getOwnerUserId(car) {
+            if (car && car.userId) return car.userId;
+            return currentUser ? currentUser.id : null;
         }
 
         function toggleAuthMode() {
@@ -951,6 +973,9 @@
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) alert("Error al iniciar sesión: " + error.message);
                 else {
+                    currentUser = data.user;
+                    await checkAdminStatus();
+                    updateAuthHeaderButton();
                     showToast("¡Bienvenido!");
                     closeLoginModal();
                 }
@@ -1000,17 +1025,28 @@
                 if (credential) {
                     const passkeyId = credential.id;
 
-                    const { error: dbErr } = await supabaseClient
+                    const { data: updatedRows, error: dbErr } = await supabaseClient
                         .from('profiles')
-                        .update({ passkey_id: passkeyId })
-                        .eq('id', currentUser.id);
+                        .update({ passkey_id: passkeyId, email: currentUser.email })
+                        .eq('id', currentUser.id)
+                        .select();
 
                     if (dbErr) {
                         alert("Error al guardar Passkey en el servidor: " + dbErr.message);
                         return;
                     }
 
-                    alert("¡Passkey registrada y vinculada a tu cuenta!\nAhora puedes usar Face ID / Touch ID para acceder directamente.");
+                    if (!updatedRows || updatedRows.length === 0) {
+                        const { error: insertErr } = await supabaseClient
+                            .from('profiles')
+                            .insert([{ id: currentUser.id, email: currentUser.email, passkey_id: passkeyId }]);
+                        if (insertErr) {
+                            alert("Error al crear perfil para Passkey: " + insertErr.message);
+                            return;
+                        }
+                    }
+
+                    alert("¡Passkey registrada y vinculada a tu cuenta!\nAhora puedes usar huella / Face ID para acceder directamente.");
                     showToast("¡Passkey vinculada con éxito!");
                     closeAdminModal();
                 }
@@ -1028,7 +1064,7 @@
                 return;
             }
 
-            showToast("Escaneando Face ID / Touch ID...");
+            showToast("Escaneando biometría...");
 
             try {
                 const challenge = new Uint8Array(32);
@@ -1050,17 +1086,15 @@
                 const passkeyId = assertion.id;
                 showToast("Verificando credencial en el servidor...");
 
-                // Llamada a la Edge Function recién desplegada
                 const { data: resData, error: fnError } = await supabaseClient.functions.invoke('verify-passkey', {
                     body: { passkeyId }
                 });
 
                 if (fnError || !resData || !resData.success) {
-                    alert("Error al validar la Passkey: " + (fnError?.message || resData?.error || "Desconocido"));
+                    alert("Error al validar la Passkey: " + (fnError?.message || resData?.error || "Credencial no vinculada"));
                     return;
                 }
 
-                // Intercambiar el token generado por una sesión activa en Supabase Auth
                 const { data: sessionData, error: verifyErr } = await supabaseClient.auth.verifyOtp({
                     token_hash: resData.hashed_token,
                     type: 'email'
@@ -1072,6 +1106,8 @@
                 }
 
                 currentUser = sessionData.session.user;
+                await checkAdminStatus();
+                updateAuthHeaderButton();
                 showToast("¡Acceso biométrico concedido!");
                 closeLoginModal();
                 await reloadData();
@@ -1093,7 +1129,7 @@
             modal.classList.remove("hidden");
             
             if (!isAdmin) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-400">Eres usuario estándar. Puedes gestionar tus Passkeys biométricas con el botón superior.</p>`;
+                listContainer.innerHTML = `<p class="text-xs text-slate-400">Usuario estándar (${currentUser.email}). Puedes vincular tu Passkey biométrica con el botón superior.</p>`;
                 return;
             }
 
@@ -1129,7 +1165,7 @@
                                     <option value="">-- Sin propietario --</option>
                                     ${optionsHTML}
                                 </select>
-                                <button onclick="reassignVehicleFromAdmin('${v.id}', '${v.db_name || v.name}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shrink-0 transition active:scale-95">
+                                <button onclick="reassignVehicleFromAdmin('${v.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shrink-0 transition active:scale-95">
                                     Guardar
                                 </button>
                             </div>
@@ -1146,22 +1182,32 @@
             document.getElementById("adminModal").classList.add("hidden");
         }
 
-        async function reassignVehicleFromAdmin(vehicleId, dbName) {
+        async function reassignVehicleFromAdmin(vehicleId) {
             if (!isAdmin || !supabaseClient) return;
             const selectElem = document.getElementById(`selectAdminUser_${vehicleId}`);
             if (!selectElem) return;
 
+            const veh = rawVehiclesData.find(v => String(v.id) === String(vehicleId));
+            if (!veh) return;
+
+            const namesToMatch = Array.from(new Set([veh.db_name, veh.name].filter(Boolean)));
             const newUserId = selectElem.value || null;
             showToast("Reasignando propietario...");
 
             try {
-                await Promise.all([
+                const results = await Promise.all([
                     supabaseClient.from('vehiculos').update({ user_id: newUserId }).eq('id', vehicleId),
-                    supabaseClient.from('mantenimiento').update({ user_id: newUserId }).eq('vehiculo', dbName),
-                    supabaseClient.from('repostajes').update({ user_id: newUserId }).eq('vehiculo', dbName),
-                    supabaseClient.from('recambios').update({ user_id: newUserId }).eq('vehiculo', dbName),
-                    supabaseClient.from('alertas').update({ user_id: newUserId }).eq('vehiculo', dbName)
+                    supabaseClient.from('mantenimiento').update({ user_id: newUserId }).in('vehiculo', namesToMatch),
+                    supabaseClient.from('repostajes').update({ user_id: newUserId }).in('vehiculo', namesToMatch),
+                    supabaseClient.from('recambios').update({ user_id: newUserId }).in('vehiculo', namesToMatch),
+                    supabaseClient.from('alertas').update({ user_id: newUserId }).in('vehiculo', namesToMatch)
                 ]);
+
+                const failed = results.find(r => r.error);
+                if (failed) {
+                    alert("Error al reasignar propietario: " + failed.error.message);
+                    return;
+                }
 
                 showToast("Propietario actualizado con éxito.");
                 await reloadData();
@@ -1244,6 +1290,8 @@
 
                 vehicles = rawVehiclesData.map(v => ({
                     id: v.id_alias || String(v.id),
+                    dbId: v.id,
+                    userId: v.user_id || null,
                     name: v.name,
                     dbName: v.db_name || v.name,
                     plate: v.plate,
@@ -1362,11 +1410,12 @@
         function openModalForCurrentView() {
             if (activeMainTab === 'fuel') {
                 openFuelModal();
-            } else if (activeMainTab === 'maintenance') {
-                if (!checkAuthOrLogin()) return;
+                return;
+            }
+            if (!checkAuthOrLogin()) return;
+            if (activeMainTab === 'maintenance') {
                 openRecordModal();
             } else {
-                if (!checkAuthOrLogin()) return;
                 openPartModal();
             }
         }
@@ -1395,6 +1444,7 @@
 
         function changeActiveVehicle(id) {
             activeVehicleId = id;
+            localStorage.setItem("activeVehicleId", id);
             renderDashboard();
             if (activeMainTab === 'fuel') renderFuelDashboard();
         }
@@ -1458,7 +1508,7 @@
             setTimeout(() => { toast.classList.add("translate-y-[-100px]", "opacity-0", "pointer-events-none"); }, 3500);
         }
 
-        // --- GEOLOCALIZACIÓN Y GEODETECCION DE GASOLINERAS ---
+        // --- GEOLOCALIZACIÓN Y GEODETECCIÓN DE GASOLINERAS ---
 
         function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371000;
@@ -2122,12 +2172,22 @@
             const container = document.getElementById("partsContainer");
             if (!container) return;
 
-            if (car.parts.length === 0) {
+            const searchInput = document.getElementById("partSearchInput");
+            const search = searchInput ? String(searchInput.value || '').toLowerCase().trim() : '';
+
+            const filteredParts = (car.parts || []).filter(p => {
+                if (!search) return true;
+                return String(p.pieza || '').toLowerCase().includes(search) ||
+                       String(p.marca || '').toLowerCase().includes(search) ||
+                       String(p.notas || '').toLowerCase().includes(search);
+            });
+
+            if (filteredParts.length === 0) {
                 container.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-800 p-8 rounded-xl text-center text-slate-400 font-semibold border border-slate-200 dark:border-slate-700/60">No se encontraron recambios guardados.</div>`;
                 return;
             }
 
-            container.innerHTML = car.parts.map(p => `
+            container.innerHTML = filteredParts.map(p => `
                 <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
                     <div>
                         <div class="flex items-center justify-between">
@@ -2137,7 +2197,7 @@
                         <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 font-mono bg-slate-50 dark:bg-slate-700/40 p-2 rounded">${p.notas || ""}</p>
                     </div>
                     <div class="flex items-center justify-between pt-1">
-                        ${p.link ? `<a href="${p.link}" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:underline"><i class="fa-solid fa-cart-shopping mr-1"></i>Ver en Tienda</a>` : '<div></div>'}
+                        ${p.link ? `<a href="${p.link}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:underline"><i class="fa-solid fa-cart-shopping mr-1"></i>Ver en Tienda</a>` : '<div></div>'}
                         <div class="flex items-center space-x-1 ml-auto">
                             <button onclick="openPartModal('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
                             <button onclick="deletePart('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
@@ -2162,26 +2222,31 @@
             const wb = XLSX.utils.book_new();
 
             if (includeMaint) {
-                const maintData = (car.records || []).map(r => ({
-                    Fecha: formatDateDisplay(r.fecha),
-                    Kilometros: Number(r.kms || 0),
-                    Categoria: r.detalle || "",
-                    Trabajo: r.tipo || "",
-                    Taller: r.taller || "",
-                    Coste_Euros: Number(r.coste || 0)
-                }));
+                const maintData = [...(car.records || [])]
+                    .sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0))
+                    .map(r => ({
+                        Fecha: formatDateDisplay(r.fecha),
+                        Kilometros: Number(r.kms || 0),
+                        Categoria: r.detalle || "",
+                        Trabajo: r.tipo || "",
+                        Taller: r.taller || "",
+                        Coste_Euros: Number(r.coste || 0)
+                    }));
                 const wsMaint = XLSX.utils.json_to_sheet(maintData);
                 XLSX.utils.book_append_sheet(wb, wsMaint, "Mantenimiento");
             }
 
             if (includeFuel) {
-                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name).map(f => ({
-                    Fecha: formatDateDisplay(f.fecha),
-                    Kilometros: Number(f.kms || 0),
-                    Importe_Euros: Number(f.importe || 0),
-                    Litros: Number(f.litros || 0),
-                    Gasolinera_Notas: f.notas || ""
-                }));
+                const carFuel = fuelRecords
+                    .filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name)
+                    .sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0))
+                    .map(f => ({
+                        Fecha: formatDateDisplay(f.fecha),
+                        Kilometros: Number(f.kms || 0),
+                        Importe_Euros: Number(f.importe || 0),
+                        Litros: Number(f.litros || 0),
+                        Gasolinera_Notas: f.notas || ""
+                    }));
                 const wsFuel = XLSX.utils.json_to_sheet(carFuel);
                 XLSX.utils.book_append_sheet(wb, wsFuel, "Repostajes");
             }
@@ -2311,6 +2376,7 @@
             }
 
             if (includeMaint && car.records && car.records.length > 0) {
+                const sortedRecords = [...car.records].sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
                 checkPageBreak(15);
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(11);
@@ -2330,7 +2396,7 @@
                 y += 7;
 
                 doc.setFont("helvetica", "normal");
-                car.records.forEach((r, idx) => {
+                sortedRecords.forEach((r, idx) => {
                     checkPageBreak(7);
                     if (idx % 2 === 0) {
                         doc.setFillColor(248, 250, 252);
@@ -2348,7 +2414,9 @@
             }
 
             if (includeFuel) {
-                const carFuel = fuelRecords.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
+                const carFuel = fuelRecords
+                    .filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name)
+                    .sort((a, b) => (parseDate(b.fecha) || 0) - (parseDate(a.fecha) || 0));
                 if (carFuel.length > 0) {
                     checkPageBreak(15);
                     doc.setFont("helvetica", "bold");
@@ -2476,7 +2544,7 @@
 
             const id = document.getElementById("recordRowIndex").value;
             const recordData = {
-                user_id: currentUser.id,
+                user_id: getOwnerUserId(car),
                 vehiculo: car.dbName,
                 fecha: document.getElementById("formFecha").value,
                 kms: parseInt(document.getElementById("formKms").value) || 0,
@@ -2486,18 +2554,26 @@
                 coste: parseFloat(document.getElementById("formCoste").value) || 0
             };
 
-            try {
-                if (id) await supabaseClient.from('mantenimiento').update(recordData).eq('id', id);
-                else await supabaseClient.from('mantenimiento').insert([recordData]);
-                closeRecordModal();
-                await reloadData();
-            } catch (err) { console.error("Error al guardar:", err); }
+            const { error } = id
+                ? await supabaseClient.from('mantenimiento').update(recordData).eq('id', id)
+                : await supabaseClient.from('mantenimiento').insert([recordData]);
+
+            if (error) {
+                alert("Error al guardar mantenimiento: " + error.message);
+                return;
+            }
+            closeRecordModal();
+            await reloadData();
         }
 
         async function deleteRecord(id) {
             if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar este registro?") || !supabaseClient) return;
-            await supabaseClient.from('mantenimiento').delete().eq('id', id);
+            const { error } = await supabaseClient.from('mantenimiento').delete().eq('id', id);
+            if (error) {
+                alert("No se pudo eliminar: " + error.message);
+                return;
+            }
             await reloadData();
         }
 
@@ -2516,7 +2592,7 @@
                 const record = fuelRecords.find(r => String(r.id) === String(id));
                 if (record) {
                     document.getElementById("fuelRowIndex").value = record.id;
-                    document.getElementById("fuelFormVehicle").value = record.vehiculo || (car ? car.dbName : vehicles[0].dbName);
+                    document.getElementById("fuelFormVehicle").value = record.vehiculo || (car ? car.dbName : vehicles[0]?.dbName);
                     document.getElementById("fuelFormFecha").value = formatDateISO(record.fecha);
                     document.getElementById("fuelFormKms").value = record.kms || "";
                     document.getElementById("fuelFormImporte").value = record.importe || "";
@@ -2525,7 +2601,7 @@
                 }
             } else {
                 document.getElementById("fuelRowIndex").value = "";
-                document.getElementById("fuelFormVehicle").value = car ? car.dbName : vehicles[0].dbName;
+                document.getElementById("fuelFormVehicle").value = car ? car.dbName : (vehicles[0]?.dbName || "");
                 document.getElementById("fuelFormFecha").value = formatDateISO(new Date());
                 document.getElementById("fuelFormKms").value = car ? car.kms : "";
                 document.getElementById("fuelFormImporte").value = "";
@@ -2564,12 +2640,15 @@
             if (id && !checkAuthOrLogin()) return;
             if (!supabaseClient) return;
 
+            const selectedVehDbName = document.getElementById("fuelFormVehicle").value;
+            const targetCar = vehicles.find(v => v.dbName === selectedVehDbName || v.name === selectedVehDbName);
+
             const latVal = parseFloat(document.getElementById("fuelLat").value);
             const lngVal = parseFloat(document.getElementById("fuelLng").value);
 
             const fuelData = {
-                user_id: currentUser ? currentUser.id : null,
-                vehiculo: document.getElementById("fuelFormVehicle").value,
+                user_id: getOwnerUserId(targetCar),
+                vehiculo: selectedVehDbName,
                 fecha: document.getElementById("fuelFormFecha").value,
                 kms: parseInt(document.getElementById("fuelFormKms").value) || null,
                 importe: parseFloat(document.getElementById("fuelFormImporte").value) || 0,
@@ -2579,18 +2658,26 @@
                 longitud: !isNaN(lngVal) ? lngVal : null
             };
 
-            try {
-                if (id) await supabaseClient.from('repostajes').update(fuelData).eq('id', id);
-                else await supabaseClient.from('repostajes').insert([fuelData]);
-                closeFuelModal();
-                await reloadData();
-            } catch (err) { console.error("Error al guardar repostaje:", err); }
+            const { error } = id
+                ? await supabaseClient.from('repostajes').update(fuelData).eq('id', id)
+                : await supabaseClient.from('repostajes').insert([fuelData]);
+
+            if (error) {
+                alert("Error al guardar repostaje: " + error.message);
+                return;
+            }
+            closeFuelModal();
+            await reloadData();
         }
 
         async function deleteFuelRecord(id) {
             if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar este repostaje?") || !supabaseClient) return;
-            await supabaseClient.from('repostajes').delete().eq('id', id);
+            const { error } = await supabaseClient.from('repostajes').delete().eq('id', id);
+            if (error) {
+                alert("No se pudo eliminar: " + error.message);
+                return;
+            }
             await reloadData();
         }
 
@@ -2630,7 +2717,7 @@
 
             const id = document.getElementById("partRowIndex").value;
             const partData = {
-                user_id: currentUser.id,
+                user_id: getOwnerUserId(car),
                 vehiculo: car.dbName,
                 pieza: document.getElementById("partPieza").value,
                 marca: document.getElementById("partMarca").value,
@@ -2638,18 +2725,26 @@
                 link: document.getElementById("partLink").value
             };
 
-            try {
-                if (id) await supabaseClient.from('recambios').update(partData).eq('id', id);
-                else await supabaseClient.from('recambios').insert([partData]);
-                closePartModal();
-                await reloadData();
-            } catch (err) { console.error("Error al guardar recambio:", err); }
+            const { error } = id
+                ? await supabaseClient.from('recambios').update(partData).eq('id', id)
+                : await supabaseClient.from('recambios').insert([partData]);
+
+            if (error) {
+                alert("Error al guardar recambio: " + error.message);
+                return;
+            }
+            closePartModal();
+            await reloadData();
         }
 
         async function deletePart(id) {
             if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar esta referencia?") || !supabaseClient) return;
-            await supabaseClient.from('recambios').delete().eq('id', id);
+            const { error } = await supabaseClient.from('recambios').delete().eq('id', id);
+            if (error) {
+                alert("No se pudo eliminar: " + error.message);
+                return;
+            }
             await reloadData();
         }
 
@@ -2659,13 +2754,13 @@
             const car = getActiveVehicle();
 
             if (id && car) {
-                const alert = car.alerts.find(a => String(a.id) === String(id));
-                if (alert) {
-                    document.getElementById("alertRowIndex").value = alert.id;
-                    document.getElementById("alertTitulo").value = alert.title || "";
-                    document.getElementById("alertTipo").value = alert.type || "warning";
-                    document.getElementById("alertFecha").value = alert.fecha ? formatDateISO(alert.fecha) : "";
-                    document.getElementById("alertDescripcion").value = alert.desc || "";
+                const alertObj = car.alerts.find(a => String(a.id) === String(id));
+                if (alertObj) {
+                    document.getElementById("alertRowIndex").value = alertObj.id;
+                    document.getElementById("alertTitulo").value = alertObj.title || "";
+                    document.getElementById("alertTipo").value = alertObj.type || "warning";
+                    document.getElementById("alertFecha").value = alertObj.fecha ? formatDateISO(alertObj.fecha) : "";
+                    document.getElementById("alertDescripcion").value = alertObj.desc || "";
                 }
             } else {
                 document.getElementById("alertRowIndex").value = "";
@@ -2687,7 +2782,7 @@
 
             const id = document.getElementById("alertRowIndex").value;
             const alertData = {
-                user_id: currentUser.id,
+                user_id: getOwnerUserId(car),
                 vehiculo: car.dbName,
                 titulo: document.getElementById("alertTitulo").value,
                 tipo: document.getElementById("alertTipo").value,
@@ -2695,18 +2790,26 @@
                 fecha: document.getElementById("alertFecha").value || null
             };
 
-            try {
-                if (id) await supabaseClient.from('alertas').update(alertData).eq('id', id);
-                else await supabaseClient.from('alertas').insert([alertData]);
-                closeAlertModal();
-                await reloadData();
-            } catch (err) { console.error("Error al guardar alerta:", err); }
+            const { error } = id
+                ? await supabaseClient.from('alertas').update(alertData).eq('id', id)
+                : await supabaseClient.from('alertas').insert([alertData]);
+
+            if (error) {
+                alert("Error al guardar alerta: " + error.message);
+                return;
+            }
+            closeAlertModal();
+            await reloadData();
         }
 
         async function deleteAlert(id) {
             if (!checkAuthOrLogin()) return;
             if (!confirm("¿Eliminar esta alerta?") || !supabaseClient) return;
-            await supabaseClient.from('alertas').delete().eq('id', id);
+            const { error } = await supabaseClient.from('alertas').delete().eq('id', id);
+            if (error) {
+                alert("No se pudo eliminar: " + error.message);
+                return;
+            }
             await reloadData();
         }
 
@@ -2732,7 +2835,10 @@
 
             const nameVal = document.getElementById("vehName").value.trim();
             const plateVal = document.getElementById("vehPlate").value.trim();
-            const idAlias = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            let idAlias = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            if (vehicles.some(v => v.id === idAlias)) {
+                idAlias = `${idAlias}_${Date.now()}`;
+            }
 
             const vehicleData = {
                 user_id: currentUser.id,
@@ -2748,11 +2854,15 @@
                 interval_months: parseInt(document.getElementById("vehIntervalMonths").value) || 12
             };
 
-            try {
-                await supabaseClient.from('vehiculos').insert([vehicleData]);
-                closeVehicleModal();
-                await reloadData();
-            } catch (err) { console.error("Error al guardar vehículo:", err); }
+            const { error } = await supabaseClient.from('vehiculos').insert([vehicleData]);
+            if (error) {
+                alert("Error al registrar vehículo: " + error.message);
+                return;
+            }
+            activeVehicleId = idAlias;
+            localStorage.setItem("activeVehicleId", idAlias);
+            closeVehicleModal();
+            await reloadData();
         }
 
         if ('serviceWorker' in navigator) {
