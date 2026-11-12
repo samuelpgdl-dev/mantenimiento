@@ -172,8 +172,8 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
 
-                    <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Acceder / Bloquear">
-                        <i id="authHeaderIcon" class="fa-solid fa-user"></i>
+                    <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-500 dark:text-slate-400 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Modo lectura (Pulsa para iniciar sesión)">
+                        <i id="authHeaderIcon" class="fa-solid fa-lock"></i>
                     </button>
                 </div>
             </div>
@@ -894,27 +894,40 @@
             if (!btn || !icon) return;
 
             if (currentUser) {
-                btn.className = "bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 p-2 sm:p-2.5 rounded-lg border border-rose-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
-                btn.title = `Cerrar sesión (${currentUser.email})`;
-                icon.className = "fa-solid fa-lock";
+                btn.className = "bg-emerald-500/15 hover:bg-rose-500/20 text-emerald-600 dark:text-emerald-400 hover:text-rose-600 p-2 sm:p-2.5 rounded-lg border border-emerald-500/30 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
+                btn.title = `Conectado: ${currentUser.email} (Pulsa para cerrar sesión)`;
+                icon.className = "fa-solid fa-lock-open";
             } else {
-                btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
-                btn.title = "Iniciar sesión";
-                icon.className = "fa-solid fa-user";
+                btn.className = "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-500 dark:text-slate-400 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95";
+                btn.title = "Modo lectura (Pulsa para iniciar sesión)";
+                icon.className = "fa-solid fa-lock";
             }
         }
 
         async function handleAuthHeaderClick() {
             if (currentUser) {
-                if (confirm(`¿Cerrar sesión de ${currentUser.email}? Para entrar de nuevo podrás usar huella / Face ID o contraseña.`)) {
-                    await supabaseClient.auth.signOut();
-                    currentUser = null;
-                    isAdmin = false;
-                    await checkAdminStatus();
-                    updateAuthHeaderButton();
-                    document.getElementById("loginModal").classList.remove("hidden");
-                    showToast("Sesión cerrada.");
+                if (!confirm(`¿Cerrar sesión de ${currentUser.email}?`)) return;
+
+                try {
+                    await supabaseClient.auth.signOut({ scope: 'local' });
+                } catch (e) {
+                    console.warn("Aviso al cerrar sesión:", e);
                 }
+
+                Object.keys(localStorage).forEach((key) => {
+                    if (key.startsWith('sb-')) localStorage.removeItem(key);
+                });
+                Object.keys(sessionStorage).forEach((key) => {
+                    if (key.startsWith('sb-')) sessionStorage.removeItem(key);
+                });
+
+                currentUser = null;
+                isAdmin = false;
+                await checkAdminStatus();
+                updateAuthHeaderButton();
+                closeAdminModal();
+                showToast("Sesión cerrada (Modo solo lectura).");
+                await reloadData();
             } else {
                 document.getElementById("loginModal").classList.remove("hidden");
             }
@@ -992,7 +1005,7 @@
                 return;
             }
 
-            showToast("Verificando soporte para Passkeys...");
+            showToast("Abriendo gestor de llaves de paso...");
 
             try {
                 const challenge = new Uint8Array(32);
@@ -1002,7 +1015,7 @@
                 const publicKeyCredentialCreationOptions = {
                     challenge: challenge,
                     rp: {
-                        name: "Canana Automotive BD",
+                        name: "Canana Automotive",
                         id: window.location.hostname
                     },
                     user: {
@@ -1010,11 +1023,16 @@
                         name: currentUser.email,
                         displayName: currentUser.email
                     },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    pubKeyCredParams: [
+                        { alg: -7, type: "public-key" },
+                        { alg: -257, type: "public-key" }
+                    ],
                     authenticatorSelection: {
-                        authenticatorAttachment: "platform",
-                        userVerification: "required"
+                        residentKey: "required",
+                        requireResidentKey: true,
+                        userVerification: "preferred"
                     },
+                    attestation: "none",
                     timeout: 60000
                 };
 
@@ -1022,39 +1040,40 @@
                     publicKey: publicKeyCredentialCreationOptions
                 });
 
-                if (credential) {
-                    const passkeyId = credential.id;
+                if (!credential) {
+                    alert("No se recibió ninguna credencial del dispositivo.");
+                    return;
+                }
 
-                    const { data: updatedRows, error: dbErr } = await supabaseClient
+                const passkeyId = credential.id;
+
+                const { data: updatedRows, error: dbErr } = await supabaseClient
+                    .from('profiles')
+                    .update({ passkey_id: passkeyId, email: currentUser.email })
+                    .eq('id', currentUser.id)
+                    .select();
+
+                if (dbErr) {
+                    alert("Error al guardar Passkey en el servidor: " + dbErr.message);
+                    return;
+                }
+
+                if (!updatedRows || updatedRows.length === 0) {
+                    const { error: insertErr } = await supabaseClient
                         .from('profiles')
-                        .update({ passkey_id: passkeyId, email: currentUser.email })
-                        .eq('id', currentUser.id)
-                        .select();
-
-                    if (dbErr) {
-                        alert("Error al guardar Passkey en el servidor: " + dbErr.message);
+                        .insert([{ id: currentUser.id, email: currentUser.email, passkey_id: passkeyId }]);
+                    if (insertErr) {
+                        alert("Error al crear perfil para Passkey: " + insertErr.message);
                         return;
                     }
-
-                    if (!updatedRows || updatedRows.length === 0) {
-                        const { error: insertErr } = await supabaseClient
-                            .from('profiles')
-                            .insert([{ id: currentUser.id, email: currentUser.email, passkey_id: passkeyId }]);
-                        if (insertErr) {
-                            alert("Error al crear perfil para Passkey: " + insertErr.message);
-                            return;
-                        }
-                    }
-
-                    alert("¡Passkey registrada y vinculada a tu cuenta!\nAhora puedes usar huella / Face ID para acceder directamente.");
-                    showToast("¡Passkey vinculada con éxito!");
-                    closeAdminModal();
                 }
+
+                alert("¡Passkey guardada en el dispositivo!\nYa puedes cerrar sesión y entrar con tu huella.");
+                showToast("¡Passkey vinculada con éxito!");
+                closeAdminModal();
             } catch (err) {
                 console.error("Error al registrar Passkey:", err);
-                if (err.name !== 'NotAllowedError') {
-                    alert("Error en la creación de Passkey: " + (err.message || err.name));
-                }
+                alert(`Error al registrar Passkey (${err.name}): ${err.message}`);
             }
         }
 
@@ -1073,7 +1092,7 @@
                 const publicKeyCredentialRequestOptions = {
                     challenge: challenge,
                     rpId: window.location.hostname,
-                    userVerification: "required",
+                    userVerification: "preferred",
                     timeout: 60000
                 };
 
@@ -1114,9 +1133,7 @@
 
             } catch (err) {
                 console.error("Error en login con Passkey:", err);
-                if (err.name !== 'NotAllowedError') {
-                    alert("Operación cancelada o error biométrico.");
-                }
+                alert(`Error con Passkey (${err.name}): ${err.message}`);
             }
         }
 
