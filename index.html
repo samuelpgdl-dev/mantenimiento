@@ -47,6 +47,29 @@
         .fab-bottom-safe {
             bottom: calc(1.25rem + env(safe-area-inset-bottom));
         }
+
+        /* Normalización de inputs en iOS Safari (evita descuadre entre date, number y select) */
+        #recordModal input:not([type="checkbox"]):not([type="hidden"]),
+        #recordModal select,
+        #fuelModal input:not([type="checkbox"]):not([type="hidden"]),
+        #fuelModal select,
+        #partModal input:not([type="checkbox"]):not([type="hidden"]),
+        #alertModal input:not([type="checkbox"]):not([type="hidden"]),
+        #alertModal select,
+        #vehicleModal input:not([type="checkbox"]):not([type="hidden"]),
+        #vehicleModal select {
+            height: 40px;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="date"] {
+            -webkit-appearance: none;
+            appearance: none;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors pb-28 sm:pb-10 selection:bg-emerald-500 selection:text-white">
@@ -492,7 +515,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none h-[38px]">
+                        <input type="date" id="formFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
@@ -517,9 +540,9 @@
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Trabajo realizado *</label>
                     <textarea id="formDetalle" rows="2" required placeholder="Cambio aceite 5W30 + filtros..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
-                <div class="flex justify-end space-x-2.5 pt-2">
-                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Registro</button>
+                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
+                    <button type="button" onclick="closeRecordModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Registro</button>
                 </div>
             </form>
         </div>
@@ -529,9 +552,9 @@
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="flex items-center justify-between pr-8 mb-3">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i>Registrar Repostaje</h3>
-                <label class="cursor-pointer bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center space-x-1">
+            <div class="flex items-center justify-between gap-2 pr-8 mb-3">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i>Registrar Repostaje</h3>
+                <label class="cursor-pointer shrink-0 bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 active:scale-95">
                     <i class="fa-solid fa-camera"></i>
                     <span>Escanear Ticket</span>
                     <input type="file" accept="image/*" capture="environment" onchange="processTicketOCR(event)" class="hidden">
@@ -552,7 +575,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none h-[38px]">
+                        <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros</label>
@@ -589,9 +612,9 @@
                     <input type="text" id="fuelFormNotas" placeholder="Repsol Arganda, Plenoil..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
 
-                <div class="flex justify-end space-x-2.5 pt-2">
-                    <button type="button" onclick="closeFuelModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold">Guardar Repostaje</button>
+                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
+                    <button type="button" onclick="closeFuelModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Repostaje</button>
                 </div>
             </form>
         </div>
@@ -620,9 +643,9 @@
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace de Compra</label>
                     <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
-                <div class="flex justify-end space-x-2.5 pt-2">
-                    <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar Referencia</button>
+                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
+                    <button type="button" onclick="closePartModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Referencia</button>
                 </div>
             </form>
         </div>
@@ -650,16 +673,16 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Día Exacto / Vencimiento</label>
-                        <input type="date" id="alertFecha" class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none h-[38px]">
+                        <input type="date" id="alertFecha" class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Detalles *</label>
                     <textarea id="alertDescripcion" rows="2" required placeholder="Detalles o notas sobre la alerta..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
                 </div>
-                <div class="flex justify-end space-x-2.5 pt-2">
-                    <button type="button" onclick="closeAlertModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold">Guardar Alerta</button>
+                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
+                    <button type="button" onclick="closeAlertModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
+                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Alerta</button>
                 </div>
             </form>
         </div>
@@ -716,13 +739,13 @@
                         <input type="number" id="vehIntervalMonths" inputmode="numeric" pattern="[0-9]*" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
-                <div class="flex items-center justify-between pt-2">
-                    <button type="button" id="btnDeleteVehicle" onclick="deleteActiveVehicle()" class="hidden px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-semibold transition">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Eliminar
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-3">
+                    <button type="button" id="btnDeleteVehicle" onclick="deleteActiveVehicle()" class="hidden w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Eliminar Vehículo
                     </button>
-                    <div class="flex justify-end space-x-2.5 ml-auto">
-                        <button type="button" onclick="closeVehicleModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                        <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Vehículo</button>
+                    <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 w-full sm:w-auto sm:ml-auto">
+                        <button type="button" onclick="closeVehicleModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
+                        <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Vehículo</button>
                     </div>
                 </div>
             </form>
