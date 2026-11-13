@@ -47,29 +47,15 @@
         .fab-bottom-safe {
             bottom: calc(1.25rem + env(safe-area-inset-bottom));
         }
-
-        /* Normalización de inputs en iOS Safari (evita descuadre entre date, number y select) */
-        #recordModal input:not([type="checkbox"]):not([type="hidden"]),
-        #recordModal select,
-        #fuelModal input:not([type="checkbox"]):not([type="hidden"]),
-        #fuelModal select,
-        #partModal input:not([type="checkbox"]):not([type="hidden"]),
-        #alertModal input:not([type="checkbox"]):not([type="hidden"]),
-        #alertModal select,
-        #vehicleModal input:not([type="checkbox"]):not([type="hidden"]),
-        #vehicleModal select {
-            height: 40px;
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
+    
+        @keyframes pulseItvExpired {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.65); }
+            50% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); }
+        }
+        .itv-expired-pulse {
+            animation: pulseItvExpired 2s infinite;
         }
 
-        input[type="date"] {
-            -webkit-appearance: none;
-            appearance: none;
-            display: flex;
-            align-items: center;
-        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors pb-28 sm:pb-10 selection:bg-emerald-500 selection:text-white">
@@ -135,38 +121,48 @@
     <!-- Contenido Principal -->
     <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
 
-        <!-- Tarjeta Identificativa del Vehículo -->
-        <section class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-start sm:items-center space-x-3.5 sm:space-x-4 min-w-0">
-                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/70 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0 p-2.5">
-                    <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
-                    <i id="brandLogoFallback" class="fa-solid fa-car text-xl sm:text-2xl text-emerald-500"></i>
-                </div>
-                <div class="min-w-0 space-y-1.5">
-                    <div class="flex items-center space-x-2">
-                        <h2 id="carTitle" class="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">Cargando vehículo...</h2>
-                        <button id="btnEditVehicle" onclick="openEditVehicleModal()" class="text-slate-400 hover:text-blue-500 p-1 rounded-lg transition" title="Editar ficha del vehículo">
-                            <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <button onclick="copyVehicleField('plate')" class="inline-flex items-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-md overflow-hidden shadow-xs hover:border-blue-500 transition active:scale-95" title="Pulsa para copiar matrícula">
-                            <span class="bg-blue-700 text-white text-[9px] font-black px-1.5 py-1">E</span>
-                            <span id="carPlateText" class="px-2 py-0.5 font-mono font-extrabold text-slate-900 dark:text-white tracking-wider">--</span>
-                        </button>
-
-                        <button id="carVin" onclick="copyVehicleField('vin')" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition active:scale-95 max-w-full" title="Pulsa para copiar bastidor">
-                        </button>
-
-                        <div id="carSub" class="flex flex-wrap items-center gap-1.5"></div>
-                    </div>
-                </div>
+        <!-- SECCIÓN 1: DATOS DEL VEHÍCULO + PEGATINA ITV V-19 -->
+        <section class="space-y-2">
+            <div class="flex items-center justify-between px-0.5">
+                <h3 class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Datos del Vehículo</h3>
             </div>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-4 sm:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start sm:items-center space-x-3.5 sm:space-x-4 min-w-0">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/70 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0 p-2.5">
+                        <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
+                        <i id="brandLogoFallback" class="fa-solid fa-car text-xl sm:text-2xl text-emerald-500"></i>
+                    </div>
+                    <div class="min-w-0 space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <h2 id="carTitle" class="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">Cargando vehículo...</h2>
+                            <button id="btnEditVehicle" onclick="openEditVehicleModal()" class="text-slate-400 hover:text-blue-500 p-1 rounded-lg transition" title="Editar ficha del vehículo">
+                                <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                            <button onclick="copyVehicleField('plate')" class="inline-flex items-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-md overflow-hidden shadow-xs hover:border-blue-500 transition active:scale-95" title="Pulsa para copiar matrícula">
+                                <span class="bg-blue-700 text-white text-[9px] font-black px-1.5 py-1">E</span>
+                                <span id="carPlateText" class="px-2 py-0.5 font-mono font-extrabold text-slate-900 dark:text-white tracking-wider">--</span>
+                            </button>
 
-            <div class="flex items-center justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 dark:border-slate-700/60 shrink-0">
-                <div class="md:text-right">
-                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Odómetro Actual</span>
-                    <span id="carKm" class="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">0 km</span>
+                            <button id="carVin" onclick="copyVehicleField('vin')" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition active:scale-95 max-w-full" title="Pulsa para copiar bastidor">
+                            </button>
+
+                            <div id="carSub" class="flex flex-wrap items-center gap-1.5"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloque Derecho: Pegatina ITV V-19 + Separador + Odómetro -->
+                <div class="flex items-center justify-between lg:justify-end gap-4 sm:gap-6 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100 dark:border-slate-700/60 shrink-0">
+                    <div id="vehicleItvStickerSlot" class="flex items-center"></div>
+
+                    <div id="vehicleItvDivider" class="hidden sm:block h-11 w-px bg-slate-200 dark:bg-slate-700/80"></div>
+
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Odómetro Actual</span>
+                        <span id="carKm" class="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">0 km</span>
+                    </div>
                 </div>
             </div>
         </section>
@@ -185,69 +181,80 @@
         </nav>
 
         <!-- VISTA 1: MANTENIMIENTO -->
-        <div id="viewMaintenance" class="space-y-4 sm:space-y-6">
-            <!-- KPIs -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gasto Acumulado</span>
-                    <div id="kpiTotalCost" class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-1">0,00 €</div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Intervenciones</span>
-                    <div id="kpiTotalCount" class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Motorización</span>
-                    <div id="kpiFuel" class="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">--</div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Alertas Activas</span>
-                    <div id="kpiAlertCount" class="text-lg sm:text-2xl font-black text-amber-500 mt-1">0</div>
-                </div>
-            </div>
-
-            <!-- Estimación Próxima Revisión -->
-            <div id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
-                <div>
-                    <span class="text-[10px] uppercase font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400">Estimación Próxima Revisión</span>
-                    <h3 id="nextServiceMonth" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">Calculando...</h3>
-                    <p id="nextServiceDetail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
-                </div>
-                <div class="sm:text-right shrink-0">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Margen Restante</span>
-                    <span id="nextServiceKm" class="text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</span>
-                </div>
-            </div>
-
-            <!-- Alertas e ITV -->
-            <div class="space-y-2.5">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Alertas y Vencimientos</h3>
+        <div id="viewMaintenance" class="space-y-6 sm:space-y-7">
+            <!-- SECCIÓN 2: ESTADO Y PRÓXIMOS VENCIMIENTOS -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-0.5">
+                    <h3 class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Estado y Próximos Vencimientos</h3>
                     <button onclick="openAlertModal()" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center space-x-1">
                         <i class="fa-solid fa-plus"></i><span>Nueva Alerta</span>
                     </button>
                 </div>
-                <div id="alertsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-            </div>
 
-            <!-- Gráficos de Mantenimiento -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Distribución del Gasto por Tipo</h3>
-                    <div class="h-56 sm:h-64 relative">
-                        <canvas id="categoryChart"></canvas>
+                <!-- KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gasto Acumulado</span>
+                        <div id="kpiTotalCost" class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-1">0,00 €</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Intervenciones</span>
+                        <div id="kpiTotalCount" class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Coste Medio Anual</span>
+                        <div id="kpiFuel" class="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">0,00 €</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Alertas Activas</span>
+                        <div id="kpiAlertCount" class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</div>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Evolución Anual de Gastos (€)</h3>
-                    <div class="h-56 sm:h-64 relative">
-                        <canvas id="timeChart"></canvas>
+
+                <!-- Estimación Próxima Revisión -->
+                <div id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
+                    <div>
+                        <span class="text-[10px] uppercase font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400">Estimación Próxima Revisión</span>
+                        <h3 id="nextServiceMonth" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">Calculando...</h3>
+                        <p id="nextServiceDetail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+                    </div>
+                    <div class="sm:text-right shrink-0">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Margen Restante</span>
+                        <span id="nextServiceKm" class="text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Filtros y Tabla de Mantenimiento -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
+                <!-- Alertas Activas (Solo se despliega si ITV <= 30 días, caducada o existen alertas manuales) -->
+                <div id="alertsContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </section>
+
+            <!-- SECCIÓN 3: ANÁLISIS DE GASTOS -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-0.5">
+                    <h3 class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Análisis de Gastos</h3>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Distribución del Gasto por Tipo</h3>
+                        <div class="h-56 sm:h-64 relative">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Evolución Anual de Gastos (€)</h3>
+                        <div class="h-56 sm:h-64 relative">
+                            <canvas id="timeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: HISTORIAL DE INTERVENCIONES -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-0.5">
+                    <h3 class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Historial de Intervenciones</h3>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
                 <div class="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/60 space-y-2.5">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <div class="relative">
@@ -292,6 +299,7 @@
                     </table>
                 </div>
             </div>
+            </section>
         </div>
 
         <!-- VISTA 2: REPOSTAJES -->
@@ -515,7 +523,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="formFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="date" id="formFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none h-[38px]">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
@@ -540,9 +548,9 @@
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Trabajo realizado *</label>
                     <textarea id="formDetalle" rows="2" required placeholder="Cambio aceite 5W30 + filtros..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
-                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
-                    <button type="button" onclick="closeRecordModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
-                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Registro</button>
+                <div class="flex justify-end space-x-2.5 pt-2">
+                    <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Registro</button>
                 </div>
             </form>
         </div>
@@ -552,9 +560,9 @@
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="flex items-center justify-between gap-2 pr-8 mb-3">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i>Registrar Repostaje</h3>
-                <label class="cursor-pointer shrink-0 bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 active:scale-95">
+            <div class="flex items-center justify-between pr-8 mb-3">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i>Registrar Repostaje</h3>
+                <label class="cursor-pointer bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center space-x-1">
                     <i class="fa-solid fa-camera"></i>
                     <span>Escanear Ticket</span>
                     <input type="file" accept="image/*" capture="environment" onchange="processTicketOCR(event)" class="hidden">
@@ -575,7 +583,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
-                        <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none h-[38px]">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros</label>
@@ -612,9 +620,9 @@
                     <input type="text" id="fuelFormNotas" placeholder="Repsol Arganda, Plenoil..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
 
-                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
-                    <button type="button" onclick="closeFuelModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
-                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Repostaje</button>
+                <div class="flex justify-end space-x-2.5 pt-2">
+                    <button type="button" onclick="closeFuelModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold">Guardar Repostaje</button>
                 </div>
             </form>
         </div>
@@ -643,9 +651,9 @@
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace de Compra</label>
                     <input type="url" id="partLink" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
-                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
-                    <button type="button" onclick="closePartModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
-                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Referencia</button>
+                <div class="flex justify-end space-x-2.5 pt-2">
+                    <button type="button" onclick="closePartModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar Referencia</button>
                 </div>
             </form>
         </div>
@@ -673,16 +681,16 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Día Exacto / Vencimiento</label>
-                        <input type="date" id="alertFecha" class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <input type="date" id="alertFecha" class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none h-[38px]">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Detalles *</label>
                     <textarea id="alertDescripcion" rows="2" required placeholder="Detalles o notas sobre la alerta..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
                 </div>
-                <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 pt-3">
-                    <button type="button" onclick="closeAlertModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
-                    <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Alerta</button>
+                <div class="flex justify-end space-x-2.5 pt-2">
+                    <button type="button" onclick="closeAlertModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold">Guardar Alerta</button>
                 </div>
             </form>
         </div>
@@ -739,13 +747,13 @@
                         <input type="number" id="vehIntervalMonths" inputmode="numeric" pattern="[0-9]*" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
-                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-3">
-                    <button type="button" id="btnDeleteVehicle" onclick="deleteActiveVehicle()" class="hidden w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">
-                        <i class="fa-solid fa-trash-can mr-1"></i> Eliminar Vehículo
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" id="btnDeleteVehicle" onclick="deleteActiveVehicle()" class="hidden px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-semibold transition">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Eliminar
                     </button>
-                    <div class="grid grid-cols-2 sm:flex sm:justify-end gap-2.5 w-full sm:w-auto sm:ml-auto">
-                        <button type="button" onclick="closeVehicleModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl sm:rounded-lg text-sm sm:text-xs font-semibold transition active:scale-95">Cancelar</button>
-                        <button type="submit" class="w-full sm:w-auto px-5 py-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm transition active:scale-95">Guardar Vehículo</button>
+                    <div class="flex justify-end space-x-2.5 ml-auto">
+                        <button type="button" onclick="closeVehicleModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                        <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Vehículo</button>
                     </div>
                 </div>
             </form>
@@ -1093,7 +1101,8 @@
                     }
                 }
 
-                alert("¡Passkey guardada en el dispositivo!\nYa puedes cerrar sesión y entrar con tu huella.");
+                alert("¡Passkey guardada en el dispositivo!
+Ya puedes cerrar sesión y entrar con tu huella.");
                 showToast("¡Passkey vinculada con éxito!");
                 closeAdminModal();
             } catch (err) {
@@ -1743,11 +1752,21 @@
             `;
 
             document.getElementById("carKm").innerText = `${Number(car.kms || 0).toLocaleString('es-ES')} km`;
-            document.getElementById("kpiFuel").innerText = car.fuel;
 
             const totalCost = car.records.reduce((sum, r) => sum + Number(r.coste || 0), 0);
             document.getElementById("kpiTotalCost").innerText = `${totalCost.toLocaleString('es-ES', {minimumFractionDigits:2})} €`;
             document.getElementById("kpiTotalCount").innerText = car.records.length;
+
+            // Calcular Coste Medio Anual (sustituye el dato redundante de motorización que ya está arriba)
+            const recordYears = new Set(
+                (car.records || []).map(r => {
+                    const d = parseDate(r.fecha);
+                    return d ? d.getFullYear() : null;
+                }).filter(Boolean)
+            );
+            const numYears = Math.max(1, recordYears.size);
+            const annualAvg = totalCost / numYears;
+            document.getElementById("kpiFuel").innerText = `${annualAvg.toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2})} €`;
 
             renderAlerts(car);
             renderCharts(car);
@@ -1849,82 +1868,224 @@
             }
         }
 
-        function createITVStickerHTML(title, desc, id = null, isManual = false, rawFecha = null) {
+        function getItvEvaluation(rawFecha) {
             let targetDate = parseDate(rawFecha);
-            let yearVal = targetDate ? String(targetDate.getFullYear()) : "2027";
-            let shortYear = yearVal.slice(-2);
-            let yearNum = parseInt(yearVal);
-            let monthNum = targetDate ? (targetDate.getMonth() + 1) : 10;
+            if (!targetDate) return null;
 
-            let colorBg = "bg-amber-400 text-slate-950 border-amber-500/50";
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiryEnd = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+            const diffDays = Math.ceil((expiryEnd - today) / (1000 * 60 * 60 * 24));
+
+            // Límite de 1 mes natural (o 30 días)
+            const oneMonthAhead = new Date(today);
+            oneMonthAhead.setMonth(oneMonthAhead.getMonth() + 1);
+
+            const isExpired = diffDays < 0;
+            const isDueSoon = !isExpired && (expiryEnd <= oneMonthAhead || diffDays <= 31);
+
+            return {
+                targetDate,
+                diffDays,
+                isExpired,
+                isDueSoon,
+                isValid: !isExpired && !isDueSoon
+            };
+        }
+
+        function renderHeaderITVSticker(itvAlert) {
+            const slot = document.getElementById("vehicleItvStickerSlot");
+            const divider = document.getElementById("vehicleItvDivider");
+            if (!slot) return;
+
+            if (!itvAlert || !itvAlert.fecha) {
+                slot.innerHTML = "";
+                if (divider) divider.classList.add("hidden");
+                return;
+            }
+
+            const evalItv = getItvEvaluation(itvAlert.fecha);
+            if (!evalItv) {
+                slot.innerHTML = "";
+                if (divider) divider.classList.add("hidden");
+                return;
+            }
+
+            if (divider) {
+                divider.classList.remove("hidden");
+                divider.classList.add("hidden", "sm:block");
+            }
+
+            const targetDate = evalItv.targetDate;
+            const yearVal = String(targetDate.getFullYear());
+            const shortYear = yearVal.slice(-2);
+            const yearNum = parseInt(yearVal, 10);
+            const monthNum = targetDate.getMonth() + 1;
+
+            let colorBg = "bg-amber-400 text-slate-950 border-amber-500/60";
             let holeBg = "bg-slate-900 text-amber-400";
             if (yearNum % 3 === 0) {
-                colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/50";
+                colorBg = "bg-emerald-500 text-slate-950 border-emerald-600/60";
                 holeBg = "bg-slate-900 text-emerald-400";
             } else if (yearNum % 3 === 2) {
-                colorBg = "bg-rose-500 text-white border-rose-600/50";
+                colorBg = "bg-rose-500 text-white border-rose-600/60";
                 holeBg = "bg-slate-900 text-rose-400";
             }
 
             const romanMonths = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-            let monthBarHTML = romanMonths.map((m, idx) => {
+            const monthBarHTML = romanMonths.map((m, idx) => {
                 if ((idx + 1) === monthNum) {
-                    return `<span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full ${holeBg} font-black text-[8px] sm:text-[10px] flex items-center justify-center shadow-inner border border-black/30 shrink-0">${m}</span>`;
+                    return `<span class="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full ${holeBg} font-black text-[7px] sm:text-[8px] flex items-center justify-center shadow-inner border border-black/30 shrink-0">${m}</span>`;
                 }
-                return `<span class="opacity-75 text-[6.5px] sm:text-[8.5px] font-extrabold leading-none text-center">${m}</span>`;
+                return `<span class="opacity-75 text-[5.5px] sm:text-[6.5px] font-extrabold leading-none text-center">${m}</span>`;
             }).join('');
 
-            const actionBtnsHTML = (isManual && id) ? `
-                <div class="flex items-center space-x-1 shrink-0">
-                    <button onclick="openAlertModal('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg" title="Editar"><i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i></button>
-                    <button onclick="deleteAlert('${id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg" title="Eliminar"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
-                </div>
-            ` : '';
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const formattedMonthYear = `${monthNames[targetDate.getMonth()]} ${yearVal}`;
 
-            return `
-                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between gap-3">
-                    <div class="flex items-center space-x-3 sm:space-x-4 min-w-0">
-                        <div class="w-32 sm:w-36 h-20 sm:h-24 ${colorBg} rounded-xl border-2 shadow-md flex flex-col justify-between p-1.5 sm:p-2 relative shrink-0 select-none font-sans">
-                            <div class="flex items-center justify-between border-b border-black/20 pb-1 px-0.5 text-[8px] sm:text-[10px] font-black tracking-tight">
-                                <span class="flex items-center space-x-1">
-                                    <i class="fa-solid fa-shield-halved text-[9px] sm:text-[11px] opacity-90"></i>
-                                    <span class="opacity-80">V-19</span>
-                                </span>
-                                <span class="font-extrabold opacity-90">DGT</span>
-                            </div>
+            let statusBadgeHTML = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mt-0.5">En vigor</span>`;
+            let expiredPulse = "";
 
-                            <div class="flex items-center justify-between px-0.5 my-1">
-                                ${monthBarHTML}
-                            </div>
+            if (evalItv.isExpired) {
+                const daysAgo = Math.abs(evalItv.diffDays);
+                statusBadgeHTML = `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-600 text-white mt-0.5">Caducada (${daysAgo}d)</span>`;
+                expiredPulse = "itv-expired-pulse ring-2 ring-rose-600";
+            } else if (evalItv.isDueSoon) {
+                statusBadgeHTML = `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">Quedan ${evalItv.diffDays}d</span>`;
+            }
 
-                            <div class="flex items-end justify-between px-1 pt-0.5 border-t border-black/15">
-                                <span class="text-[9px] sm:text-[11px] font-black tracking-wider opacity-85 leading-none mb-1">ITV</span>
-                                <span class="text-2xl sm:text-3xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
-                            </div>
+            const clickAction = (itvAlert.isManual && itvAlert.id)
+                ? `openAlertModal('${itvAlert.id}')`
+                : `openAlertModal()`;
+
+            slot.innerHTML = `
+                <button type="button" onclick="${clickAction}" class="group flex items-center gap-2.5 sm:gap-3 text-left rounded-xl p-1 -m-1 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition" title="Vencimiento ITV: ${formatDateDisplay(targetDate)} (Pulsa para configurar)">
+                    <div class="w-24 sm:w-28 h-14 sm:h-16 ${colorBg} ${expiredPulse} rounded-lg border-2 shadow-sm flex flex-col justify-between p-1 sm:p-1.5 relative shrink-0 select-none font-sans group-hover:scale-[1.03] transition-transform">
+                        <div class="flex items-center justify-between border-b border-black/20 pb-0.5 px-0.5 text-[7px] sm:text-[8px] font-black tracking-tight">
+                            <span class="flex items-center space-x-0.5">
+                                <i class="fa-solid fa-shield-halved text-[7px] sm:text-[8px] opacity-90"></i>
+                                <span class="opacity-85">V-19</span>
+                            </span>
+                            <span class="font-extrabold opacity-90">DGT</span>
                         </div>
-
-                        <div class="min-w-0">
-                            <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] uppercase font-bold px-2 py-0.5 rounded">Inspección Técnica</span>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5 truncate">${escapeHTML(title)}</h4>
-                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${escapeHTML(desc)}</p>
+                        <div class="flex items-center justify-between px-0.5 my-0.5">
+                            ${monthBarHTML}
+                        </div>
+                        <div class="flex items-end justify-between px-0.5 pt-0.5 border-t border-black/15">
+                            <span class="text-[7.5px] sm:text-[9px] font-black tracking-wider opacity-85 leading-none mb-0.5">ITV</span>
+                            <span class="text-base sm:text-xl font-black font-mono leading-none tracking-tighter">${shortYear}</span>
                         </div>
                     </div>
-                    ${actionBtnsHTML}
-                </div>
+                    <div class="min-w-0">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Validez ITV</span>
+                        <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 block leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">${formattedMonthYear}</span>
+                        ${statusBadgeHTML}
+                    </div>
+                </button>
             `;
+        }
+
+        function openQuickItvRecordModal() {
+            openRecordModal();
+            const tipoEl = document.getElementById("formTipo");
+            const detalleEl = document.getElementById("formDetalle");
+            if (tipoEl) {
+                const itvOpt = Array.from(tipoEl.options).find(o => o.value.toLowerCase().includes("itv"));
+                if (itvOpt) tipoEl.value = itvOpt.value;
+            }
+            if (detalleEl && !detalleEl.value) {
+                detalleEl.value = "Inspección Técnica Periódica (ITV) favorable";
+            }
         }
 
         function renderAlerts(car) {
             const container = document.getElementById("alertsContainer");
             container.innerHTML = "";
-            const alerts = car.alerts || [];
+            const allAlerts = car.alerts || [];
 
-            document.getElementById("kpiAlertCount").innerText = alerts.length;
-            alerts.forEach(a => {
+            // 1. Localizar alerta de ITV (manual o automática) y pintar la pegatina en Datos del Vehículo
+            const itvAlert = allAlerts.find(a => {
+                const t = String(a.title || '').toLowerCase();
+                const tp = String(a.type || '').toLowerCase();
+                return t.includes("itv") || tp.includes("itv");
+            });
+            renderHeaderITVSticker(itvAlert);
+
+            // 2. Filtrar alertas que realmente deben mostrarse en "Estado y Próximos Vencimientos"
+            let visibleAlertsCount = 0;
+
+            allAlerts.forEach(a => {
                 const titleLower = String(a.title || '').toLowerCase();
-                if (titleLower.includes("itv") || String(a.type || '').toLowerCase().includes("itv")) {
-                    container.innerHTML += createITVStickerHTML(a.title, a.desc, a.id, a.isManual, a.fecha);
+                const typeLower = String(a.type || '').toLowerCase();
+                const isItv = titleLower.includes("itv") || typeLower.includes("itv");
+
+                if (isItv) {
+                    const evalItv = getItvEvaluation(a.fecha);
+                    // Si falta más de 1 mes (isValid), NO se genera tarjeta de alerta (cero ruido)
+                    if (!evalItv || evalItv.isValid) return;
+
+                    visibleAlertsCount++;
+
+                    const actionBtnsHTML = (a.isManual && a.id) ? `
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button onclick="openAlertModal('${a.id}')" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-blue-600 bg-white/70 dark:bg-slate-800/70 rounded-lg" title="Editar"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteAlert('${a.id}')" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-rose-600 bg-white/70 dark:bg-slate-800/70 rounded-lg" title="Eliminar"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </div>
+                    ` : '';
+
+                    if (evalItv.isExpired) {
+                        // ESTADO CADUCADO: Alerta agresiva roja
+                        const daysAgo = Math.abs(evalItv.diffDays);
+                        container.innerHTML += `
+                            <div class="col-span-1 md:col-span-2 bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-500 p-4 rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-start sm:items-center space-x-3.5 min-w-0">
+                                    <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                        <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="bg-rose-600 text-white text-[10px] uppercase font-black px-2 py-0.5 rounded tracking-wider">¡ITV CADUCADA!</span>
+                                            <span class="text-xs font-extrabold text-rose-700 dark:text-rose-300">Caducó hace ${daysAgo} ${daysAgo === 1 ? 'día' : 'días'} (${formatDateDisplay(evalItv.targetDate)})</span>
+                                        </div>
+                                        <p class="text-rose-950 dark:text-rose-100 text-xs sm:text-sm font-bold mt-1">
+                                            Circular con la ITV vencida implica sanción de 200 € y riesgo de falta de cobertura.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                    <button onclick="openQuickItvRecordModal()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-sm transition active:scale-95">
+                                        Registrar ITV pasada
+                                    </button>
+                                    ${actionBtnsHTML}
+                                </div>
+                            </div>`;
+                    } else if (evalItv.isDueSoon) {
+                        // ESTADO <= 1 MES: Aviso ámbar preventivo
+                        container.innerHTML += `
+                            <div class="bg-amber-500/10 dark:bg-amber-950/40 border-2 border-amber-500/50 p-3.5 sm:p-4 rounded-xl flex items-center justify-between gap-3">
+                                <div class="flex items-start space-x-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 font-black text-xs">
+                                        ITV
+                                    </div>
+                                    <div class="min-w-0">
+                                        <span class="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded">
+                                            Vence en ${evalItv.diffDays} ${evalItv.diffDays === 1 ? 'día' : 'días'}
+                                        </span>
+                                        <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-1 truncate">${escapeHTML(a.title || 'Próxima ITV')}</h4>
+                                        <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">Fecha límite: ${formatDateDisplay(evalItv.targetDate)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <button onclick="openQuickItvRecordModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                        Registrar
+                                    </button>
+                                    ${actionBtnsHTML}
+                                </div>
+                            </div>`;
+                    }
                 } else {
+                    // Resto de alertas personalizadas
+                    visibleAlertsCount++;
                     const actionBtnsHTML = (a.isManual && a.id) ? `
                         <div class="flex items-center space-x-1 shrink-0 ml-auto">
                             <button onclick="openAlertModal('${a.id}')" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
@@ -1941,6 +2102,22 @@
                         </div>`;
                 }
             });
+
+            const kpiAlertEl = document.getElementById("kpiAlertCount");
+            kpiAlertEl.innerText = visibleAlertsCount;
+            if (itvAlert && getItvEvaluation(itvAlert.fecha)?.isExpired) {
+                kpiAlertEl.className = "text-lg sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-1";
+            } else if (visibleAlertsCount > 0) {
+                kpiAlertEl.className = "text-lg sm:text-2xl font-black text-amber-500 mt-1";
+            } else {
+                kpiAlertEl.className = "text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1";
+            }
+
+            if (visibleAlertsCount === 0) {
+                container.classList.add("hidden");
+            } else {
+                container.classList.remove("hidden");
+            }
         }
 
         function renderCharts(car) {
@@ -2831,6 +3008,25 @@
                 alert("Error al guardar mantenimiento: " + error.message);
                 return;
             }
+
+            // Si se registra una ITV y existe alerta manual de ITV en Supabase, actualizar su fecha (+1 año)
+            const isItvSaved = String(recordData.detalle || '').toLowerCase().includes('itv') || String(recordData.tipo || '').toLowerCase().includes('itv');
+            if (isItvSaved && recordData.fecha) {
+                const manualItvAlert = (car.alerts || []).find(a => a.isManual && (String(a.type || '').toLowerCase() === 'itv' || String(a.title || '').toLowerCase().includes('itv')));
+                if (manualItvAlert && manualItvAlert.id) {
+                    const baseItv = parseDate(recordData.fecha);
+                    if (baseItv) {
+                        const nextItv = new Date(baseItv);
+                        nextItv.setFullYear(nextItv.getFullYear() + 1);
+                        const nextIso = formatDateISO(nextItv);
+                        await supabaseClient.from('alertas').update({
+                            fecha: nextIso,
+                            descripcion: `Inspección prevista para el ${formatDateDisplay(nextItv)}`
+                        }).eq('id', manualItvAlert.id);
+                    }
+                }
+            }
+
             closeRecordModal();
             await reloadData();
         }
