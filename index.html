@@ -2,547 +2,480 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canana Automotive - Control de Mantenimiento y Combustible</title>
-
-    <!-- PWA & Favicons -->
-    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Canauto" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Canana Automotive — Mantenimiento y Repostajes</title>
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="manifest" href="site.webmanifest" />
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 900: '#14532d' }
-                    }
-                }
-            }
+            darkMode: 'class'
         }
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase JS v2 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/@simplewebauthn/browser@9.0.1/dist/bundle/index.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Tesseract.js OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
-        input[type="date"] {
-            -webkit-appearance: none;
-            appearance: none;
-            min-height: 38px;
-        }
-        input[type="date"]::-webkit-date-and-time-value {
-            text-align: left;
-            min-height: 1.2em;
-        }
-        @media (max-width: 639px) {
-            input, select, textarea {
-                font-size: 16px !important;
-            }
-        }
         .modal-bottom-safe {
-            padding-bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+            padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+        }
+        .fab-bottom-safe {
+            bottom: calc(1.25rem + env(safe-area-inset-bottom));
         }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased relative transition-colors duration-200">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors pb-24 sm:pb-10 selection:bg-emerald-500 selection:text-white">
 
-    <!-- Toast Notification -->
-    <div id="toastNotification" class="fixed top-4 right-4 sm:top-20 sm:right-5 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-[-100px] opacity-0 pointer-events-none max-w-[90vw]">
-        <i class="fa-solid fa-circle-check text-xl shrink-0"></i>
-        <div class="min-w-0">
-            <h5 class="font-bold text-xs sm:text-sm">Estado</h5>
-            <p class="text-xs text-emerald-100 truncate" id="toastMsg">Sincronizando datos...</p>
-        </div>
+    <!-- Notificación Toast -->
+    <div id="toastNotification" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 dark:bg-slate-800 text-white border border-slate-700 px-4 py-2.5 rounded-full shadow-2xl flex items-center space-x-2 text-xs font-semibold transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">Sincronizado</span>
     </div>
 
-    <!-- MODAL INICIO DE SESIÓN / REGISTRO / PASSKEY -->
-    <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5 relative">
-            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center space-y-2">
-                <img src="apple-touch-icon.png" alt="Canana Logo" class="w-16 h-16 rounded-2xl mx-auto shadow-md border border-slate-200 dark:border-slate-700 object-cover">
-                <h2 class="text-xl font-black text-slate-900 dark:text-white">Canana Automotive</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Inicia sesión o usa biometría para gestionar tus vehículos</p>
-            </div>
-
-            <!-- Botón de Inicio con Passkey (Biometría) -->
-            <div id="passkeyLoginContainer" class="space-y-2 pb-2 border-b border-slate-100 dark:border-slate-700">
-                <button type="button" onclick="loginWithPasskey()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-fingerprint text-base"></i>
-                    <span>Iniciar Sesión con Huella / Face ID</span>
-                </button>
-                <div class="text-center text-[10px] text-slate-400 font-medium">O introduce tus credenciales:</div>
-            </div>
-
-            <form id="loginForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Correo electrónico</label>
-                    <input type="email" id="authEmail" required placeholder="tu@email.com" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+    <!-- Barra Superior -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/70">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+            <!-- Marca -->
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shrink-0">
+                    <i class="fa-solid fa-car-wrench text-base"></i>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <h1 class="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white leading-none">Canana Automotive</h1>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Gestión de Flota y Mantenimiento</p>
                 </div>
+            </div>
 
-                <div class="pt-2 space-y-2">
-                    <button type="submit" id="btnAuthSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-md">
-                        Iniciar Sesión
+            <!-- Selector de Vehículo y Acciones -->
+            <div class="flex items-center space-x-1.5 sm:space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="flex items-center space-x-1.5 flex-grow sm:flex-grow-0 min-w-0">
+                    <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-xs sm:text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none truncate max-w-[190px] sm:max-w-[240px]">
+                        <option value="">Cargando vehículos...</option>
+                    </select>
+                    <button onclick="openVehicleModal()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-bold transition shrink-0 active:scale-95" title="Registrar nuevo vehículo">
+                        <i class="fa-solid fa-plus sm:mr-1"></i><span class="hidden md:inline">Vehículo</span>
                     </button>
-                    <button type="button" onclick="toggleAuthMode()" id="btnToggleAuth" class="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:underline">
-                        ¿No tienes cuenta? Regístrate aquí
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL PANEL DE ADMINISTRACIÓN Y GESTIÓN DE PASSKEYS -->
-    <div id="adminModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto relative">
-            <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700 pb-3">
-                <div class="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl text-xl">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <div>
-                    <h2 class="text-lg font-black text-slate-900 dark:text-white">Panel de Control de Usuario</h2>
-                    <p id="adminUserEmail" class="text-xs text-slate-500 dark:text-slate-400">Administra tus accesos biométricos y permisos de vehículos</p>
-                </div>
-            </div>
-
-            <!-- Registro de Biometría Passkey -->
-            <div class="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-fingerprint text-purple-600 dark:text-purple-400 text-2xl"></i>
-                    <div>
-                        <h4 class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Acceso con Biometría (Passkey)</h4>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincular huella digital / Face ID / PIN en este dispositivo</p>
-                    </div>
-                </div>
-                <button onclick="registerNewPasskey()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs transition shrink-0 active:scale-95 flex items-center justify-center space-x-1.5">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Vincular este dispositivo</span>
-                </button>
-            </div>
-
-            <div id="adminVehiclesList" class="space-y-3 pt-2">
-                <p class="text-xs text-slate-400">Cargando lista de usuarios y vehículos...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header Principal -->
-    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm transition-colors duration-200">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 space-y-2">
-            
-            <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center space-x-2 shrink-0">
-                    <img src="apple-touch-icon.png" alt="Canana Logo" class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover shadow-sm shrink-0 border border-slate-200 dark:border-slate-700">
-                    <span class="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">Canana Automotive</span>
                 </div>
 
                 <div class="flex items-center space-x-1.5 shrink-0">
-                    <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-2 sm:p-2.5 rounded-lg border border-amber-500/20 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Panel de Usuario / Admin">
-                        <i class="fa-solid fa-shield-halved"></i>
+                    <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition active:scale-95" title="Sincronizar datos">
+                        <i class="fa-solid fa-rotate"></i>
                     </button>
 
-                    <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-600 text-xs font-semibold transition flex items-center active:scale-95" title="Añadir vehículo">
-                        <i class="fa-solid fa-car text-xs sm:mr-1.5"></i>
-                        <span class="hidden sm:inline">+ Vehículo</span>
-                    </button>
-
-                    <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Cambiar tema">
+                    <button onclick="toggleTheme()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition active:scale-95" title="Cambiar tema">
                         <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
                     </button>
 
-                    <button onclick="reloadData()" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Recargar">
-                        <i class="fa-solid fa-arrows-rotate"></i>
+                    <button id="btnAdminPanel" onclick="openAdminModal()" class="hidden bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-600 dark:text-indigo-400 p-2 sm:p-2.5 rounded-lg border border-indigo-500/30 text-xs sm:text-sm transition active:scale-95" title="Cuenta y Passkeys">
+                        <i class="fa-solid fa-fingerprint"></i>
                     </button>
 
                     <button id="btnAuthAction" onclick="handleAuthHeaderClick()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-500 dark:text-slate-400 p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs sm:text-sm transition flex items-center justify-center shrink-0 active:scale-95" title="Modo lectura (Pulsa para iniciar sesión)">
                         <i id="authHeaderIcon" class="fa-solid fa-lock"></i>
                     </button>
-                </div>
-            </div>
 
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
-                <div class="flex items-center space-x-2 w-full sm:w-72 shrink-0">
-                    <div id="brandLogoContainer" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center p-1.5 shrink-0 transition">
-                        <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
-                        <i id="brandLogoFallback" class="fa-solid fa-car text-slate-400 text-xs"></i>
-                    </div>
-                    <div class="relative w-full">
-                        <select id="vehicleSelector" onchange="changeActiveVehicle(this.value)" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 p-2 pr-8 appearance-none font-bold truncate cursor-pointer">
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-slate-100 dark:bg-slate-700/80 p-1 rounded-lg flex items-center space-x-1 border border-slate-200 dark:border-slate-600 w-full sm:w-auto justify-between">
-                    <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center">
-                        <i class="fa-solid fa-wrench mr-1"></i> <span>Mantenimiento</span>
-                    </button>
-                    <button id="btnTabFuel" onclick="switchMainTab('fuel')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
-                        <i class="fa-solid fa-gas-pump mr-1"></i> <span>Repostajes</span>
-                    </button>
-                    <button id="btnTabParts" onclick="switchMainTab('parts')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
-                        <i class="fa-solid fa-boxes-packing mr-1"></i> <span>Recambios</span>
+                    <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="hidden sm:flex bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-lg text-xs font-bold shadow-md transition items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-plus"></i>
+                        <span id="lblHeaderAdd">Añadir Mantenimiento</span>
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-36 space-y-4 sm:space-y-6">
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
 
-        <section id="vehicleCard" class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md relative overflow-hidden transition-colors duration-200">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div class="space-y-1">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h1 id="carTitle" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">--</h1>
-                        <button type="button" id="btnEditVehicle" onclick="openEditVehicleModal()" class="hidden text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/70 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition active:scale-95" title="Editar o eliminar vehículo">
-                            <i class="fa-solid fa-pen-to-square text-xs"></i>
-                        </button>
-                        <button type="button" id="carPlate" onclick="copyVehicleField('plate')" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0 transition active:scale-95" title="Pulsa para copiar matrícula">--</button>
-                        <button type="button" id="carVin" onclick="copyVehicleField('vin')" class="hidden bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0 transition active:scale-95 items-center gap-1.5" title="Pulsa para copiar bastidor (VIN)"></button>
-                    </div>
-                    <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs font-medium">--</p>
+        <!-- Tarjeta Identificativa del Vehículo -->
+        <section class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center space-x-3.5 sm:space-x-4 min-w-0">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/70 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0 p-2.5">
+                    <img id="brandLogoImg" src="" alt="Marca" class="w-full h-full object-contain dark:invert hidden">
+                    <i id="brandLogoFallback" class="fa-solid fa-car text-xl sm:text-2xl text-emerald-500"></i>
                 </div>
-
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-700/50">
-                    <div class="text-left md:text-right">
-                        <div class="text-slate-500 dark:text-slate-400 text-[11px] uppercase font-bold tracking-wider">Kilometraje Actual</div>
-                        <div id="carKm" class="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
+                <div class="min-w-0 space-y-1.5">
+                    <div class="flex items-center space-x-2">
+                        <h2 id="carTitle" class="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">Cargando vehículo...</h2>
+                        <button id="btnEditVehicle" onclick="openEditVehicleModal()" class="text-slate-400 hover:text-blue-500 p-1 rounded-lg transition" title="Editar ficha del vehículo">
+                            <i class="fa-solid fa-pen-to-square text-xs sm:text-sm"></i>
+                        </button>
                     </div>
-                    
-                    <div class="flex items-center space-x-2 w-full sm:w-auto">
-                        <button onclick="openAlertModal()" class="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition flex items-center justify-center space-x-1.5 active:scale-95" title="Añadir Alerta">
-                            <i class="fa-solid fa-bell"></i>
-                            <span>Alerta</span>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <button onclick="copyVehicleField('plate')" class="inline-flex items-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-md overflow-hidden shadow-xs hover:border-blue-500 transition active:scale-95" title="Pulsa para copiar matrícula">
+                            <span class="bg-blue-700 text-white text-[9px] font-black px-1.5 py-1">E</span>
+                            <span id="carPlateText" class="px-2 py-0.5 font-mono font-extrabold text-slate-900 dark:text-white tracking-wider">--</span>
                         </button>
-                        <button id="btnHeaderAdd" onclick="openModalForCurrentView()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5 active:scale-95">
-                            <i class="fa-solid fa-circle-plus"></i>
-                            <span id="lblHeaderAdd">Añadir Mantenimiento</span>
+
+                        <button id="carVin" onclick="copyVehicleField('vin')" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700/70 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition active:scale-95 max-w-full" title="Pulsa para copiar bastidor">
                         </button>
+
+                        <div id="carSub" class="flex flex-wrap items-center gap-1.5"></div>
                     </div>
                 </div>
             </div>
+
+            <div class="flex items-center justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100 dark:border-slate-700/60 shrink-0">
+                <div class="md:text-right">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Odómetro Actual</span>
+                    <span id="carKm" class="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">0 km</span>
+                </div>
+            </div>
         </section>
+
+        <!-- Pestañas Principales -->
+        <nav class="bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-1">
+            <button id="btnTabMaintenance" onclick="switchMainTab('maintenance')" class="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm">
+                <i class="fa-solid fa-screwdriver-wrench mr-1.5"></i>Mantenimiento
+            </button>
+            <button id="btnTabFuel" onclick="switchMainTab('fuel')" class="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
+                <i class="fa-solid fa-gas-pump mr-1.5"></i>Repostajes
+            </button>
+            <button id="btnTabParts" onclick="switchMainTab('parts')" class="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center">
+                <i class="fa-solid fa-gears mr-1.5"></i>Recambios
+            </button>
+        </nav>
 
         <!-- VISTA 1: MANTENIMIENTO -->
         <div id="viewMaintenance" class="space-y-4 sm:space-y-6">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
-                    <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-euro-sign"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Gasto Acumulado</div><div id="kpiTotalCost" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gasto Acumulado</span>
+                    <div id="kpiTotalCost" class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-1">0,00 €</div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
-                    <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-wrench"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Revisiones</div><div id="kpiTotalCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Intervenciones</span>
+                    <div id="kpiTotalCount" class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
-                    <div class="p-2 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Alertas</div><div id="kpiAlertCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Motorización</span>
+                    <div id="kpiFuel" class="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">--</div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-2.5 sm:space-x-4 min-w-0">
-                    <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-base sm:text-xl shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Combustible</div><div id="kpiFuel" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">--</div></div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Alertas Activas</span>
+                    <div id="kpiAlertCount" class="text-lg sm:text-2xl font-black text-amber-500 mt-1">0</div>
                 </div>
-            </section>
+            </div>
 
-            <section id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
-                <div class="flex items-center space-x-3 sm:space-x-4">
-                    <div class="p-2.5 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-xl sm:text-2xl shrink-0">
-                        <i class="fa-solid fa-calendar-check"></i>
+            <!-- Estimación Próxima Revisión -->
+            <div id="nextServiceCard" class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
+                <div>
+                    <span class="text-[10px] uppercase font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400">Estimación Próxima Revisión</span>
+                    <h3 id="nextServiceMonth" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">Calculando...</h3>
+                    <p id="nextServiceDetail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+                </div>
+                <div class="sm:text-right shrink-0">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Margen Restante</span>
+                    <span id="nextServiceKm" class="text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</span>
+                </div>
+            </div>
+
+            <!-- Alertas e ITV -->
+            <div class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Alertas y Vencimientos</h3>
+                    <button onclick="openAlertModal()" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i><span>Nueva Alerta</span>
+                    </button>
+                </div>
+                <div id="alertsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- Gráficos de Mantenimiento -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Distribución del Gasto por Tipo</h3>
+                    <div class="h-56 sm:h-64 relative">
+                        <canvas id="categoryChart"></canvas>
                     </div>
-                    <div>
-                        <span class="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Próxima Revisión Estimada</span>
-                        <h3 id="nextServiceMonth" class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">--</h3>
-                        <p id="nextServiceDetail" class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Evolución Anual de Gastos (€)</h3>
+                    <div class="h-56 sm:h-64 relative">
+                        <canvas id="timeChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 sm:p-3 rounded-lg border border-slate-200/60 dark:border-slate-600/60 text-left sm:text-right w-full sm:w-auto shrink-0">
-                    <div class="text-[10px] text-slate-400 font-medium">Faltan aproximadamente</div>
-                    <div id="nextServiceKm" class="text-sm sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">-- km</div>
-                </div>
-            </section>
+            </div>
 
-            <section id="alertsContainer" class="space-y-3"></section>
-
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h2 class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center"><i class="fa-solid fa-chart-pie text-emerald-500 dark:text-emerald-400 mr-2"></i> Gastos por Categoría</h2>
-                    <div class="h-52 sm:h-64 relative"><canvas id="categoryChart"></canvas></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h2 class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center"><i class="fa-solid fa-chart-column text-blue-500 dark:text-blue-400 mr-2"></i> Evolución de Gastos</h2>
-                    <div class="h-52 sm:h-64 relative"><canvas id="timeChart"></canvas></div>
-                </div>
-            </section>
-
-            <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
-                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3 sm:space-y-4">
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                            <i class="fa-solid fa-clock-rotate-left text-emerald-500 dark:text-emerald-400 mr-2"></i> Historial de Mantenimiento
-                        </h2>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
-                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar detalle o taller..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full">
-                            <select id="categoryFilter" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full"></select>
-                            <select id="sortSelector" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 font-medium text-base sm:text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 cursor-pointer w-full">
-                                <option value="date-desc">Fecha: Recientes primero</option>
-                                <option value="date-asc">Fecha: Antiguos primero</option>
-                                <option value="km-desc">KM: Mayor a Menor</option>
-                                <option value="km-asc">KM: Menor a Mayor</option>
-                            </select>
+            <!-- Filtros y Tabla de Mantenimiento -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
+                <div class="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-700/60 space-y-2.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchInput" oninput="renderTable()" placeholder="Buscar trabajo, taller..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg pl-8 pr-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         </div>
+                        <select id="categoryFilter" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+                        <select id="sortSelector" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="date-desc">Más recientes primero</option>
+                            <option value="date-asc">Más antiguos primero</option>
+                            <option value="km-desc">Mayor kilometraje</option>
+                            <option value="km-asc">Menor kilometraje</option>
+                        </select>
                     </div>
-
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
-                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                            <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
-                                <i class="fa-solid fa-calendar-days text-emerald-500 dark:text-emerald-400 mr-1.5"></i> Fechas:
-                            </span>
-                            <div class="flex items-center space-x-1.5">
-                                <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
-                            </div>
-                            <div class="flex items-center space-x-1.5">
-                                <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
-                            </div>
-                        </div>
-                        <button onclick="clearDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                            <span>Limpiar</span>
-                        </button>
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span class="text-slate-400 font-semibold">Desde:</span>
+                        <input type="date" id="dateFrom" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white">
+                        <span class="text-slate-400 font-semibold">Hasta:</span>
+                        <input type="date" id="dateTo" onchange="renderTable()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white">
+                        <button onclick="clearDateFilter()" class="text-xs text-slate-500 hover:text-rose-500 px-2 py-1 rounded transition">Limpiar</button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                        <thead class="bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-semibold">
-                            <tr>
+                <!-- Vista Móvil -->
+                <div id="recordsMobileList" class="sm:hidden divide-y divide-slate-200 dark:divide-slate-700/60"></div>
+
+                <!-- Vista Escritorio -->
+                <div class="hidden sm:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase border-b border-slate-200 dark:border-slate-700/60">
                                 <th class="px-3 sm:px-4 py-3">Fecha</th>
-                                <th class="px-3 sm:px-4 py-3">Km</th>
-                                <th class="px-3 sm:px-4 py-3">Tipo Mantenimiento</th>
-                                <th class="px-3 sm:px-4 py-3">Detalle / Trabajo</th>
-                                <th class="px-3 sm:px-4 py-3 hidden sm:table-cell">Taller</th>
-                                <th class="px-3 sm:px-4 py-3 text-right">Coste (€)</th>
-                                <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
+                                <th class="px-3 sm:px-4 py-3">Kilómetros</th>
+                                <th class="px-3 sm:px-4 py-3">Categoría</th>
+                                <th class="px-3 sm:px-4 py-3">Trabajo Realizado</th>
+                                <th class="px-3 sm:px-4 py-3">Taller</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Coste</th>
+                                <th class="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="recordsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50"></tbody>
+                        <tbody id="recordsTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/60"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- VISTA 2: REPOSTAJES -->
-        <div id="viewFuel" class="space-y-4 sm:space-y-6 hidden">
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
-                    <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gas-pump"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Total Combustible</div><div id="kpiFuelTotal" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,00 €</div></div>
+        <div id="viewFuel" class="hidden space-y-4 sm:space-y-6">
+            <!-- Filtro de Fechas -->
+            <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-slate-400 font-semibold">Periodo:</span>
+                    <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white">
+                    <span class="text-slate-400">a</span>
+                    <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white">
+                    <button onclick="clearFuelDateFilter()" class="text-slate-500 hover:text-rose-500 px-2 py-1 rounded transition">Limpiar</button>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
-                    <div class="p-2 sm:p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-calculator"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Repostajes</div><div id="kpiFuelCount" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0</div></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
-                    <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-gauge-high"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Consumo Medio</div><div id="kpiFuelAvgConsumption" class="text-sm sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">-- L/100km</div></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center space-x-3 min-w-0">
-                    <div class="p-2 sm:p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-lg shrink-0"><i class="fa-solid fa-coins"></i></div>
-                    <div class="min-w-0"><div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Precio Medio Total</div><div id="kpiFuelAvgPriceLiter" class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white truncate">0,000 €/L</div></div>
-                </div>
-            </section>
+            </div>
 
-            <section class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                    <div class="flex items-center space-x-2">
-                        <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-base shrink-0">
-                            <i class="fa-solid fa-chart-line"></i>
+            <!-- KPIs Combustible -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Gasto en Combustible</span>
+                    <div id="kpiFuelTotal" class="text-lg sm:text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">0,00 €</div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Repostajes</span>
+                    <div id="kpiFuelCount" class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-1">0</div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Precio Medio</span>
+                    <div id="kpiFuelAvgPriceLiter" class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-1">0,000 €/L</div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Consumo Medio</span>
+                    <div id="kpiFuelAvgConsumption" class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">-- L/100km</div>
+                </div>
+            </div>
+
+            <!-- Analítica de Combustible -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Estaciones Frecuentes</h3>
+                    <div id="gasStationRanking" class="space-y-2.5"></div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Estabilidad de Precios</h3>
+                        <span id="periodVariabilityBadge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">--</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block">Media del periodo</span>
+                        <span id="periodAvgPrice" class="text-2xl font-black text-slate-900 dark:text-white">-- €/L</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-xs">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Mínimo</span>
+                            <span id="periodMinPrice" class="font-bold text-emerald-600 dark:text-emerald-400">--</span>
                         </div>
                         <div>
-                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Análisis de Precio en Periodo Seleccionado</h3>
-                            <p class="text-[10px] text-slate-400">Varía al ajustar el rango de fechas inferior</p>
+                            <span class="text-[10px] text-slate-400 block">Máximo</span>
+                            <span id="periodMaxPrice" class="font-bold text-rose-500">--</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Horquilla</span>
+                            <span id="periodDiffPrice" class="font-bold text-slate-700 dark:text-slate-200">--</span>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <span id="periodVariabilityBadge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500">Sin datos</span>
-                    </div>
+                    <p id="periodAnalysisComment" class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">--</p>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs pt-1">
-                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
-                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Precio Medio Periodo</div>
-                        <div id="periodAvgPrice" class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-0.5">-- €/L</div>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
-                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Mínimo Registrado</div>
-                        <div id="periodMinPrice" class="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">-- €/L</div>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
-                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Máximo Registrado</div>
-                        <div id="periodMaxPrice" class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">-- €/L</div>
-                    </div>
-                    <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
-                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Diferencia Mín / Máx</div>
-                        <div id="periodDiffPrice" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200 mt-0.5">-- €/L</div>
-                    </div>
-                </div>
-
-                <p id="periodAnalysisComment" class="text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-700/50 leading-relaxed italic">
-                    Selecciona un rango de fechas en la tabla para calcular la estabilidad o fluctuación del precio del combustible.
-                </p>
-            </section>
-
-            <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
-                        <i class="fa-solid fa-trophy text-amber-500"></i>
-                        <span>Gasolineras Más Frecuentes</span>
-                    </h3>
-                    <div id="gasStationRanking" class="space-y-3">
-                        <p class="text-xs text-slate-400">Cargando datos...</p>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center space-x-2">
-                        <i class="fa-solid fa-chart-line text-emerald-500"></i>
-                        <span>Evolución del Precio del Combustible (€/L)</span>
-                    </h3>
-                    <div class="h-56 relative">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Evolución Precio (€/L)</h3>
+                    <div class="h-48 relative">
                         <canvas id="chartFuelPrice"></canvas>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <section class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
-                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/60 space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Historial y Rendimiento de Combustible</h2>
-                    </div>
-
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/40 text-xs">
-                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                            <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center">
-                                <i class="fa-solid fa-calendar-days text-purple-500 mr-1.5"></i> Fechas:
-                            </span>
-                            <div class="flex items-center space-x-1.5">
-                                <label class="text-slate-400">Desde:</label>
-                                <input type="date" id="fuelDateFrom" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
-                            </div>
-                            <div class="flex items-center space-x-1.5">
-                                <label class="text-slate-400">Hasta:</label>
-                                <input type="date" id="fuelDateTo" onchange="renderFuelDashboard()" class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-xs rounded-lg border border-slate-200 dark:border-slate-600 px-1.5 py-1.5 min-w-0">
-                            </div>
-                        </div>
-                        <button onclick="clearFuelDateFilter()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition flex items-center space-x-1 ml-auto" title="Limpiar fechas">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                            <span>Limpiar</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                        <thead class="bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase font-semibold">
-                            <tr>
-                                <th class="px-3 sm:px-4 py-3 hidden sm:table-cell">Vehículo</th>
+            <!-- Tabla / Lista de Repostajes -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden">
+                <div id="fuelMobileList" class="sm:hidden divide-y divide-slate-200 dark:divide-slate-700/60"></div>
+                <div class="hidden sm:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase border-b border-slate-200 dark:border-slate-700/60">
+                                <th class="px-3 sm:px-4 py-3">Vehículo</th>
                                 <th class="px-3 sm:px-4 py-3">Fecha</th>
                                 <th class="px-3 sm:px-4 py-3">Km</th>
-                                <th class="px-3 sm:px-4 py-3 text-right">Importe (€)</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Importe</th>
                                 <th class="px-3 sm:px-4 py-3 text-right">Litros</th>
-                                <th class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">Precio/L</th>
-                                <th class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">Consumo</th>
-                                <th class="px-3 sm:px-4 py-3">Gasolinera</th>
-                                <th class="px-3 sm:px-4 py-3 text-center">Acción</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">€/L</th>
+                                <th class="px-3 sm:px-4 py-3 text-right">Consumo</th>
+                                <th class="px-3 sm:px-4 py-3">Gasolinera / Notas</th>
+                                <th class="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="fuelTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50"></tbody>
+                        <tbody id="fuelTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/60"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- VISTA 3: RECAMBIOS -->
-        <div id="viewParts" class="space-y-4 sm:space-y-6 hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-500 mr-2"></i> Guía de Piezas y Recambios</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas o pulsa sobre una referencia para copiarla al portapapeles.</p>
+        <div id="viewParts" class="hidden space-y-4 sm:space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div class="relative flex-grow">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar filtro, marca, referencia OEM..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg pl-8 pr-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
-                <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o ref..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
+                <button onclick="openPartModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shrink-0">
+                    <i class="fa-solid fa-plus mr-1.5"></i>Nueva Referencia
+                </button>
             </div>
+
             <div id="partsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
         </div>
 
-        <!-- EXPORTACIÓN -->
-        <section class="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/60 shadow-md space-y-4 transition-colors duration-200">
-            <div class="flex items-center space-x-3 border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                <div class="p-2 sm:p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-lg sm:text-xl shrink-0">
-                    <i class="fa-solid fa-file-arrow-down"></i>
-                </div>
-                <div>
-                    <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Centro de Exportación e Informes</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Selecciona los datos que deseas incluir y descarga copias de seguridad o informes detallados.</p>
+        <!-- Sección de Exportación -->
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1.5">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Exportar Informe del Vehículo</h3>
+                <div class="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <label class="inline-flex items-center space-x-1.5 cursor-pointer">
+                        <input type="checkbox" id="chkExportMaint" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>Mantenimiento</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-1.5 cursor-pointer">
+                        <input type="checkbox" id="chkExportFuel" checked class="rounded text-purple-600 focus:ring-purple-500">
+                        <span>Repostajes</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-1.5 cursor-pointer">
+                        <input type="checkbox" id="chkExportParts" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>Recambios</span>
+                    </label>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
-                    <input type="checkbox" id="chkExportMaint" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Historial de Mantenimiento</span>
-                </label>
-                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
-                    <input type="checkbox" id="chkExportFuel" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Repostajes y Combustible</span>
-                </label>
-                <label class="flex items-center space-x-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/70 transition">
-                    <input type="checkbox" id="chkExportParts" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Referencias y Recambios</span>
-                </label>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2">
-                <button onclick="exportToExcel()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm active:scale-95">
-                    <i class="fa-solid fa-file-excel"></i>
-                    <span>Exportar a Excel (CSV / XLSX)</span>
+            <div class="flex items-center space-x-2 shrink-0">
+                <button onclick="exportToExcel()" class="px-3.5 py-2 bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-file-excel mr-1.5"></i>Excel
                 </button>
-                <button onclick="exportToPDF()" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-2 shadow-sm active:scale-95">
-                    <i class="fa-solid fa-file-pdf"></i>
-                    <span>Generar Informe en PDF</span>
+                <button onclick="exportToPDF()" class="px-3.5 py-2 bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-400 border border-rose-500/30 rounded-lg text-xs font-bold transition">
+                    <i class="fa-solid fa-file-pdf mr-1.5"></i>Informe PDF
                 </button>
             </div>
         </section>
-
     </main>
 
-    <!-- FAB Action Button -->
-    <button onclick="openModalForCurrentView()" class="sm:hidden fixed bottom-6 right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-transform active:scale-90" title="Añadir nuevo registro">
-        <i class="fa-solid fa-plus text-2xl"></i>
+    <!-- Botón Flotante Móvil (FAB) -->
+    <button id="fabAddBtn" onclick="openModalForCurrentView()" class="sm:hidden fixed fab-bottom-safe right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-all active:scale-90" title="Añadir registro">
+        <i class="fa-solid fa-plus text-xl"></i>
     </button>
+
+    <!-- Modal: Inicio de Sesión / Registro -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-md shadow-2xl p-5 sm:p-6 modal-bottom-safe relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1"><i class="fa-solid fa-shield-halved text-emerald-500 mr-2"></i>Acceso de Propietario</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Inicia sesión para editar, añadir o eliminar registros.</p>
+
+            <div id="passkeyLoginContainer" class="mb-4">
+                <button type="button" onclick="loginWithPasskey()" class="w-full py-2.5 px-4 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 border border-slate-700 dark:border-slate-500 transition active:scale-98">
+                    <i class="fa-solid fa-fingerprint text-emerald-400 text-base"></i>
+                    <span>Entrar con Passkey / Huella</span>
+                </button>
+                <div class="relative flex py-3 items-center">
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                    <span class="flex-shrink mx-3 text-[10px] uppercase text-slate-400 font-bold">o con contraseña</span>
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                </div>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Correo electrónico</label>
+                    <input type="email" id="authEmail" required placeholder="tu@email.com" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" id="btnAuthSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition">Iniciar Sesión</button>
+            </form>
+
+            <div class="mt-3 text-center">
+                <button type="button" id="btnToggleAuth" onclick="toggleAuthMode()" class="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-500 underline">¿No tienes cuenta? Regístrate aquí</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Administración y Passkeys -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl p-5 sm:p-6 modal-bottom-safe relative space-y-4">
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-user-shield text-indigo-500 mr-2"></i>Cuenta y Seguridad</h3>
+                <p id="adminUserEmail" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">--</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 dark:text-white">Acceso Biométrico (Passkey)</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Vincula este dispositivo para entrar con huella o FaceID.</p>
+                </div>
+                <button onclick="registerNewPasskey()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shrink-0 transition">
+                    <i class="fa-solid fa-fingerprint mr-1.5"></i>Vincular Passkey
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gestión de Propietarios de Vehículos</h4>
+                <div id="adminVehiclesList" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: Mantenimiento -->
     <div id="recordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
@@ -558,85 +491,89 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros *</label>
-                        <input type="number" id="formKms" inputmode="numeric" pattern="[0-9]*" required min="0" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none h-[38px]">
+                        <input type="number" id="formKms" inputmode="numeric" pattern="[0-9]*" required placeholder="165000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Mantenimiento *</label>
-                    <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                 </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Coste (€) *</label>
-                        <input type="number" id="formCoste" step="0.01" inputmode="decimal" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoría *</label>
+                        <select id="formTipo" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Taller</label>
-                        <input type="text" id="formTaller" placeholder="Caldereros Villarejo..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Coste (€) *</label>
+                        <input type="number" step="0.01" id="formCoste" inputmode="decimal" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalle / Trabajo</label>
-                    <textarea id="formDetalle" rows="2" placeholder="Cambio bombillas W5W..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Taller / Lugar</label>
+                    <input type="text" id="formTaller" placeholder="Taller oficial, FeuVert, Casa..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción / Trabajo realizado *</label>
+                    <textarea id="formDetalle" rows="2" required placeholder="Cambio aceite 5W30 + filtros..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
                 <div class="flex justify-end space-x-2.5 pt-2">
                     <button type="button" onclick="closeRecordModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Registro</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal: Repostaje con OCR y GPS -->
+    <!-- Modal: Repostajes -->
     <div id="fuelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeFuelModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 id="fuelModalTitle" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i> Repostaje de Combustible</h3>
-            
-            <div class="mb-3 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-800/60 text-center">
-                <label for="ocrInput" class="cursor-pointer inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95">
+            <div class="flex items-center justify-between pr-8 mb-3">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white"><i class="fa-solid fa-gas-pump text-purple-500 mr-2"></i>Registrar Repostaje</h3>
+                <label class="cursor-pointer bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center space-x-1">
                     <i class="fa-solid fa-camera"></i>
-                    <span>Escanear Foto de Ticket (OCR)</span>
+                    <span>Escanear Ticket</span>
+                    <input type="file" accept="image/*" capture="environment" onchange="processTicketOCR(event)" class="hidden">
                 </label>
-                <input type="file" id="ocrInput" accept="image/*" capture="environment" onchange="processTicketOCR(event)" class="hidden">
-                <div id="ocrStatus" class="text-[11px] text-purple-600 dark:text-purple-300 mt-1 hidden font-medium">Procesando imagen con OCR...</div>
             </div>
+            <p id="ocrStatus" class="hidden text-[11px] font-semibold text-purple-500 mb-2"></p>
 
             <form id="fuelForm" onsubmit="handleSaveFuel(event)" class="space-y-2.5">
                 <input type="hidden" id="fuelRowIndex">
                 <input type="hidden" id="fuelLat">
                 <input type="hidden" id="fuelLng">
+
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vehículo *</label>
                     <select id="fuelFormVehicle" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none"></select>
                 </div>
+
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha *</label>
                         <input type="date" id="fuelFormFecha" required class="w-full min-w-0 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none h-[38px]">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
-                        <input type="number" id="fuelFormKms" inputmode="numeric" pattern="[0-9]*" placeholder="165500" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none h-[38px]">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kilómetros</label>
+                        <input type="number" id="fuelFormKms" inputmode="numeric" pattern="[0-9]*" placeholder="165400" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                 </div>
+
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Importe (€) *</label>
-                        <input type="number" id="fuelFormImporte" step="0.01" inputmode="decimal" required placeholder="50.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Importe Total (€) *</label>
+                        <input type="number" step="0.01" id="fuelFormImporte" inputmode="decimal" required placeholder="55.00" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Litros (Opcional)</label>
-                        <input type="number" id="fuelFormLitros" step="0.01" inputmode="decimal" placeholder="35.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Litros (L)</label>
+                        <input type="number" step="0.01" id="fuelFormLitros" inputmode="decimal" placeholder="38.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                 </div>
-                <label class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 cursor-pointer">
-                    <div class="flex items-center space-x-2">
-                        <input type="checkbox" id="fuelFormFullTank" checked class="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Depósito lleno</span>
-                    </div>
-                    <span class="text-[10px] text-slate-400">Desmarca si es parcial</span>
+
+                <label class="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600/60 cursor-pointer">
+                    <span class="flex items-center space-x-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                        <input type="checkbox" id="fuelFormFullTank" checked class="rounded text-purple-600 focus:ring-purple-500">
+                        <span>Depósito lleno</span>
+                    </span>
+                    <span class="text-[11px] text-slate-400">Desmarca si es parcial</span>
                 </label>
+
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Gasolinera / Notas</label>
@@ -654,7 +591,6 @@
             </form>
         </div>
     </div>
-
     <!-- Modal: Recambios -->
     <div id="partModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
@@ -1459,28 +1395,36 @@
             const viewFuel = document.getElementById("viewFuel");
             const viewParts = document.getElementById("viewParts");
             const lblAdd = document.getElementById("lblHeaderAdd");
+            const btnHeaderAdd = document.getElementById("btnHeaderAdd");
+            const fabAddBtn = document.getElementById("fabAddBtn");
 
-            btnMaint.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
-            btnFuel.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
-            btnParts.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
+            btnMaint.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
+            btnFuel.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
+            btnParts.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-center";
 
             viewMaint.classList.add("hidden");
             viewFuel.classList.add("hidden");
             viewParts.classList.add("hidden");
 
             if (tab === 'maintenance') {
-                btnMaint.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
+                btnMaint.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
                 viewMaint.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Mantenimiento";
+                if (btnHeaderAdd) btnHeaderAdd.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-lg text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5 active:scale-95";
+                if (fabAddBtn) fabAddBtn.className = "sm:hidden fixed fab-bottom-safe right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-all active:scale-90";
             } else if (tab === 'fuel') {
-                btnFuel.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-purple-600 text-white transition text-center shadow-sm";
+                btnFuel.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold bg-purple-600 text-white transition text-center shadow-sm";
                 viewFuel.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Repostaje";
+                if (btnHeaderAdd) btnHeaderAdd.className = "bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-2.5 rounded-lg text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5 active:scale-95";
+                if (fabAddBtn) fabAddBtn.className = "sm:hidden fixed fab-bottom-safe right-5 z-40 bg-purple-600 active:bg-purple-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-all active:scale-90";
                 renderFuelDashboard();
             } else {
-                btnParts.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
+                btnParts.className = "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition text-center shadow-sm";
                 viewParts.classList.remove("hidden");
                 lblAdd.innerText = "Añadir Recambio";
+                if (btnHeaderAdd) btnHeaderAdd.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 rounded-lg text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5 active:scale-95";
+                if (fabAddBtn) fabAddBtn.className = "sm:hidden fixed fab-bottom-safe right-5 z-40 bg-emerald-600 active:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center transition-all active:scale-90";
                 renderParts();
             }
         }
@@ -1709,18 +1653,20 @@
         function renderDashboard() {
             const car = getActiveVehicle();
             const editVehBtn = document.getElementById("btnEditVehicle");
-            const plateBtn = document.getElementById("carPlate");
+            const plateTextEl = document.getElementById("carPlateText");
             const vinBtn = document.getElementById("carVin");
 
             if (!car) {
                 document.getElementById("carTitle").innerText = "Sin vehículos";
                 if (editVehBtn) editVehBtn.classList.add("hidden");
-                plateBtn.innerText = "--";
+                if (plateTextEl) plateTextEl.innerText = "--";
                 vinBtn.classList.add("hidden");
                 vinBtn.classList.remove("inline-flex");
-                document.getElementById("carSub").innerText = "Añade un vehículo con el botón '+ Vehículo'";
+                document.getElementById("carSub").innerHTML = `<span class="text-slate-500 dark:text-slate-400">Añade un vehículo con el botón '+ Vehículo'</span>`;
                 document.getElementById("carKm").innerText = "0 km";
                 document.getElementById("recordsTableBody").innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay vehículos registrados.</td></tr>`;
+                const mobileList = document.getElementById("recordsMobileList");
+                if (mobileList) mobileList.innerHTML = `<div class="px-4 py-8 text-center text-xs text-slate-400">No hay vehículos registrados.</div>`;
                 return;
             }
 
@@ -1741,9 +1687,16 @@
                 logoFallback.classList.remove("hidden");
             }
 
-            plateBtn.innerText = car.plate || "--";
+            if (plateTextEl) plateTextEl.innerText = car.plate || "--";
+
             if (car.vin) {
-                vinBtn.innerHTML = `<span>${escapeHTML(car.vin)}</span> <i class="fa-regular fa-copy text-[10px] opacity-60"></i>`;
+                vinBtn.innerHTML = `
+                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-600 pr-2 shrink-0">
+                        <i class="fa-solid fa-barcode"></i> VIN
+                    </span>
+                    <span class="font-mono font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 tracking-wide truncate">${escapeHTML(car.vin)}</span>
+                    <i class="fa-regular fa-copy text-xs text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                `;
                 vinBtn.classList.remove("hidden");
                 vinBtn.classList.add("inline-flex");
             } else {
@@ -1751,7 +1704,15 @@
                 vinBtn.classList.remove("inline-flex");
             }
 
-            document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
+            document.getElementById("carSub").innerHTML = `
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700/70 text-slate-700 dark:text-slate-200 font-semibold border border-slate-200/80 dark:border-slate-600/60">
+                    <i class="fa-solid fa-gas-pump text-[10px] text-purple-500"></i> ${escapeHTML(car.fuel || '--')}
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700/70 text-slate-700 dark:text-slate-200 font-semibold border border-slate-200/80 dark:border-slate-600/60">
+                    <i class="fa-regular fa-calendar text-[10px] text-blue-500"></i> ${escapeHTML(car.year || '--')}
+                </span>
+            `;
+
             document.getElementById("carKm").innerText = `${Number(car.kms || 0).toLocaleString('es-ES')} km`;
             document.getElementById("kpiFuel").innerText = car.fuel;
 
@@ -2033,11 +1994,55 @@
             });
 
             const tbody = document.getElementById("recordsTableBody");
+            const mobileList = document.getElementById("recordsMobileList");
             if (!tbody) return;
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 font-semibold">No hay registros de mantenimiento para mostrar.</td></tr>`;
+                if (mobileList) {
+                    mobileList.innerHTML = `<div class="px-4 py-8 text-center text-xs text-slate-400 font-semibold">No hay registros de mantenimiento para mostrar.</div>`;
+                }
                 return;
+            }
+
+            if (mobileList) {
+                mobileList.innerHTML = filtered.map(r => `
+                    <div class="p-3.5 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-1.5 min-w-0">
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                                    ${escapeHTML(r.detalle || "Otros")}
+                                </span>
+                                <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                                    ${formatDateDisplay(r.fecha)}
+                                </span>
+                                <span class="text-[11px] text-slate-300 dark:text-slate-600">•</span>
+                                <span class="text-[11px] font-mono font-semibold text-slate-600 dark:text-slate-300">
+                                    ${Number(r.kms || 0).toLocaleString('es-ES')} km
+                                </span>
+                            </div>
+                            <span class="font-extrabold text-sm text-slate-900 dark:text-white whitespace-nowrap shrink-0">
+                                ${Number(r.coste || 0).toFixed(2)} €
+                            </span>
+                        </div>
+
+                        ${r.tipo ? `<p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">${escapeHTML(r.tipo)}</p>` : ''}
+
+                        <div class="flex items-center justify-between gap-2 pt-0.5">
+                            <span class="text-[11px] text-slate-400 truncate">
+                                ${r.taller ? `<i class="fa-solid fa-wrench mr-1 opacity-70"></i>${escapeHTML(r.taller)}` : ''}
+                            </span>
+                            <div class="flex items-center space-x-1.5 shrink-0">
+                                <button onclick="openRecordModal('${r.id}')" class="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 bg-slate-100 dark:bg-slate-700/60 rounded-lg transition" title="Editar">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i>Editar
+                                </button>
+                                <button onclick="deleteRecord('${r.id}')" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/60 rounded-lg transition" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
             }
 
             tbody.innerHTML = filtered.map(r => `
@@ -2046,7 +2051,7 @@
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
                     <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">${escapeHTML(r.detalle || "Otros")}</span></td>
                     <td class="px-3 sm:px-4 py-3">${escapeHTML(r.tipo || "")}</td>
-                    <td class="px-3 sm:px-4 py-3 text-slate-500 hidden sm:table-cell">${escapeHTML(r.taller || '--')}</td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-500">${escapeHTML(r.taller || '--')}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-1">
@@ -2298,11 +2303,65 @@
             }
 
             const tbody = document.getElementById("fuelTableBody");
+            const mobileList = document.getElementById("fuelMobileList");
             if (!tbody) return;
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400">Sin repostajes registrados.</td></tr>`;
+                if (mobileList) {
+                    mobileList.innerHTML = `<div class="px-4 py-8 text-center text-xs text-slate-400">Sin repostajes registrados.</div>`;
+                }
                 return;
+            }
+
+            if (mobileList) {
+                mobileList.innerHTML = filtered.map(f => {
+                    let badgeHTML = `<span class="text-[11px] text-slate-400">--</span>`;
+                    if (f.consumptionStatus === 'exact' && f.consumption) {
+                        badgeHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-gauge-high text-[10px]"></i>${f.consumption.toFixed(2)} L/100km</span>`;
+                    } else if (f.consumptionStatus === 'partial') {
+                        badgeHTML = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">Parcial</span>`;
+                    } else if (f.consumptionStatus === 'baseline') {
+                        badgeHTML = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">Lleno (inicio)</span>`;
+                    }
+
+                    const subDetails = [
+                        f.litros ? `${Number(f.litros).toFixed(2)} L` : null,
+                        f.pricePerLiter ? `${f.pricePerLiter.toFixed(3)} €/L` : null
+                    ].filter(Boolean).join(' • ');
+
+                    return `
+                        <div class="p-3.5 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0 space-y-0.5">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">${formatDateDisplay(f.fecha)}</span>
+                                        ${f.kms ? `<span class="text-[11px] text-slate-300 dark:text-slate-600">•</span><span class="font-mono text-xs font-semibold text-purple-600 dark:text-purple-400">${Number(f.kms).toLocaleString('es-ES')} km</span>` : ''}
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                        ${f.notas ? `<i class="fa-solid fa-gas-pump mr-1 text-purple-500/80"></i>${escapeHTML(f.notas)}` : 'Gasolinera sin especificar'}
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="font-extrabold text-sm text-slate-900 dark:text-white">${Number(f.importe || 0).toFixed(2)} €</div>
+                                    ${subDetails ? `<div class="text-[11px] text-slate-400 font-mono">${subDetails}</div>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 pt-0.5">
+                                <div>${badgeHTML}</div>
+                                <div class="flex items-center space-x-1.5 shrink-0">
+                                    <button onclick="openFuelModal('${f.id}')" class="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 bg-slate-100 dark:bg-slate-700/60 rounded-lg transition" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square mr-1"></i>Editar
+                                    </button>
+                                    <button onclick="deleteFuelRecord('${f.id}')" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/60 rounded-lg transition" title="Eliminar">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
 
             tbody.innerHTML = filtered.map(f => {
@@ -2317,12 +2376,12 @@
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                        <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400 hidden sm:table-cell">${escapeHTML(f.vehiculo)}</td>
+                        <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">${escapeHTML(f.vehiculo)}</td>
                         <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
                         <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
                         <td class="px-3 sm:px-4 py-3 text-right font-semibold">${Number(f.importe || 0).toFixed(2)} €</td>
                         <td class="px-3 sm:px-4 py-3 text-right">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
-                        <td class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                        <td class="px-3 sm:px-4 py-3 text-right">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
                         <td class="px-3 sm:px-4 py-3 text-right">${consumptionCellHTML}</td>
                         <td class="px-3 sm:px-4 py-3 text-slate-500">${escapeHTML(f.notas || '--')}</td>
                         <td class="px-3 sm:px-4 py-3 text-center">
