@@ -216,7 +216,11 @@
                 <div class="space-y-1">
                     <div class="flex flex-wrap items-center gap-2">
                         <h1 id="carTitle" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">--</h1>
-                        <span id="carPlate" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0">--</span>
+                        <button type="button" id="btnEditVehicle" onclick="openEditVehicleModal()" class="hidden text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/70 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition active:scale-95" title="Editar o eliminar vehículo">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button type="button" id="carPlate" onclick="copyVehicleField('plate')" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0 transition active:scale-95" title="Pulsa para copiar matrícula">--</button>
+                        <button type="button" id="carVin" onclick="copyVehicleField('vin')" class="hidden bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono font-semibold border border-slate-200 dark:border-slate-600 shrink-0 transition active:scale-95 items-center gap-1.5" title="Pulsa para copiar bastidor (VIN)"></button>
                     </div>
                     <p id="carSub" class="text-slate-500 dark:text-slate-400 text-xs font-medium">--</p>
                 </div>
@@ -487,7 +491,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60">
                 <div>
                     <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center"><i class="fa-solid fa-boxes-packing text-emerald-500 mr-2"></i> Guía de Piezas y Recambios</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas e información técnica para la compra de piezas compatibles.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Busca referencias exactas o pulsa sobre una referencia para copiarla al portapapeles.</p>
                 </div>
                 <input type="text" id="partSearchInput" oninput="renderParts()" placeholder="Buscar pieza, marca o ref..." class="bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-base sm:text-xs sm:text-sm rounded-lg border border-slate-200 dark:border-slate-600 px-3 py-2 w-full sm:w-64">
             </div>
@@ -626,6 +630,13 @@
                         <input type="number" id="fuelFormLitros" step="0.01" inputmode="decimal" placeholder="35.50" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                     </div>
                 </div>
+                <label class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 cursor-pointer">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="fuelFormFullTank" checked class="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Depósito lleno</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400">Desmarca si es parcial</span>
+                </label>
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Gasolinera / Notas</label>
@@ -712,13 +723,14 @@
         </div>
     </div>
 
-    <!-- Modal: Nuevo Vehículo -->
+    <!-- Modal: Vehículo (Alta y Edición) -->
     <div id="vehicleModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
         <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-4 sm:p-6 modal-bottom-safe relative">
             <button onclick="closeVehicleModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-car text-emerald-500 mr-2"></i> Registrar Nuevo Vehículo</h3>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3"><i class="fa-solid fa-car text-emerald-500 mr-2"></i> <span id="vehicleModalTitleText">Registrar Nuevo Vehículo</span></h3>
             
             <form id="vehicleForm" onsubmit="handleSaveVehicle(event)" class="space-y-2.5">
+                <input type="hidden" id="vehEditId">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial y Matrícula *</label>
                     <input type="text" id="vehName" required placeholder="Seat León - 5678LMN" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -744,7 +756,7 @@
                         <input type="number" id="vehYear" inputmode="numeric" pattern="[0-9]*" placeholder="2019" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Actuales</label>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Km Base</label>
                         <input type="number" id="vehKms" inputmode="numeric" pattern="[0-9]*" placeholder="120000" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div>
@@ -762,9 +774,14 @@
                         <input type="number" id="vehIntervalMonths" inputmode="numeric" pattern="[0-9]*" value="12" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
-                <div class="flex justify-end space-x-2.5 pt-2">
-                    <button type="button" onclick="closeVehicleModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Guardar Vehículo</button>
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" id="btnDeleteVehicle" onclick="deleteActiveVehicle()" class="hidden px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-semibold transition">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Eliminar
+                    </button>
+                    <div class="flex justify-end space-x-2.5 ml-auto">
+                        <button type="button" onclick="closeVehicleModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">Cancelar</button>
+                        <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">Guardar Vehículo</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -800,6 +817,49 @@
         let categoryChartInstance = null;
         let timeChartInstance = null;
         let fuelPriceChartInstance = null;
+
+        function escapeHTML(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function copyToClipboard(text, label = "Copiado") {
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`${label}: ${text}`);
+            } catch (err) {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                showToast(`${label}: ${text}`);
+            }
+        }
+
+        function copyVehicleField(field) {
+            const car = getActiveVehicle();
+            if (!car) return;
+            if (field === 'vin' && car.vin) copyToClipboard(car.vin, "Bastidor copiado");
+            if (field === 'plate' && car.plate) copyToClipboard(car.plate, "Matrícula copiada");
+        }
+
+        function copyPartNote(id) {
+            const car = getActiveVehicle();
+            if (!car) return;
+            const part = (car.parts || []).find(p => String(p.id) === String(id));
+            if (part && part.notas) {
+                copyToClipboard(part.notas, "Referencia copiada");
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", async () => {
             initTheme();
@@ -995,7 +1055,7 @@
             }
         }
 
-        // --- SISTEMA DE PASSKEYS (EDGE FUNCTION EN SERVIDOR) ---
+        // --- SISTEMA DE PASSKEYS ---
 
         async function registerNewPasskey() {
             if (!currentUser || !supabaseClient) return checkAuthOrLogin();
@@ -1146,7 +1206,7 @@
             modal.classList.remove("hidden");
             
             if (!isAdmin) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-400">Usuario estándar (${currentUser.email}). Puedes vincular tu Passkey biométrica con el botón superior.</p>`;
+                listContainer.innerHTML = `<p class="text-xs text-slate-400">Usuario estándar (${escapeHTML(currentUser.email)}). Puedes vincular tu Passkey biométrica con el botón superior.</p>`;
                 return;
             }
 
@@ -1168,14 +1228,14 @@
 
                 listContainer.innerHTML = vehs.map(v => {
                     const optionsHTML = profiles.map(p => `
-                        <option value="${p.id}" ${p.id === v.user_id ? 'selected' : ''}>${p.email}</option>
+                        <option value="${p.id}" ${p.id === v.user_id ? 'selected' : ''}>${escapeHTML(p.email)}</option>
                     `).join('');
 
                     return `
                         <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                             <div>
-                                <h4 class="font-bold text-slate-900 dark:text-white text-sm">${v.name}</h4>
-                                <p class="text-slate-500 dark:text-slate-400 text-[11px] font-mono">${v.plate || '--'}</p>
+                                <h4 class="font-bold text-slate-900 dark:text-white text-sm">${escapeHTML(v.name)}</h4>
+                                <p class="text-slate-500 dark:text-slate-400 text-[11px] font-mono">${escapeHTML(v.plate || '--')}</p>
                             </div>
                             <div class="flex items-center space-x-2 w-full sm:w-auto">
                                 <select id="selectAdminUser_${v.id}" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-white focus:outline-none flex-grow sm:w-56 truncate">
@@ -1266,7 +1326,7 @@
 
         function updateCarKms(car) {
             if (!car) return;
-            let maxKm = Number(car.kms || 0);
+            let maxKm = Number(car.baseKms || car.kms || 0);
 
             if (Array.isArray(car.records)) {
                 car.records.forEach(r => {
@@ -1314,6 +1374,7 @@
                     plate: v.plate,
                     vin: v.vin,
                     year: v.year,
+                    baseKms: v.kms || 0,
                     kms: v.kms || 0,
                     fuel: v.fuel || 'Diésel',
                     intervalKm: v.interval_km || 15000,
@@ -1448,7 +1509,7 @@
             const selector = document.getElementById("vehicleSelector");
             const fuelFormVehicle = document.getElementById("fuelFormVehicle");
 
-            selector.innerHTML = vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+            selector.innerHTML = vehicles.map(v => `<option value="${v.id}">${escapeHTML(v.name)}</option>`).join('');
             if (vehicles.length > 0) {
                 if (!vehicles.some(v => v.id === activeVehicleId)) activeVehicleId = vehicles[0].id;
                 selector.value = activeVehicleId;
@@ -1456,7 +1517,7 @@
                 selector.innerHTML = `<option value="">Sin vehículos</option>`;
             }
 
-            fuelFormVehicle.innerHTML = vehicles.map(v => `<option value="${v.dbName}">${v.name}</option>`).join('');
+            fuelFormVehicle.innerHTML = vehicles.map(v => `<option value="${escapeHTML(v.dbName)}">${escapeHTML(v.name)}</option>`).join('');
         }
 
         function changeActiveVehicle(id) {
@@ -1561,7 +1622,7 @@
                     notasInput.value = closestRecord.notas;
                 }
                 if (statusLabel) {
-                    statusLabel.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-500"></i> ${closestRecord.notas}`;
+                    statusLabel.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-500"></i> ${escapeHTML(closestRecord.notas)}`;
                 }
                 return;
             }
@@ -1582,7 +1643,7 @@
                 }
 
                 if (statusLabel) {
-                    statusLabel.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-500"></i> ${detectedName || 'Ubicación obtenida'}`;
+                    statusLabel.innerHTML = `<i class="fa-solid fa-location-dot text-emerald-500"></i> ${escapeHTML(detectedName || 'Ubicación obtenida')}`;
                 }
             } catch (err) {
                 console.warn("No se pudo consultar OpenStreetMap:", err);
@@ -1647,9 +1708,16 @@
 
         function renderDashboard() {
             const car = getActiveVehicle();
+            const editVehBtn = document.getElementById("btnEditVehicle");
+            const plateBtn = document.getElementById("carPlate");
+            const vinBtn = document.getElementById("carVin");
+
             if (!car) {
                 document.getElementById("carTitle").innerText = "Sin vehículos";
-                document.getElementById("carPlate").innerText = "--";
+                if (editVehBtn) editVehBtn.classList.add("hidden");
+                plateBtn.innerText = "--";
+                vinBtn.classList.add("hidden");
+                vinBtn.classList.remove("inline-flex");
                 document.getElementById("carSub").innerText = "Añade un vehículo con el botón '+ Vehículo'";
                 document.getElementById("carKm").innerText = "0 km";
                 document.getElementById("recordsTableBody").innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No hay vehículos registrados.</td></tr>`;
@@ -1658,6 +1726,7 @@
 
             updateCarKms(car);
             document.getElementById("carTitle").innerText = car.name;
+            if (editVehBtn) editVehBtn.classList.remove("hidden");
 
             const logoImg = document.getElementById("brandLogoImg");
             const logoFallback = document.getElementById("brandLogoFallback");
@@ -1672,8 +1741,16 @@
                 logoFallback.classList.remove("hidden");
             }
 
-            let identifierText = car.plate && car.vin ? `${car.plate} • ${car.vin}` : (car.plate || car.vin || "--");
-            document.getElementById("carPlate").innerText = identifierText;
+            plateBtn.innerText = car.plate || "--";
+            if (car.vin) {
+                vinBtn.innerHTML = `<span>${escapeHTML(car.vin)}</span> <i class="fa-regular fa-copy text-[10px] opacity-60"></i>`;
+                vinBtn.classList.remove("hidden");
+                vinBtn.classList.add("inline-flex");
+            } else {
+                vinBtn.classList.add("hidden");
+                vinBtn.classList.remove("inline-flex");
+            }
+
             document.getElementById("carSub").innerText = `${car.fuel} • ${car.year}`;
             document.getElementById("carKm").innerText = `${Number(car.kms || 0).toLocaleString('es-ES')} km`;
             document.getElementById("kpiFuel").innerText = car.fuel;
@@ -1838,8 +1915,8 @@
 
                         <div class="min-w-0">
                             <span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] uppercase font-bold px-2 py-0.5 rounded">Inspección Técnica</span>
-                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5 truncate">${title}</h4>
-                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${desc}</p>
+                            <h4 class="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5 truncate">${escapeHTML(title)}</h4>
+                            <p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${escapeHTML(desc)}</p>
                         </div>
                     </div>
                     ${actionBtnsHTML}
@@ -1868,7 +1945,7 @@
                         <div class="bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 p-3.5 rounded-xl flex items-center justify-between space-x-3 text-xs sm:text-sm">
                             <div class="flex items-start space-x-3 min-w-0">
                                 <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base mt-0.5 shrink-0"></i>
-                                <div class="min-w-0"><h4 class="font-bold truncate">${a.title}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${a.desc}</p></div>
+                                <div class="min-w-0"><h4 class="font-bold truncate">${escapeHTML(a.title)}</h4><p class="text-slate-600 dark:text-slate-300 text-xs mt-0.5">${escapeHTML(a.desc)}</p></div>
                             </div>
                             ${actionBtnsHTML}
                         </div>`;
@@ -1967,9 +2044,9 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap text-xs sm:text-sm">${formatDateDisplay(r.fecha)}</td>
                     <td class="px-3 sm:px-4 py-3 font-mono whitespace-nowrap">${Number(r.kms || 0).toLocaleString('es-ES')} km</td>
-                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">${r.detalle || "Otros"}</span></td>
-                    <td class="px-3 sm:px-4 py-3">${r.tipo || ""}</td>
-                    <td class="px-3 sm:px-4 py-3 text-slate-500 hidden sm:table-cell">${r.taller || '--'}</td>
+                    <td class="px-3 sm:px-4 py-3"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">${escapeHTML(r.detalle || "Otros")}</span></td>
+                    <td class="px-3 sm:px-4 py-3">${escapeHTML(r.tipo || "")}</td>
+                    <td class="px-3 sm:px-4 py-3 text-slate-500 hidden sm:table-cell">${escapeHTML(r.taller || '--')}</td>
                     <td class="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">${Number(r.coste || 0).toFixed(2)} €</td>
                     <td class="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                         <div class="flex items-center justify-center space-x-1">
@@ -2027,7 +2104,7 @@
                                 <div class="flex justify-between items-center text-xs font-semibold">
                                     <span class="flex items-center space-x-1.5 text-slate-700 dark:text-slate-200 truncate">
                                         <i class="fa-solid fa-gas-pump ${medalColor}"></i>
-                                        <span class="truncate">${name}</span>
+                                        <span class="truncate">${escapeHTML(name)}</span>
                                     </span>
                                     <span class="text-slate-500 dark:text-slate-400">${count} (${percentage}%)</span>
                                 </div>
@@ -2116,21 +2193,49 @@
             let rawList = fuelRecords;
             if (car) rawList = rawList.filter(f => f.vehiculo === car.dbName || f.vehiculo === car.name);
 
-            let sortedAsc = [...rawList].sort((a, b) => (Number(a.kms || 0) - Number(b.kms || 0)));
+            let sortedAsc = [...rawList].sort((a, b) => {
+                const kmA = Number(a.kms || 0);
+                const kmB = Number(b.kms || 0);
+                if (kmA > 0 && kmB > 0 && kmA !== kmB) return kmA - kmB;
+                return (parseDate(a.fecha) || 0) - (parseDate(b.fecha) || 0);
+            });
 
-            let processedList = sortedAsc.map((f, idx) => {
-                let imp = Number(f.importe || 0);
-                let lit = Number(f.litros || 0);
-                let kms = Number(f.kms || 0);
-                let pricePerLiter = (imp > 0 && lit > 0) ? (imp / lit) : null;
+            let lastFullKms = null;
+            let accumulatedLiters = 0;
+
+            let processedList = sortedAsc.map((f) => {
+                const imp = Number(f.importe || 0);
+                const lit = Number(f.litros || 0);
+                const kms = Number(f.kms || 0);
+                const isFull = f.deposito_lleno !== false;
+                const pricePerLiter = (imp > 0 && lit > 0) ? (imp / lit) : null;
+
                 let consumption = null;
+                let consumptionStatus = 'none';
+                let cycleLiters = 0;
+                let cycleKms = 0;
 
-                if (idx > 0 && kms > 0 && lit > 0) {
-                    let prevKms = Number(sortedAsc[idx - 1].kms || 0);
-                    let deltaKms = kms - prevKms;
-                    if (deltaKms > 0) consumption = (lit / deltaKms) * 100;
+                if (kms > 0 && lit > 0) {
+                    if (isFull) {
+                        if (lastFullKms !== null && kms > lastFullKms) {
+                            cycleLiters = accumulatedLiters + lit;
+                            cycleKms = kms - lastFullKms;
+                            consumption = (cycleLiters / cycleKms) * 100;
+                            consumptionStatus = 'exact';
+                        } else {
+                            consumptionStatus = 'baseline';
+                        }
+                        lastFullKms = kms;
+                        accumulatedLiters = 0;
+                    } else {
+                        consumptionStatus = 'partial';
+                        if (lastFullKms !== null) {
+                            accumulatedLiters += lit;
+                        }
+                    }
                 }
-                return { ...f, pricePerLiter, consumption };
+
+                return { ...f, isFull, pricePerLiter, consumption, consumptionStatus, cycleLiters, cycleKms };
             });
 
             let filtered = processedList.filter(f => {
@@ -2147,13 +2252,50 @@
             const totalLitros = filtered.reduce((sum, f) => sum + Number(f.litros || 0), 0);
             const avgPrice = totalLitros > 0 ? (totalImport / totalLitros) : 0;
 
-            let validConsumptions = filtered.filter(f => f.consumption !== null).map(f => f.consumption);
-            let avgConsumption = validConsumptions.length > 0 ? (validConsumptions.reduce((a, b) => a + b, 0) / validConsumptions.length) : null;
+            const exactCycles = filtered.filter(f => f.consumptionStatus === 'exact' && f.cycleKms > 0);
+            let avgConsumption = null;
+            let isEstimatedAvg = false;
+
+            if (exactCycles.length > 0) {
+                const totalCycleLiters = exactCycles.reduce((sum, f) => sum + f.cycleLiters, 0);
+                const totalCycleKms = exactCycles.reduce((sum, f) => sum + f.cycleKms, 0);
+                if (totalCycleKms > 0) {
+                    avgConsumption = (totalCycleLiters / totalCycleKms) * 100;
+                }
+            } else {
+                const validChrono = [...filtered]
+                    .filter(f => Number(f.kms || 0) > 0 && Number(f.litros || 0) > 0)
+                    .sort((a, b) => Number(a.kms) - Number(b.kms));
+
+                if (validChrono.length >= 2) {
+                    const firstKms = Number(validChrono[0].kms);
+                    const lastKms = Number(validChrono[validChrono.length - 1].kms);
+                    const deltaKms = lastKms - firstKms;
+                    const litersBurned = validChrono
+                        .slice(0, -1)
+                        .reduce((sum, f) => sum + Number(f.litros || 0), 0);
+
+                    if (deltaKms > 0 && litersBurned > 0) {
+                        avgConsumption = (litersBurned / deltaKms) * 100;
+                        isEstimatedAvg = true;
+                    }
+                }
+            }
 
             document.getElementById("kpiFuelTotal").innerText = `${totalImport.toFixed(2)} €`;
             document.getElementById("kpiFuelCount").innerText = filtered.length;
             document.getElementById("kpiFuelAvgPriceLiter").innerText = avgPrice > 0 ? `${avgPrice.toFixed(3)} €/L` : "0,000 €/L";
-            document.getElementById("kpiFuelAvgConsumption").innerText = avgConsumption ? `${avgConsumption.toFixed(2)} L/100km` : "-- L/100km";
+
+            const kpiAvgEl = document.getElementById("kpiFuelAvgConsumption");
+            if (avgConsumption) {
+                kpiAvgEl.innerText = `${avgConsumption.toFixed(2)} L/100km${isEstimatedAvg ? ' ~' : ''}`;
+                kpiAvgEl.title = isEstimatedAvg
+                    ? "Media acumulada estimada (repostajes parciales)"
+                    : "Media real calculada entre llenados completos";
+            } else {
+                kpiAvgEl.innerText = "-- L/100km";
+                kpiAvgEl.title = "";
+            }
 
             const tbody = document.getElementById("fuelTableBody");
             if (!tbody) return;
@@ -2163,24 +2305,35 @@
                 return;
             }
 
-            tbody.innerHTML = filtered.map(f => `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                    <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400 hidden sm:table-cell">${f.vehiculo}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
-                    <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-semibold">${Number(f.importe || 0).toFixed(2)} €</td>
-                    <td class="px-3 sm:px-4 py-3 text-right">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">${f.consumption ? f.consumption.toFixed(2) + ' L/100km' : '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-slate-500">${f.notas || '--'}</td>
-                    <td class="px-3 sm:px-4 py-3 text-center">
-                        <div class="flex items-center justify-center space-x-1">
-                            <button onclick="openFuelModal('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                            <button onclick="deleteFuelRecord('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filtered.map(f => {
+                let consumptionCellHTML = '--';
+                if (f.consumptionStatus === 'exact' && f.consumption) {
+                    consumptionCellHTML = `<span class="font-bold text-emerald-600 dark:text-emerald-400">${f.consumption.toFixed(2)} L/100km</span>`;
+                } else if (f.consumptionStatus === 'partial') {
+                    consumptionCellHTML = `<span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400" title="Repostaje parcial: litros acumulados para el próximo llenado">Parcial</span>`;
+                } else if (f.consumptionStatus === 'baseline') {
+                    consumptionCellHTML = `<span class="text-[11px] text-slate-400" title="Depósito lleno: referencia inicial para el siguiente tramo">Lleno (inicio)</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                        <td class="px-3 sm:px-4 py-3 font-semibold text-purple-600 dark:text-purple-400 hidden sm:table-cell">${escapeHTML(f.vehiculo)}</td>
+                        <td class="px-3 sm:px-4 py-3 font-mono">${formatDateDisplay(f.fecha)}</td>
+                        <td class="px-3 sm:px-4 py-3 font-mono">${f.kms ? Number(f.kms).toLocaleString('es-ES') + ' km' : '--'}</td>
+                        <td class="px-3 sm:px-4 py-3 text-right font-semibold">${Number(f.importe || 0).toFixed(2)} €</td>
+                        <td class="px-3 sm:px-4 py-3 text-right">${f.litros ? Number(f.litros).toFixed(2) + ' L' : '--'}</td>
+                        <td class="px-3 sm:px-4 py-3 text-right hidden md:table-cell">${f.pricePerLiter ? f.pricePerLiter.toFixed(3) + ' €/L' : '--'}</td>
+                        <td class="px-3 sm:px-4 py-3 text-right">${consumptionCellHTML}</td>
+                        <td class="px-3 sm:px-4 py-3 text-slate-500">${escapeHTML(f.notas || '--')}</td>
+                        <td class="px-3 sm:px-4 py-3 text-center">
+                            <div class="flex items-center justify-center space-x-1">
+                                <button onclick="openFuelModal('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="deleteFuelRecord('${f.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function renderParts() {
@@ -2204,24 +2357,34 @@
                 return;
             }
 
-            container.innerHTML = filteredParts.map(p => `
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${p.pieza}</h3>
-                            ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded">${p.marca}</span>` : ''}
+            container.innerHTML = filteredParts.map(p => {
+                const searchQuery = encodeURIComponent([p.pieza, p.marca, p.notas].filter(Boolean).join(' '));
+                const actionLinkHTML = p.link
+                    ? `<a href="${escapeHTML(p.link)}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:underline"><i class="fa-solid fa-cart-shopping mr-1"></i>Ver en Tienda</a>`
+                    : `<a href="https://www.google.com/search?q=${searchQuery}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition"><i class="fa-solid fa-magnifying-glass mr-1"></i>Buscar ref.</a>`;
+
+                return `
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">${escapeHTML(p.pieza)}</h3>
+                                ${p.marca ? `<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded shrink-0">${escapeHTML(p.marca)}</span>` : ''}
+                            </div>
+                            <div onclick="copyPartNote('${p.id}')" class="mt-2 font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/70 p-2 rounded flex items-center justify-between gap-2 cursor-pointer transition group" title="Pulsa para copiar referencia">
+                                <span class="break-all">${escapeHTML(p.notas || "")}</span>
+                                <i class="fa-regular fa-copy text-slate-400 group-hover:text-emerald-500 shrink-0"></i>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 font-mono bg-slate-50 dark:bg-slate-700/40 p-2 rounded">${p.notas || ""}</p>
-                    </div>
-                    <div class="flex items-center justify-between pt-1">
-                        ${p.link ? `<a href="${p.link}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:underline"><i class="fa-solid fa-cart-shopping mr-1"></i>Ver en Tienda</a>` : '<div></div>'}
-                        <div class="flex items-center space-x-1 ml-auto">
-                            <button onclick="openPartModal('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                            <button onclick="deletePart('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        <div class="flex items-center justify-between pt-1">
+                            ${actionLinkHTML}
+                            <div class="flex items-center space-x-1 ml-auto">
+                                <button onclick="openPartModal('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-blue-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="deletePart('${p.id}')" class="w-8 h-8 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-slate-700/50 rounded-lg"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function exportToExcel() {
@@ -2262,6 +2425,7 @@
                         Kilometros: Number(f.kms || 0),
                         Importe_Euros: Number(f.importe || 0),
                         Litros: Number(f.litros || 0),
+                        Deposito_Lleno: f.deposito_lleno !== false ? "Sí" : "Parcial",
                         Gasolinera_Notas: f.notas || ""
                     }));
                 const wsFuel = XLSX.utils.json_to_sheet(carFuel);
@@ -2614,6 +2778,7 @@
                     document.getElementById("fuelFormKms").value = record.kms || "";
                     document.getElementById("fuelFormImporte").value = record.importe || "";
                     document.getElementById("fuelFormLitros").value = record.litros || "";
+                    document.getElementById("fuelFormFullTank").checked = (record.deposito_lleno !== false);
                     document.getElementById("fuelFormNotas").value = record.notas || "";
                 }
             } else {
@@ -2623,6 +2788,7 @@
                 document.getElementById("fuelFormKms").value = car ? car.kms : "";
                 document.getElementById("fuelFormImporte").value = "";
                 document.getElementById("fuelFormLitros").value = "";
+                document.getElementById("fuelFormFullTank").checked = true;
                 document.getElementById("fuelFormNotas").value = "";
 
                 if ("geolocation" in navigator) {
@@ -2670,14 +2836,23 @@
                 kms: parseInt(document.getElementById("fuelFormKms").value) || null,
                 importe: parseFloat(document.getElementById("fuelFormImporte").value) || 0,
                 litros: parseFloat(document.getElementById("fuelFormLitros").value) || null,
+                deposito_lleno: document.getElementById("fuelFormFullTank").checked,
                 notas: document.getElementById("fuelFormNotas").value,
                 latitud: !isNaN(latVal) ? latVal : null,
                 longitud: !isNaN(lngVal) ? lngVal : null
             };
 
-            const { error } = id
+            let { error } = id
                 ? await supabaseClient.from('repostajes').update(fuelData).eq('id', id)
                 : await supabaseClient.from('repostajes').insert([fuelData]);
+
+            if (error && String(error.message || '').includes('deposito_lleno')) {
+                delete fuelData.deposito_lleno;
+                const retry = id
+                    ? await supabaseClient.from('repostajes').update(fuelData).eq('id', id)
+                    : await supabaseClient.from('repostajes').insert([fuelData]);
+                error = retry.error;
+            }
 
             if (error) {
                 alert("Error al guardar repostaje: " + error.message);
@@ -2832,6 +3007,9 @@
 
         function openVehicleModal() {
             if (!checkAuthOrLogin()) return;
+            document.getElementById("vehicleModalTitleText").innerText = "Registrar Nuevo Vehículo";
+            document.getElementById("vehEditId").value = "";
+            document.getElementById("btnDeleteVehicle").classList.add("hidden");
             document.getElementById("vehName").value = "";
             document.getElementById("vehPlate").value = "";
             document.getElementById("vehVin").value = "";
@@ -2843,6 +3021,25 @@
             document.getElementById("vehicleModal").classList.remove("hidden");
         }
 
+        function openEditVehicleModal() {
+            if (!checkAuthOrLogin()) return;
+            const car = getActiveVehicle();
+            if (!car) return;
+
+            document.getElementById("vehicleModalTitleText").innerText = "Editar Vehículo";
+            document.getElementById("vehEditId").value = car.dbId;
+            document.getElementById("btnDeleteVehicle").classList.remove("hidden");
+            document.getElementById("vehName").value = car.name || "";
+            document.getElementById("vehPlate").value = car.plate || "";
+            document.getElementById("vehVin").value = car.vin || "";
+            document.getElementById("vehYear").value = car.year || new Date().getFullYear();
+            document.getElementById("vehKms").value = car.baseKms || car.kms || 0;
+            document.getElementById("vehFuel").value = car.fuel || "Diésel";
+            document.getElementById("vehIntervalKm").value = car.intervalKm || 15000;
+            document.getElementById("vehIntervalMonths").value = car.intervalMonths || 12;
+            document.getElementById("vehicleModal").classList.remove("hidden");
+        }
+
         function closeVehicleModal() { document.getElementById("vehicleModal").classList.add("hidden"); }
 
         async function handleSaveVehicle(e) {
@@ -2850,8 +3047,47 @@
             if (!checkAuthOrLogin()) return;
             if (!supabaseClient) return;
 
+            const editId = document.getElementById("vehEditId").value;
             const nameVal = document.getElementById("vehName").value.trim();
             const plateVal = document.getElementById("vehPlate").value.trim();
+
+            if (editId) {
+                const car = vehicles.find(v => String(v.dbId) === String(editId));
+                const oldNames = car ? Array.from(new Set([car.dbName, car.name].filter(Boolean))) : [];
+
+                const updateData = {
+                    name: nameVal,
+                    db_name: nameVal,
+                    plate: plateVal,
+                    vin: document.getElementById("vehVin").value.trim() || "",
+                    year: parseInt(document.getElementById("vehYear").value) || new Date().getFullYear(),
+                    kms: parseInt(document.getElementById("vehKms").value) || 0,
+                    fuel: document.getElementById("vehFuel").value,
+                    interval_km: parseInt(document.getElementById("vehIntervalKm").value) || 15000,
+                    interval_months: parseInt(document.getElementById("vehIntervalMonths").value) || 12
+                };
+
+                const { error } = await supabaseClient.from('vehiculos').update(updateData).eq('id', editId);
+                if (error) {
+                    alert("Error al actualizar vehículo: " + error.message);
+                    return;
+                }
+
+                if (oldNames.length > 0 && !oldNames.includes(nameVal)) {
+                    await Promise.all([
+                        supabaseClient.from('mantenimiento').update({ vehiculo: nameVal }).in('vehiculo', oldNames),
+                        supabaseClient.from('repostajes').update({ vehiculo: nameVal }).in('vehiculo', oldNames),
+                        supabaseClient.from('recambios').update({ vehiculo: nameVal }).in('vehiculo', oldNames),
+                        supabaseClient.from('alertas').update({ vehiculo: nameVal }).in('vehiculo', oldNames)
+                    ]);
+                }
+
+                closeVehicleModal();
+                showToast("Vehículo actualizado.");
+                await reloadData();
+                return;
+            }
+
             let idAlias = nameVal.toLowerCase().replace(/[^a-z0-9]/g, '_');
             if (vehicles.some(v => v.id === idAlias)) {
                 idAlias = `${idAlias}_${Date.now()}`;
@@ -2880,6 +3116,41 @@
             localStorage.setItem("activeVehicleId", idAlias);
             closeVehicleModal();
             await reloadData();
+        }
+
+        async function deleteActiveVehicle() {
+            if (!checkAuthOrLogin()) return;
+            const car = getActiveVehicle();
+            if (!car || !supabaseClient) return;
+
+            if (!confirm(`¿Eliminar el vehículo "${car.name}" y todos sus registros de mantenimiento, repostajes y recambios? Esta acción no se puede deshacer.`)) return;
+
+            const namesToMatch = Array.from(new Set([car.dbName, car.name].filter(Boolean)));
+            showToast("Eliminando vehículo...");
+
+            try {
+                await Promise.all([
+                    supabaseClient.from('mantenimiento').delete().in('vehiculo', namesToMatch),
+                    supabaseClient.from('repostajes').delete().in('vehiculo', namesToMatch),
+                    supabaseClient.from('recambios').delete().in('vehiculo', namesToMatch),
+                    supabaseClient.from('alertas').delete().in('vehiculo', namesToMatch)
+                ]);
+
+                const { error } = await supabaseClient.from('vehiculos').delete().eq('id', car.dbId);
+                if (error) {
+                    alert("No se pudo eliminar el vehículo: " + error.message);
+                    return;
+                }
+
+                localStorage.removeItem("activeVehicleId");
+                activeVehicleId = "";
+                closeVehicleModal();
+                showToast("Vehículo eliminado.");
+                await reloadData();
+            } catch (err) {
+                console.error("Error al eliminar vehículo:", err);
+                alert("Error al eliminar el vehículo.");
+            }
         }
 
         if ('serviceWorker' in navigator) {
