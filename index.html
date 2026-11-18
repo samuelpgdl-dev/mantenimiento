@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Canana Automotive — Mantenimiento y Repostajes</title>
     <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
@@ -1079,8 +1080,7 @@
             if (error) {
                 alert("No se pudo enviar el correo: " + error.message);
             } else {
-                alert("Enlace de recuperación enviado a " + email + ".
-Revisa tu bandeja de entrada o la carpeta de Spam.");
+                alert("Enlace de recuperación enviado a " + email + ".\nRevisa tu bandeja de entrada o la carpeta de Spam.");
                 showToast("Correo de recuperación enviado.");
             }
         }
