@@ -475,7 +475,10 @@
                     <input type="email" id="authEmail" required placeholder="tu@email.com" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
+                        <button type="button" id="btnForgotPassword" onclick="handleForgotPassword()" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">¿Olvidaste tu contraseña?</button>
+                    </div>
                     <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <button type="submit" id="btnAuthSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition">Iniciar Sesión</button>
@@ -484,6 +487,27 @@
             <div class="mt-3 text-center">
                 <button type="button" id="btnToggleAuth" onclick="toggleAuthMode()" class="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-500 underline">¿No tienes cuenta? Regístrate aquí</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Establecer Nueva Contraseña (Recuperación) -->
+    <div id="recoveryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-800 border-t sm:border border-slate-200 dark:border-slate-700 rounded-t-2xl sm:rounded-xl w-full max-w-md shadow-2xl p-5 sm:p-6 modal-bottom-safe relative">
+            <button onclick="closeRecoveryModal()" class="absolute top-4 right-4 text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1"><i class="fa-solid fa-key text-emerald-500 mr-2"></i>Nueva Contraseña</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Introduce tu nueva contraseña para completar el acceso a tu cuenta.</p>
+
+            <form onsubmit="handleUpdatePassword(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nueva contraseña (mínimo 6 caracteres)</label>
+                    <input type="password" id="newRecoveryPassword" minlength="6" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Repite la nueva contraseña</label>
+                    <input type="password" id="confirmRecoveryPassword" minlength="6" required placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-base sm:text-xs text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition">Guardar Nueva Contraseña</button>
+            </form>
         </div>
     </div>
 
@@ -503,6 +527,16 @@
                 </div>
                 <button onclick="registerNewPasskey()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shrink-0 transition">
                     <i class="fa-solid fa-fingerprint mr-1.5"></i>Vincular Passkey
+                </button>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 dark:text-white">Contraseña de Acceso</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Cambia tu contraseña actual por una personalizada.</p>
+                </div>
+                <button onclick="openRecoveryModal()" class="px-3.5 py-2 bg-slate-800 dark:bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-bold shrink-0 transition">
+                    <i class="fa-solid fa-key mr-1.5"></i>Cambiar Contraseña
                 </button>
             </div>
 
@@ -887,12 +921,16 @@
             updateAuthHeaderButton();
 
             document.getElementById("loginModal").classList.add("hidden");
+            checkRecoveryRedirect();
             await reloadData();
 
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 currentUser = session ? session.user : null;
                 await checkAdminStatus();
                 updateAuthHeaderButton();
+                if (event === 'PASSWORD_RECOVERY') {
+                    openRecoveryModal();
+                }
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
                     await reloadData();
                 }
@@ -989,15 +1027,84 @@
             const btnSubmit = document.getElementById("btnAuthSubmit");
             const btnToggle = document.getElementById("btnToggleAuth");
             const passkeyContainer = document.getElementById("passkeyLoginContainer");
+            const btnForgot = document.getElementById("btnForgotPassword");
             
             if (isAuthSignUpMode) {
                 btnSubmit.innerText = "Crear Cuenta Nueva";
                 btnToggle.innerText = "¿Ya tienes cuenta? Inicia sesión aquí";
                 if (passkeyContainer) passkeyContainer.classList.add("hidden");
+                if (btnForgot) btnForgot.classList.add("hidden");
             } else {
                 btnSubmit.innerText = "Iniciar Sesión";
                 btnToggle.innerText = "¿No tienes cuenta? Regístrate aquí";
                 if (passkeyContainer) passkeyContainer.classList.remove("hidden");
+                if (btnForgot) btnForgot.classList.remove("hidden");
+            }
+        }
+
+        function checkRecoveryRedirect() {
+            const hash = window.location.hash || "";
+            const params = new URLSearchParams(window.location.search);
+            if (hash.includes("type=recovery") || params.get("type") === "recovery") {
+                openRecoveryModal();
+            }
+        }
+
+        function openRecoveryModal() {
+            closeLoginModal();
+            closeAdminModal();
+            document.getElementById("newRecoveryPassword").value = "";
+            document.getElementById("confirmRecoveryPassword").value = "";
+            document.getElementById("recoveryModal").classList.remove("hidden");
+        }
+
+        function closeRecoveryModal() {
+            document.getElementById("recoveryModal").classList.add("hidden");
+        }
+
+        async function handleForgotPassword() {
+            if (!supabaseClient) return;
+            const email = document.getElementById("authEmail").value.trim();
+            if (!email) {
+                alert("Escribe primero tu correo electrónico en el campo superior y vuelve a pulsar en '¿Olvidaste tu contraseña?'.");
+                document.getElementById("authEmail").focus();
+                return;
+            }
+
+            showToast("Enviando correo de recuperación...");
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: "https://samuelpgdl-dev.github.io/mantenimiento/"
+            });
+
+            if (error) {
+                alert("No se pudo enviar el correo: " + error.message);
+            } else {
+                alert("Enlace de recuperación enviado a " + email + ".
+Revisa tu bandeja de entrada o la carpeta de Spam.");
+                showToast("Correo de recuperación enviado.");
+            }
+        }
+
+        async function handleUpdatePassword(e) {
+            e.preventDefault();
+            if (!supabaseClient) return;
+            const p1 = document.getElementById("newRecoveryPassword").value;
+            const p2 = document.getElementById("confirmRecoveryPassword").value;
+
+            if (p1 !== p2) {
+                alert("Las contraseñas no coinciden.");
+                return;
+            }
+
+            showToast("Actualizando contraseña...");
+            const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+
+            if (error) {
+                alert("Error al actualizar la contraseña: " + error.message);
+            } else {
+                window.history.replaceState(null, "", window.location.pathname);
+                closeRecoveryModal();
+                showToast("¡Contraseña actualizada correctamente!");
             }
         }
 
